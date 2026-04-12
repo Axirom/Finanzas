@@ -2916,32 +2916,6 @@ const ACCOUNT_COLORS = [
 ];
 
 // ===================== FIREBASE =====================
-const firebaseConfig = {
-  apiKey: "AIzaSyD3UzY2xxjUdrQMRP5yT5WmOIPpX_GBwH4",
-  authDomain: "finanzas-4d75d.firebaseapp.com",
-  projectId: "finanzas-4d75d",
-  storageBucket: "finanzas-4d75d.firebasestorage.app",
-  messagingSenderId: "914260342078",
-  appId: "1:914260342078:web:ec01da84dd238b228ce86f"
-};
-
-let db = null;
-let STATE_DOC = null;
-let firebaseAvailable = false;
-
-try {
-  if (typeof firebase !== 'undefined') {
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-    STATE_DOC = db.collection('finanzas').doc('shared');
-    firebaseAvailable = true;
-  }
-} catch(e) {
-  console.warn('Firebase no disponible, usando localStorage:', e);
-}
-
-let isSaving = false; // prevent save-loop on remote updates
-
 function getDefaults() {
   return {
     accounts: { mario: [], miri: [], common: [] },
@@ -2968,7 +2942,6 @@ function migrateState(parsed) {
   DEFAULT_CATEGORIES.expense.forEach(c => {
     if (!parsed.categories.expense.includes(c)) parsed.categories.expense.push(c);
   });
-  // Ensure all keys exist
   ['debts','deposits','snapshots'].forEach(k => {
     if (!parsed[k]) parsed[k] = defaults[k];
     if (!parsed[k].mario) parsed[k].mario = [];
@@ -2979,62 +2952,12 @@ function migrateState(parsed) {
 }
 
 function loadState() {
-  // Fallback to localStorage while Firebase loads
   const raw = localStorage.getItem('finanzas_v2');
   return raw ? migrateState(JSON.parse(raw)) : getDefaults();
 }
 
-async function saveState() {
-  isSaving = true;
+function saveState() {
   localStorage.setItem('finanzas_v2', JSON.stringify(state));
-  if (firebaseAvailable && STATE_DOC) {
-    try {
-      await STATE_DOC.set({ data: JSON.stringify(state) });
-    } catch(e) {
-      console.warn('Firebase save failed:', e);
-    }
-  }
-  isSaving = false;
-}
-
-// Real-time listener — syncs changes from the other device
-function startFirebaseSync() {
-  if (!firebaseAvailable || !STATE_DOC) return;
-  STATE_DOC.onSnapshot(doc => {
-    if (isSaving) return;
-    if (!doc.exists) return;
-    try {
-      const remote = migrateState(JSON.parse(doc.data().data));
-      state = remote;
-      localStorage.setItem('finanzas_v2', JSON.stringify(state));
-      renderAll();
-      showToast('☁️ Datos sincronizados', 'success');
-    } catch(e) {
-      console.warn('Firebase sync error:', e);
-    }
-  }, err => {
-    console.warn('Firebase listener error:', err);
-  });
-}
-
-// Load from Firebase on startup, then start sync
-async function loadFromFirebase() {
-  if (!firebaseAvailable || !STATE_DOC) {
-    startFirebaseSync();
-    return;
-  }
-  try {
-    const doc = await STATE_DOC.get();
-    if (doc.exists) {
-      state = migrateState(JSON.parse(doc.data().data));
-      localStorage.setItem('finanzas_v2', JSON.stringify(state));
-    } else {
-      await STATE_DOC.set({ data: JSON.stringify(state) });
-    }
-  } catch(e) {
-    console.warn('Firebase load failed, using localStorage:', e);
-  }
-  startFirebaseSync();
 }
 
 let state = loadState();
@@ -3119,12 +3042,9 @@ function showPinError(msg) {
 function unlockApp() {
   document.getElementById('pinScreen').style.opacity = '0';
   document.getElementById('pinScreen').style.transition = 'opacity 0.4s';
-  setTimeout(async () => {
+  setTimeout(() => {
     document.getElementById('pinScreen').style.display = 'none';
     document.getElementById('appShell').classList.add('visible');
-    // Show loading indicator briefly while Firebase loads
-    showToast('Cargando datos…', '');
-    await loadFromFirebase();
     autoSnapshot();
     renderAll();
     renderGlobalPatrimonyChart();
@@ -5561,7 +5481,7 @@ function renderPositionChart(inv) {
       plugins: { legend: { display: false } },
       scales: {
         x: { grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => '€' + v } }
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => '€' + Number(v).toFixed(2) } }
       }
     }
   });
@@ -5664,7 +5584,7 @@ function renderPortfolioChart() {
       plugins: { legend: { display: false } },
       scales: {
         x: { grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => '€' + v } }
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => '€' + Number(v).toFixed(2) } }
       }
     }
   });
@@ -5814,7 +5734,7 @@ function renderInvestBarChart() {
       plugins: { legend: { labels: { boxWidth: 10, padding: 12 } } },
       scales: {
         x: { grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => '€' + v } }
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => '€' + Number(v).toFixed(2) } }
       }
     }
   });
@@ -5912,9 +5832,8 @@ function importBackup(event) {
 function resetApp() {
   showConfirm(
     '¿Borrar todos los datos?',
-    'Se eliminarán permanentemente todas las cuentas, movimientos, depósitos y deudas en todos los dispositivos. Esta acción NO se puede deshacer.',
-    async () => {
-      try { await STATE_DOC.delete(); } catch(e) {}
+    'Se eliminarán permanentemente todas las cuentas, movimientos, depósitos y deudas. Esta acción NO se puede deshacer.',
+    () => {
       localStorage.removeItem('finanzas_v2');
       localStorage.removeItem('pin');
       location.reload();
@@ -6110,7 +6029,7 @@ function renderInOutChart(person) {
       plugins: { legend: { labels: { boxWidth: 10, padding: 12 } } },
       scales: {
         x: { grid: { color: c.grid } },
-        y: { grid: { color: c.grid }, ticks: { callback: v => '€' + v } }
+        y: { grid: { color: c.grid }, ticks: { callback: v => '€' + Number(v).toFixed(2) } }
       }
     }
   });
@@ -6178,7 +6097,7 @@ function renderSavingChart(person) {
       plugins: { legend: { labels: { boxWidth: 10, padding: 12 } } },
       scales: {
         x: { grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => '€' + v } }
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => '€' + Number(v).toFixed(2) } }
       }
     }
   });
