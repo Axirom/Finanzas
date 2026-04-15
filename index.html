@@ -88,7 +88,7 @@ body::before {
   font-size: 40px;
   font-weight: 400;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, #60c8f5 0%, #a78bfa 50%, #f472b6 100%);
+  background: linear-gradient(135deg, #0abfbc 0%, #2dd4bf 40%, #34d399 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.5px;
@@ -247,6 +247,19 @@ body::before {
   justify-content: space-between;
   margin-bottom: 4px;
 }
+
+.calc-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 40px; height: 40px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.calc-btn:active { background: var(--surface3); }
 
 .section-name {
   font-family: 'Cormorant Garamond', serif;
@@ -541,7 +554,7 @@ body::before {
 
 .account-saving-badge {
   position: absolute;
-  bottom: 8px;
+  top: 8px;
   right: 8px;
   font-size: 9px;
   font-weight: 600;
@@ -552,6 +565,15 @@ body::before {
   padding: 2px 5px;
   letter-spacing: 0.3px;
   text-transform: uppercase;
+}
+
+/* When both badges present: Ahorro on top, rate % pushed below */
+.account-saving-badge.has-rate {
+  top: 8px;
+}
+.account-saving-badge.has-rate ~ .account-rate-badge,
+.account-saving-badge + .account-rate-badge {
+  top: 30px;
 }
 
 .account-card.dragging {
@@ -1688,6 +1710,7 @@ body::before {
 .main-content::-webkit-scrollbar-track { background: transparent; }
 .main-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" onerror="window.Chart=function(){this.destroy=function(){};}"></script>
 </head>
 <body>
@@ -1948,6 +1971,7 @@ body::before {
       <div class="section-header">
         <div class="section-title-row">
           <div class="section-name invest">Inversión</div>
+          <button class="calc-btn" onclick="openCompoundCalc()" title="Calculadora de interés compuesto">🧮</button>
         </div>
       </div>
 
@@ -2075,6 +2099,14 @@ body::before {
             <div style="font-size:11px;color:var(--muted);margin-top:2px;">Invertido: <span id="global-invest-cost">€0,00</span></div>
           </div>
         </div>
+        <div class="global-card">
+          <div class="global-card-icon" style="background:rgba(86,207,225,0.12)">🏦</div>
+          <div class="global-card-info">
+            <div class="global-card-label">Depósitos (Mario + Miri)</div>
+            <div class="global-card-amount" style="color:var(--saving)" id="global-deposits">€0,00</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;"><span id="global-deposits-count">0</span> activos</div>
+          </div>
+        </div>
       </div>
 
       <button onclick="openSettings()" style="
@@ -2199,6 +2231,76 @@ body::before {
     </div>
 
     <button class="btn-submit" onclick="saveDepositMaturity()">Confirmar liquidación</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: COMPOUND CALCULATOR ==================== -->
+<div class="modal-overlay" id="modalCompoundCalc" onclick="closeModalOutside(event, 'modalCompoundCalc')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+      <div class="modal-title" style="margin-bottom:0;flex:1;">Interés compuesto</div>
+      <span style="font-size:22px;">🧮</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Capital inicial (€)</label>
+        <input class="form-input" id="calc-initial" type="number" min="0" step="any" inputmode="decimal" oninput="calcCompound()">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Aportación mensual (€)</label>
+        <input class="form-input" id="calc-monthly" type="number" min="0" step="any" placeholder="0" inputmode="decimal" oninput="calcCompound()">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Rentabilidad anual (%)</label>
+        <input class="form-input" id="calc-rate" type="number" min="0" step="0.1" placeholder="7" inputmode="decimal" oninput="calcCompound()">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Años</label>
+        <input class="form-input" id="calc-years" type="number" min="1" max="50" step="1" placeholder="10" inputmode="numeric" oninput="calcCompound()">
+      </div>
+    </div>
+
+    <div id="calc-result" style="display:none;margin-top:20px;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Resultado final</div>
+        <div id="calc-final" style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:500;color:var(--invest);letter-spacing:-1px;"></div>
+        <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Aportado</div>
+            <div id="calc-contributed" style="font-size:15px;font-weight:600;color:var(--text);"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Intereses</div>
+            <div id="calc-interests" style="font-size:15px;font-weight:600;color:var(--income);"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Rentabilidad</div>
+            <div id="calc-return-pct" style="font-size:15px;font-weight:600;color:var(--income);"></div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Evolución año a año</div>
+        <div style="height:160px;"><canvas id="calc-chart"></canvas></div>
+        <div style="display:flex;gap:12px;margin-top:10px;">
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);">
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(99,102,241,0.6);flex-shrink:0;"></div>Aportado
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);">
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(52,211,153,0.7);flex-shrink:0;"></div>Intereses
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="calc-placeholder" style="text-align:center;padding:32px 20px;color:var(--muted);font-size:13px;line-height:1.6;">
+      Rellena los campos de arriba<br>para ver la proyección.
+    </div>
   </div>
 </div>
 
@@ -2399,13 +2501,33 @@ body::before {
     <div class="modal-handle"></div>
     <div class="modal-title">Ajustes</div>
 
-    <div class="settings-section-title">Copia de seguridad</div>
+    <div class="settings-section-title">Nombres</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Persona 1</label>
+        <input class="form-input" id="settings-name-mario" type="text" maxlength="16" placeholder="Mario" oninput="previewNames()">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Persona 2</label>
+        <input class="form-input" id="settings-name-miri" type="text" maxlength="16" placeholder="Miri" oninput="previewNames()">
+      </div>
+    </div>
+    <button class="btn-submit" style="margin-bottom:20px;" onclick="saveNames()">Guardar nombres</button>
 
     <button class="settings-btn" onclick="exportBackup()">
       <span class="settings-btn-icon">📤</span>
       <div class="settings-btn-info">
-        <div class="settings-btn-label">Exportar datos</div>
-        <div class="settings-btn-desc">Descarga un archivo .json con todos tus datos</div>
+        <div class="settings-btn-label">Exportar datos (JSON)</div>
+        <div class="settings-btn-desc">Copia de seguridad completa en formato .json</div>
+      </div>
+    </button>
+
+    <button class="settings-btn" onclick="exportExcel()">
+      <span class="settings-btn-icon">📊</span>
+      <div class="settings-btn-info">
+        <div class="settings-btn-label">Exportar a Excel</div>
+        <div class="settings-btn-desc">Descarga un .xlsx con movimientos, cuentas, deudas y depósitos</div>
       </div>
     </button>
 
@@ -2721,7 +2843,7 @@ body::before {
       <div class="form-group">
         <label class="form-label">Tipo</label>
         <div class="op-type-row">
-          <button class="op-type-btn" id="editTx-income" onclick="selectEditTxType('income')">💚 Ingreso</button>
+          <button class="op-type-btn" id="editTx-income" onclick="selectEditTxType('income')">🟢 Ingreso</button>
           <button class="op-type-btn" id="editTx-expense" onclick="selectEditTxType('expense')">🔴 Gasto</button>
         </div>
       </div>
@@ -2857,7 +2979,7 @@ body::before {
     <div class="form-group">
       <label class="form-label">Tipo de operación</label>
       <div class="op-type-row">
-        <button class="op-type-btn active-income" id="qe-income" onclick="selectQEType('income')">💚 Ingreso</button>
+        <button class="op-type-btn active-income" id="qe-income" onclick="selectQEType('income')">🟢 Ingreso</button>
         <button class="op-type-btn" id="qe-expense" onclick="selectQEType('expense')">🔴 Gasto</button>
       </div>
     </div>
@@ -2924,6 +3046,7 @@ function getDefaults() {
     deposits: { mario: [], miri: [] },
     snapshots: { mario: [], miri: [] },
     investments: [],
+    names: { mario: 'Mario', miri: 'Miri' },
     categories: { income: [...DEFAULT_CATEGORIES.income], expense: [...DEFAULT_CATEGORIES.expense] }
   };
 }
@@ -2934,6 +3057,7 @@ function migrateState(parsed) {
   if (parsed.accounts && parsed.accounts.common && !Array.isArray(parsed.accounts.common)) {
     parsed.accounts.common = [parsed.accounts.common];
   }
+  if (!parsed.names) parsed.names = defaults.names;
   if (!Array.isArray(parsed.accounts.common)) parsed.accounts.common = [];
   if (!parsed.categories) parsed.categories = defaults.categories;
   DEFAULT_CATEGORIES.income.forEach(c => {
@@ -3047,6 +3171,7 @@ function unlockApp() {
     document.getElementById('appShell').classList.add('visible');
     autoSnapshot();
     renderAll();
+    applyNames();
     renderGlobalPatrimonyChart();
   }, 400);
 }
@@ -3111,8 +3236,8 @@ function renderAll() {
 
 function getAccountMeta(accountId) {
   const owners = [
-    { key: 'mario', label: 'Mario' },
-    { key: 'miri', label: 'Miri' },
+    { key: 'mario', label: getName('mario') },
+    { key: 'miri', label: getName('miri') },
     { key: 'common', label: 'Común' }
   ];
   for (const o of owners) {
@@ -3207,7 +3332,7 @@ function renderTransactions(person) {
       .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
   }
 
-  const TYPE_ICON  = { income: '💚', expense: '🔴', saving: '🏦' };
+  const TYPE_ICON  = { income: '🟢', expense: '🔴', saving: '🏦' };
   const TYPE_COLOR = { income: 'var(--income)', expense: 'var(--expense)', saving: 'var(--saving)' };
 
   // Deduplicate internal transfers: if both accounts belong to same person, show only the expense record
@@ -3616,7 +3741,7 @@ function renderAccounts(person) {
   } else {
     accounts.forEach((acc, idx) => {
       const rateBadge   = acc.rate != null ? `<div class="account-rate-badge">${acc.rate}%</div>` : '';
-      const savingBadge = acc.accType === 'saving' ? `<div class="account-saving-badge">Ahorro</div>` : '';
+      const savingBadge = acc.accType === 'saving' ? `<div class="account-saving-badge${acc.rate != null ? ' has-rate' : ''}">Ahorro</div>` : '';
       const logo        = getBankLogoHtml(acc.bankId || 'none');
       const dot         = `<div class="account-color-dot" style="background:${acc.color};${logo ? 'display:none' : ''}"></div>`;
       const metalBg   = metallicGradient(acc.color);
@@ -3632,8 +3757,8 @@ function renderAccounts(person) {
           ontouchstart="dragTouchStart(event, '${person}')"
           ontouchmove="dragTouchMove(event)"
           ontouchend="dragTouchEnd(event)">
-          ${rateBadge}
           ${savingBadge}
+          ${rateBadge}
           ${logo || ''}${dot}
           <div class="account-name" style="color:${nameColor};">${acc.name}</div>
           <div class="account-balance" style="color:${balColor};text-shadow:${shadow};">€${fmt(acc.balance)}</div>
@@ -3649,19 +3774,27 @@ function renderGlobal() {
   const miriTotal       = getPersonTotal('miri');
   const commonTotal     = getCommonBalance();
   const invCurrentTotal = getInvestCurrentTotal();
-  const grandTotal      = marioTotal + miriTotal + commonTotal + invCurrentTotal;
 
-  document.getElementById('global-total').textContent       = fmt(grandTotal);
-  document.getElementById('global-mario').textContent       = '€' + fmt(marioTotal);
-  document.getElementById('global-miri').textContent        = '€' + fmt(miriTotal);
-  document.getElementById('global-common').textContent      = '€' + fmt(commonTotal);
-  document.getElementById('global-invest').textContent      = '€' + fmt(invCurrentTotal);
-  document.getElementById('global-invest-cost').textContent = '€' + fmt(getInvestTotalCost());
+  // Deposits: sum of active + matured (not liquidated) from both persons
+  ensureDeposits();
+  const allDeposits = [...(state.deposits.mario || []), ...(state.deposits.miri || [])];
+  const activeDeposits = allDeposits.filter(d => !d.liquidated);
+  const depositTotal = activeDeposits.reduce((s, d) => s + d.amount, 0);
+
+  const grandTotal = marioTotal + miriTotal + commonTotal + invCurrentTotal + depositTotal;
+
+  document.getElementById('global-total').textContent          = fmt(grandTotal);
+  document.getElementById('global-mario').textContent          = '€' + fmt(marioTotal);
+  document.getElementById('global-miri').textContent           = '€' + fmt(miriTotal);
+  document.getElementById('global-common').textContent         = '€' + fmt(commonTotal);
+  document.getElementById('global-invest').textContent         = '€' + fmt(invCurrentTotal);
+  document.getElementById('global-invest-cost').textContent    = '€' + fmt(getInvestTotalCost());
+  document.getElementById('global-deposits').textContent       = '€' + fmt(depositTotal);
+  document.getElementById('global-deposits-count').textContent = activeDeposits.length;
 
   // Year label
   const el = document.getElementById('global-year-label');
   if (el) el.textContent = globalYear;
-  // Disable next arrow if current year
   const nextBtn = document.getElementById('global-year-next');
   if (nextBtn) nextBtn.disabled = globalYear >= new Date().getFullYear();
 }
@@ -3763,13 +3896,32 @@ function renderGlobalPatrimonyChart() {
   const now        = new Date();
   const currentKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
-  const marioData  = months.map(m => m.key > currentKey ? null : snapBalance('mario', m.key));
-  const miriData   = months.map(m => m.key > currentKey ? null : snapBalance('miri',  m.key));
-  const commonData = months.map(m => m.key > currentKey ? null : commonBalanceAt(m.key));
-  const investData = months.map(m => m.key > currentKey ? null : investValueAt(m.key));
+  // Helper: total active deposits (both persons) at end of month
+  function depositsValueAt(monthKey) {
+    ensureDeposits();
+    const endDate = monthKey + '-31';
+    const all = [...(state.deposits.mario || []), ...(state.deposits.miri || [])];
+    if (all.length === 0) return null;
+    const total = all.reduce((s, d) => {
+      // Deposit existed and hadn't been liquidated yet at this point
+      const created    = d.createdAt || d.startDate || '';
+      const liquidated = d.liquidated ? (d.liquidationDate || d.endDate || '') : '9999-99';
+      if (created > endDate) return s;        // not created yet
+      if (liquidated <= endDate) return s;    // already liquidated
+      return s + d.amount;
+    }, 0);
+    const hasActivity = all.some(d => (d.createdAt || d.startDate || '') <= endDate);
+    return hasActivity ? total : null;
+  }
+
+  const marioData    = months.map(m => m.key > currentKey ? null : snapBalance('mario', m.key));
+  const miriData     = months.map(m => m.key > currentKey ? null : snapBalance('miri',  m.key));
+  const commonData   = months.map(m => m.key > currentKey ? null : commonBalanceAt(m.key));
+  const investData   = months.map(m => m.key > currentKey ? null : investValueAt(m.key));
+  const depositData  = months.map(m => m.key > currentKey ? null : depositsValueAt(m.key));
 
   // Check if any data exists for this year
-  const hasData = [...marioData, ...miriData, ...commonData, ...investData].some(v => v !== null && v > 0);
+  const hasData = [...marioData, ...miriData, ...commonData, ...investData, ...depositData].some(v => v !== null && v > 0);
 
   if (!hasData) {
     if (msgEl)  { msgEl.innerHTML = `Sin datos para ${globalYear}.<br><span style="opacity:0.6;">Los datos se acumulan mes a mes al abrir la app.</span>`; msgEl.style.display = 'block'; }
@@ -3781,10 +3933,11 @@ function renderGlobalPatrimonyChart() {
   if (wrapEl) wrapEl.style.display = 'block';
 
   const series = [
-    { label: 'Mario',     data: marioData,  color: '#60c8f5' },
-    { label: 'Miri',      data: miriData,   color: '#f472b6' },
-    { label: 'Común',     data: commonData, color: '#a78bfa' },
-    { label: 'Inversión', data: investData, color: '#34d399' },
+    { label: getName('mario'), data: marioData,   color: '#60c8f5' },
+    { label: getName('miri'),  data: miriData,    color: '#f472b6' },
+    { label: 'Común',     data: commonData,  color: '#a78bfa' },
+    { label: 'Depósitos', data: depositData, color: '#56cfe1' },
+    { label: 'Inversión', data: investData,  color: '#34d399' },
   ];
 
   globalPatrimonyChart = new Chart(ctx, {
@@ -3860,7 +4013,7 @@ function toggleCommon() {
   // If marking as common, update title
   document.getElementById('addAccountTitle').textContent = isCommonAccount
     ? 'Nueva cuenta común'
-    : (addAccountTarget === 'mario' ? 'Nueva cuenta — Mario' : 'Nueva cuenta — Miri');
+    : `Nueva cuenta — ${getName(addAccountTarget)}`;
 }
 
 // ===================== ADD ACCOUNT =====================
@@ -3879,7 +4032,7 @@ function openAddAccount(person) {
   selectedBankId = 'none';
   document.getElementById('commonToggle').classList.remove('active');
   document.getElementById('addAccountTitle').textContent =
-    person === 'mario' ? 'Nueva cuenta — Mario' : 'Nueva cuenta — Miri';
+    `Nueva cuenta — ${getName(person)}`;
   document.getElementById('accName').value = '';
   document.getElementById('accBalance').value = '';
   document.getElementById('accRate').value = '';
@@ -4035,7 +4188,7 @@ function renderDetailTransactions(accountId) {
 
     const sign  = t.type === 'income' ? '+' : '-';
     const color = t.type === 'income' ? 'var(--income)' : 'var(--expense)';
-    const icon  = t.type === 'income' ? '💚' : '🔴';
+    const icon  = t.type === 'income' ? '🟢' : '🔴';
     return `
       <div class="detail-tx-item" onclick="openEditTx('${t.id}')" style="cursor:pointer;">
         <div class="detail-tx-icon">${icon}</div>
@@ -4115,8 +4268,8 @@ function deleteAccount() {
 // ===================== TRANSFERS =====================
 function getAllAccounts() {
   return [
-    ...state.accounts.mario.map(a => ({ ...a, owner: 'mario', ownerLabel: 'Mario' })),
-    ...state.accounts.miri.map(a => ({ ...a, owner: 'miri', ownerLabel: 'Miri' })),
+    ...state.accounts.mario.map(a => ({ ...a, owner: 'mario', ownerLabel: getName('mario') })),
+    ...state.accounts.miri.map(a => ({ ...a, owner: 'miri', ownerLabel: getName('miri') })),
     ...state.accounts.common.map(a => ({ ...a, owner: 'common', ownerLabel: 'Común' }))
   ];
 }
@@ -4237,7 +4390,7 @@ let payingDebtPerson = null;
 function openAddDebt(person) {
   debtPerson = person;
   debtType = 'loan';
-  document.getElementById('addDebtTitle').textContent = person === 'mario' ? 'Nueva deuda — Mario' : 'Nueva deuda — Miri';
+  document.getElementById('addDebtTitle').textContent = `Nueva deuda — ${getName(person)}`;
   document.getElementById('debtName').value = '';
   document.getElementById('debtTotal').value = '';
   document.getElementById('debtPaid').value = '';
@@ -4543,7 +4696,7 @@ function openAddDeposit(person) {
   depositPerson = person;
   ensureDeposits();
   document.getElementById('addDepositTitle').textContent =
-    person === 'mario' ? 'Nuevo depósito — Mario' : 'Nuevo depósito — Miri';
+    `Nuevo depósito — ${getName(person)}`;
   document.getElementById('dep-name').value = '';
   document.getElementById('dep-amount').value = '';
   document.getElementById('dep-tin').value = '';
@@ -5741,8 +5894,70 @@ function renderInvestBarChart() {
 }
 
 // ===================== SETTINGS =====================
+// ===================== NAMES =====================
+function getName(person) {
+  return (state.names && state.names[person]) || (person === 'mario' ? 'Mario' : 'Miri');
+}
+
+function applyNames() {
+  const m = getName('mario');
+  const mi = getName('miri');
+  // Section titles
+  const marioTitle = document.querySelector('.section-name.mario');
+  const miriTitle  = document.querySelector('.section-name.miri');
+  if (marioTitle) marioTitle.textContent = m;
+  if (miriTitle)  miriTitle.textContent  = mi;
+  // Bottom nav labels
+  const navLabels = document.querySelectorAll('.nav-label');
+  navLabels.forEach(el => {
+    if (el.textContent === 'Mario' || el.dataset.person === 'mario') el.textContent = m;
+    if (el.textContent === 'Miri'  || el.dataset.person === 'miri')  el.textContent = mi;
+  });
+  // Global cards
+  const gm = document.querySelector('#global-mario')?.previousElementSibling;
+  const gmi = document.querySelector('#global-miri')?.previousElementSibling;
+  if (gm)  gm.textContent  = m;
+  if (gmi) gmi.textContent = mi;
+  // Quick entry buttons
+  const qeMario = document.getElementById('qe-mario');
+  const qeMiri  = document.getElementById('qe-miri');
+  if (qeMario) qeMario.textContent = '👤 ' + m;
+  if (qeMiri)  qeMiri.textContent  = '👤 ' + mi;
+  // Deposits global label
+  const depLabel = document.getElementById('global-deposits')?.closest('.global-card')?.querySelector('.global-card-label');
+  if (depLabel) depLabel.textContent = `Depósitos (${m} + ${mi})`;
+  // Common toggle desc
+  const togDesc = document.querySelector('.common-toggle-desc');
+  if (togDesc) togDesc.textContent = `Aparecerá en la sección de ${m} y de ${mi}`;
+}
+
 function openSettings() {
+  document.getElementById('settings-name-mario').value = getName('mario');
+  document.getElementById('settings-name-miri').value  = getName('miri');
   document.getElementById('modalSettings').classList.add('open');
+}
+
+function previewNames() {
+  // Live preview while typing - just update the title row
+  const m  = document.getElementById('settings-name-mario').value.trim() || 'Mario';
+  const mi = document.getElementById('settings-name-miri').value.trim()  || 'Miri';
+  const marioTitle = document.querySelector('.section-name.mario');
+  const miriTitle  = document.querySelector('.section-name.miri');
+  if (marioTitle) marioTitle.textContent = m;
+  if (miriTitle)  miriTitle.textContent  = mi;
+}
+
+function saveNames() {
+  const m  = document.getElementById('settings-name-mario').value.trim();
+  const mi = document.getElementById('settings-name-miri').value.trim();
+  if (!m || !mi) { showToast('Los nombres no pueden estar vacíos', 'error'); return; }
+  if (!state.names) state.names = {};
+  state.names.mario = m;
+  state.names.miri  = mi;
+  saveState();
+  applyNames();
+  closeModal('modalSettings');
+  showToast('Nombres actualizados ✓', 'success');
 }
 
 function exportBackup() {
@@ -5792,6 +6007,122 @@ function exportBackup() {
 
 function fallbackExport(json, fileName) {
   // Not used anymore but kept for safety
+}
+
+function exportExcel() {
+  if (typeof XLSX === 'undefined') {
+    showToast('Librería Excel no disponible, intenta de nuevo', 'error');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+  const m  = getName('mario');
+  const mi = getName('miri');
+  const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-ES') : '';
+
+  // ---- MOVIMIENTOS ----
+  const txHeaders = ['Fecha', 'Persona', 'Tipo', 'Descripción', 'Categoría', 'Cuenta', 'Importe (€)'];
+  const txRows = [...state.transactions]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(t => {
+      const acc = findAccountById(t.accountId);
+      const personLabel = t.person === 'mario' ? m : mi;
+      const typeLabel   = t.type === 'income' ? 'Ingreso' : t.type === 'expense' ? 'Gasto' : 'Ahorro';
+      const amount      = t.type === 'income' ? t.amount : -t.amount;
+      return [fmtDate(t.date), personLabel, typeLabel, t.desc || '', t.category || '', acc ? acc.name : '—', amount];
+    });
+  const txSheet = XLSX.utils.aoa_to_sheet([txHeaders, ...txRows]);
+  txSheet['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 28 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, txSheet, 'Movimientos');
+
+  // ---- CUENTAS ----
+  const accHeaders = ['Persona', 'Nombre', 'Saldo (€)', 'Tipo', 'Remuneración (%)', 'Común'];
+  const accRows = [];
+  state.accounts.mario.forEach(a => accRows.push([m, a.name, a.balance, a.accType === 'saving' ? 'Ahorro' : 'Corriente', a.rate ?? '', 'No']));
+  state.accounts.miri.forEach(a  => accRows.push([mi, a.name, a.balance, a.accType === 'saving' ? 'Ahorro' : 'Corriente', a.rate ?? '', 'No']));
+  state.accounts.common.forEach(a => accRows.push(['Común', a.name, a.balance, 'Corriente', a.rate ?? '', 'Sí']));
+  const accSheet = XLSX.utils.aoa_to_sheet([accHeaders, ...accRows]);
+  accSheet['!cols'] = [{ wch: 10 }, { wch: 20 }, { wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 8 }];
+  XLSX.utils.book_append_sheet(wb, accSheet, 'Cuentas');
+
+  // ---- DEUDAS ----
+  const debtHeaders = ['Persona', 'Nombre', 'Tipo', 'Total (€)', 'Pagado (€)', 'Pendiente (€)', 'Cuota mensual (€)', 'TIN (%)', 'TAE (%)'];
+  const debtRows = [];
+  ['mario', 'miri'].forEach(p => {
+    const label = p === 'mario' ? m : mi;
+    (state.debts[p] || []).forEach(d => {
+      const typeLabel = { loan: 'Préstamo', financed: 'Financiado', other: 'Otro' }[d.type] || d.type;
+      debtRows.push([label, d.name, typeLabel, d.total, d.paid, d.total - d.paid, d.quota || 0, d.tin ?? '', d.tae ?? '']);
+    });
+  });
+  const debtSheet = XLSX.utils.aoa_to_sheet([debtHeaders, ...debtRows]);
+  debtSheet['!cols'] = [{ wch: 10 }, { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 18 }, { wch: 8 }, { wch: 8 }];
+  XLSX.utils.book_append_sheet(wb, debtSheet, 'Deudas');
+
+  // ---- DEPÓSITOS ----
+  const depHeaders = ['Persona', 'Nombre', 'Importe (€)', 'TIN (%)', 'TAE (%)', 'Inicio', 'Vencimiento', 'Estado', 'Intereses (€)'];
+  const depRows = [];
+  ['mario', 'miri'].forEach(p => {
+    const label = p === 'mario' ? m : mi;
+    (state.deposits[p] || []).forEach(d => {
+      const today = new Date().toISOString().split('T')[0];
+      const status = d.liquidated ? 'Liquidado' : d.endDate <= today ? 'Vencido' : 'Activo';
+      depRows.push([label, d.name, d.amount, d.tin ?? '', d.tae ?? '', fmtDate(d.startDate), fmtDate(d.endDate), status, d.interest ?? '']);
+    });
+  });
+  const depSheet = XLSX.utils.aoa_to_sheet([depHeaders, ...depRows]);
+  depSheet['!cols'] = [{ wch: 10 }, { wch: 22 }, { wch: 13 }, { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, depSheet, 'Depósitos');
+
+  // ---- INVERSIONES ----
+  const invHeaders = ['Nombre', 'Tipo', 'Unidades', 'Precio medio compra (€)', 'Precio actual (€)', 'Coste total (€)', 'Valor actual (€)', 'Rentabilidad (€)', 'Rentabilidad (%)'];
+  const invRows = (state.investments || []).map(inv => {
+    const typeLabel = { index: 'Fondo indexado', active: 'Gestión activa', crypto: 'Cripto' }[inv.type] || inv.type;
+    const cost      = inv.units * inv.avgBuyPrice;
+    const current   = inv.units * (inv.currentPrice || inv.avgBuyPrice);
+    const retEur    = current - cost;
+    const retPct    = cost > 0 ? ((retEur / cost) * 100).toFixed(2) : '0';
+    return [inv.name, typeLabel, inv.units, inv.avgBuyPrice, inv.currentPrice || inv.avgBuyPrice, cost, current, retEur, retPct + '%'];
+  });
+  const invSheet = XLSX.utils.aoa_to_sheet([invHeaders, ...invRows]);
+  invSheet['!cols'] = [{ wch: 22 }, { wch: 16 }, { wch: 10 }, { wch: 22 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 }];
+  XLSX.utils.book_append_sheet(wb, invSheet, 'Inversiones');
+
+  // ---- GENERATE & SHARE ----
+  const date     = new Date().toISOString().split('T')[0];
+  const fileName = `finanzas-${date}.xlsx`;
+  const wbOut    = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob     = new Blob([wbOut], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const file     = new File([blob], fileName, { type: blob.type });
+
+  if (typeof navigator.share === 'function') {
+    let canShare = false;
+    try { canShare = navigator.canShare({ files: [file] }); } catch(e) {}
+    if (canShare) {
+      navigator.share({ files: [file], title: 'Finanzas Excel' })
+        .then(() => showToast('Excel listo para guardar ✓', 'success'))
+        .catch(() => showToast('Compartir cancelado', ''));
+      return;
+    }
+  }
+  // Fallback 1: SheetJS direct write (works in most browsers)
+  try {
+    XLSX.writeFile(wb, fileName);
+    showToast('Excel descargado ✓', 'success');
+    return;
+  } catch(e) {}
+  // Fallback 2: blob download link
+  try {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Excel descargado ✓', 'success');
+  } catch(e) {
+    showToast('No se pudo descargar en este navegador', 'error');
+  }
 }
 
 function importBackup(event) {
@@ -6276,6 +6607,137 @@ function dragTouchEnd(e) {
 
 // Cancel long press on scroll
 document.addEventListener('touchmove', () => { clearTimeout(longPressTimer); }, { passive: true });
+
+// ===================== COMPOUND INTEREST CALCULATOR =====================
+let calcChart = null;
+
+function openCompoundCalc() {
+  // Pre-fill capital inicial with current investment value
+  const currentVal = getInvestCurrentTotal();
+  document.getElementById('calc-initial').value = currentVal > 0 ? currentVal.toFixed(2) : '';
+  document.getElementById('calc-monthly').value = '';
+  document.getElementById('calc-rate').value    = '7';
+  document.getElementById('calc-years').value   = '10';
+  document.getElementById('calc-result').style.display      = 'none';
+  document.getElementById('calc-placeholder').style.display = 'block';
+  document.getElementById('modalCompoundCalc').classList.add('open');
+  setTimeout(calcCompound, 50);
+}
+
+function calcCompound() {
+  const initial = parseFloat(document.getElementById('calc-initial').value) || 0;
+  const monthly = parseFloat(document.getElementById('calc-monthly').value) || 0;
+  const rate    = parseFloat(document.getElementById('calc-rate').value);
+  const years   = parseInt(document.getElementById('calc-years').value);
+
+  if (!rate || !years || (initial === 0 && monthly === 0)) {
+    document.getElementById('calc-result').style.display      = 'none';
+    document.getElementById('calc-placeholder').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('calc-result').style.display      = 'block';
+  document.getElementById('calc-placeholder').style.display = 'none';
+
+  const r = rate / 100 / 12; // monthly rate
+
+  // Build year-by-year data
+  const labels      = [];
+  const contributed = [];
+  const interests   = [];
+
+  for (let y = 1; y <= years; y++) {
+    const n = y * 12;
+    // Future value of lump sum
+    const fvLump = initial * Math.pow(1 + r, n);
+    // Future value of monthly contributions (annuity)
+    const fvMonthly = monthly > 0 ? monthly * ((Math.pow(1 + r, n) - 1) / r) : 0;
+    const total = fvLump + fvMonthly;
+    const totalContributed = initial + monthly * n;
+    const totalInterest = total - totalContributed;
+
+    labels.push(`Año ${y}`);
+    contributed.push(totalContributed);
+    interests.push(Math.max(0, totalInterest));
+  }
+
+  const finalTotal       = contributed[years - 1] + interests[years - 1];
+  const finalContributed = contributed[years - 1];
+  const finalInterests   = interests[years - 1];
+  const returnPct        = finalContributed > 0 ? ((finalInterests / finalContributed) * 100).toFixed(1) : '0';
+
+  document.getElementById('calc-final').textContent        = '€' + fmt(finalTotal);
+  document.getElementById('calc-contributed').textContent  = '€' + fmt(finalContributed);
+  document.getElementById('calc-interests').textContent    = '€' + fmt(finalInterests);
+  document.getElementById('calc-return-pct').textContent   = '+' + returnPct + '%';
+
+  // Draw chart
+  if (calcChart) { calcChart.destroy(); calcChart = null; }
+  const ctx = document.getElementById('calc-chart');
+  if (!ctx) return;
+
+  // Sample every N years if many years to keep chart readable
+  const step = years > 20 ? 2 : 1;
+  const sampledLabels      = labels.filter((_, i) => (i + 1) % step === 0 || i === years - 1);
+  const sampledContributed = contributed.filter((_, i) => (i + 1) % step === 0 || i === years - 1);
+  const sampledInterests   = interests.filter((_, i) => (i + 1) % step === 0 || i === years - 1);
+
+  calcChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sampledLabels,
+      datasets: [
+        {
+          label: 'Aportado',
+          data: sampledContributed,
+          backgroundColor: 'rgba(99,102,241,0.6)',
+          borderRadius: 3,
+          borderSkipped: false,
+        },
+        {
+          label: 'Intereses',
+          data: sampledInterests,
+          backgroundColor: 'rgba(52,211,153,0.7)',
+          borderRadius: 3,
+          borderSkipped: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => items[0].label,
+            label: ctx => ` ${ctx.dataset.label}: €${fmt(ctx.raw)}`,
+            footer: items => {
+              const total = items.reduce((s, i) => s + i.raw, 0);
+              return `Total: €${fmt(total)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } }
+        },
+        y: {
+          stacked: true,
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: {
+            color: 'rgba(255,255,255,0.3)',
+            font: { size: 10 },
+            callback: v => v >= 1000 ? (v/1000).toFixed(0) + 'k' : '€' + v
+          }
+        }
+      }
+    }
+  });
+}
 
 // ===================== MODALS =====================
 function closeModal(id) {
