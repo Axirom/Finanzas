@@ -1705,6 +1705,64 @@ body::before {
   border: 1px dashed var(--border);
 }
 
+/* ===================== VISIBILITY TOGGLE ===================== */
+.visibility-btn {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 80;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 36px; height: 36px;
+  font-size: 17px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.visibility-btn:active { background: var(--surface3); }
+
+/* When values are hidden, blur all monetary values */
+body.values-hidden .total-amount span:not(.currency),
+body.values-hidden .account-balance,
+body.values-hidden .global-card-amount,
+body.values-hidden .global-total-amount span:not(.currency),
+body.values-hidden .invest-stat-value,
+body.values-hidden .total-stat-value,
+body.values-hidden .tx-row-amount,
+body.values-hidden .detail-tx-amount,
+body.values-hidden .detail-tx-balance,
+body.values-hidden .debt-amounts span,
+body.values-hidden .deposit-amount,
+body.values-hidden #mario-deposit-total,
+body.values-hidden #miri-deposit-total,
+body.values-hidden #global-invest-cost,
+body.values-hidden .account-rate-inline {
+  filter: blur(6px);
+  user-select: none;
+  transition: filter 0.25s;
+}
+
+body:not(.values-hidden) .total-amount span:not(.currency),
+body:not(.values-hidden) .account-balance,
+body:not(.values-hidden) .global-card-amount,
+body:not(.values-hidden) .global-total-amount span:not(.currency),
+body:not(.values-hidden) .invest-stat-value,
+body:not(.values-hidden) .total-stat-value,
+body:not(.values-hidden) .tx-row-amount,
+body:not(.values-hidden) .detail-tx-amount,
+body:not(.values-hidden) .detail-tx-balance,
+body:not(.values-hidden) .debt-amounts span,
+body:not(.values-hidden) .deposit-amount,
+body:not(.values-hidden) #mario-deposit-total,
+body:not(.values-hidden) #miri-deposit-total,
+body:not(.values-hidden) #global-invest-cost,
+body:not(.values-hidden) .account-rate-inline {
+  filter: blur(0);
+  transition: filter 0.25s;
+}
+
 /* ===================== SCROLLBAR ===================== */
 .main-content::-webkit-scrollbar { width: 3px; }
 .main-content::-webkit-scrollbar-track { background: transparent; }
@@ -1744,6 +1802,11 @@ body::before {
 
 <!-- ==================== APP SHELL ==================== -->
 <div id="appShell">
+
+  <!-- VISIBILITY TOGGLE -->
+  <button class="visibility-btn" id="visibilityBtn" onclick="toggleVisibility()">
+    <span id="visibilityIcon">👁️</span>
+  </button>
 
   <!-- TOP NAV -->
 
@@ -3172,6 +3235,7 @@ function unlockApp() {
     autoSnapshot();
     renderAll();
     applyNames();
+    initVisibility();
     renderGlobalPatrimonyChart();
   }, 400);
 }
@@ -6737,6 +6801,22 @@ function calcCompound() {
       }
     }
   });
+}
+
+// ===================== VISIBILITY TOGGLE =====================
+let valuesVisible = false;
+
+function toggleVisibility() {
+  valuesVisible = !valuesVisible;
+  document.body.classList.toggle('values-hidden', !valuesVisible);
+  document.getElementById('visibilityIcon').textContent = valuesVisible ? '👁️' : '👁️‍🗨️';
+}
+
+function initVisibility() {
+  // Default: hidden
+  valuesVisible = false;
+  document.body.classList.add('values-hidden');
+  document.getElementById('visibilityIcon').textContent = '👁️‍🗨️';
 }
 
 // ===================== MODALS =====================
