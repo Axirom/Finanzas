@@ -1763,6 +1763,12 @@ body:not(.values-hidden) .account-rate-inline {
   transition: filter 0.25s;
 }
 
+.inv-history-editable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.inv-history-editable:active { background: var(--surface2); border-radius: 8px; }
+
 /* ===================== SCROLLBAR ===================== */
 .main-content::-webkit-scrollbar { width: 3px; }
 .main-content::-webkit-scrollbar-track { background: transparent; }
@@ -2063,6 +2069,7 @@ body:not(.values-hidden) .account-rate-inline {
         <div class="chart-card-title">Evolución de la cartera</div>
         <div id="inv-portfolio-msg" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:12px;line-height:1.8;"></div>
         <div class="chart-wrap" id="inv-portfolio-wrap"><canvas id="inv-chart-portfolio"></canvas></div>
+        <div id="inv-portfolio-legend"></div>
       </div>
 
       <div class="chart-card" style="overflow:hidden;">
@@ -2488,6 +2495,58 @@ body:not(.values-hidden) .account-rate-inline {
     <!-- Movement history -->
     <div class="block-title" style="margin-bottom:10px;">Historial de movimientos</div>
     <div id="pd-history"></div>
+  </div>
+</div>
+
+<!-- ==================== MODAL: EDIT INVESTMENT MOVEMENT ==================== -->
+<div class="modal-overlay" id="modalEditInvMove" onclick="closeModalOutside(event, 'modalEditInvMove')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="eim-title">Editar movimiento</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label" id="eim-units-label">Unidades</label>
+        <input class="form-input" id="eim-units" type="number" min="0" step="any" inputmode="decimal" oninput="updateEimTotal()">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Precio/u. (€)</label>
+        <input class="form-input" id="eim-price" type="number" min="0" step="any" inputmode="decimal" oninput="updateEimTotal()">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:12px;">
+      <label class="form-label">Total (€) — calculado</label>
+      <div id="eim-total" style="font-size:20px;font-weight:600;font-family:'Cormorant Garamond',serif;color:var(--invest);padding:8px 0;">€0,00</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Cuenta origen/destino</label>
+      <select class="form-select" id="eim-account"></select>
+      <div style="margin-top:6px;">
+        <div class="common-toggle" id="eim-no-deduct-toggle" onclick="toggleEimNoDeduct()">
+          <div class="common-toggle-icon">⚡</div>
+          <div class="common-toggle-info">
+            <div class="common-toggle-title">Sin cargo a cuenta</div>
+            <div class="common-toggle-desc">El broker lo gestiona automáticamente</div>
+          </div>
+          <div class="common-toggle-check" id="eim-no-deduct-check">✓</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" id="eim-date" type="date">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notas — opcional</label>
+      <input class="form-input" id="eim-notes" type="text" placeholder="Observaciones…">
+    </div>
+
+    <button class="btn-submit" onclick="saveEditInvMovement()">Guardar cambios</button>
+    <button class="btn-danger" onclick="deleteInvMovement()" style="margin-top:8px;">🗑 Eliminar movimiento</button>
   </div>
 </div>
 
@@ -5721,14 +5780,16 @@ function renderPositionHistory(inv) {
     if (m.type === 'buy')    detail = `${m.units} u. × €${fmt(m.price)} = €${fmt(m.total)}`;
     if (m.type === 'sell')   detail = `${m.units} u. × €${fmt(m.price)} = €${fmt(m.total)}${m.pl ? ` · P&L: ${m.pl >= 0 ? '+' : ''}€${fmt(m.pl)}` : ''}`;
     if (m.type === 'update') detail = `Precio → €${fmt(m.price)}`;
+    const editable = m.type === 'buy' || m.type === 'sell';
 
     return `
-      <div class="inv-history-item">
+      <div class="inv-history-item${editable ? ' inv-history-editable' : ''}" ${editable ? `onclick="openEditInvMovement('${inv.id}','${m.id}')"` : ''}>
         <span class="inv-history-type ${m.type}">${typeLabel[m.type]}</span>
         <div class="inv-history-info">
           <div style="font-weight:500;">${detail}</div>
           <div style="font-size:11px;color:var(--muted);">${fmtD(m.date)}${m.notes ? ' · ' + m.notes : ''}</div>
         </div>
+        ${editable ? '<div style="font-size:16px;color:var(--muted);flex-shrink:0;">›</div>' : ''}
       </div>`;
   }).join('');
 }
@@ -5750,10 +5811,11 @@ function renderPortfolioChart() {
   const wrapEl = document.getElementById('inv-portfolio-wrap');
   if (!ctx) return;
 
-  // Build timeline from all price updates and buys, calculate total portfolio value at each point
+  // Collect all relevant dates (price updates + buy/sell movements)
   const allDates = new Set();
   state.investments.forEach(inv => {
     (inv.priceHistory || []).forEach(h => allDates.add(h.date));
+    (inv.movements    || []).forEach(m => { if (m.type === 'buy' || m.type === 'sell') allDates.add(m.date); });
   });
 
   const sorted = [...allDates].sort();
@@ -5766,18 +5828,41 @@ function renderPortfolioChart() {
   if (msgEl)  msgEl.style.display  = 'none';
   if (wrapEl) wrapEl.style.display = 'block';
 
-  const values = sorted.map(date => {
-    return state.investments.reduce((sum, inv) => {
-      // Find the last known price on or before this date
+  const currentValues  = [];
+  const investedValues = [];
+
+  sorted.forEach(date => {
+    let totalValue    = 0;
+    let totalInvested = 0;
+
+    state.investments.forEach(inv => {
+      // --- Valor actual a esta fecha ---
       const prices = (inv.priceHistory || []).filter(h => h.date <= date);
-      if (prices.length === 0) return sum;
-      const lastPrice = prices[prices.length - 1].price;
-      // Find units at this date (subtract sells after this date)
-      let units = inv.units;
-      (inv.movements || []).filter(m => m.type === 'sell' && m.date > date).forEach(m => units += m.units);
-      (inv.movements || []).filter(m => m.type === 'buy'  && m.date > date).forEach(m => units -= m.units);
-      return sum + Math.max(0, units) * lastPrice;
-    }, 0);
+      if (prices.length > 0) {
+        const lastPrice = prices[prices.length - 1].price;
+        let units = inv.units;
+        (inv.movements || []).filter(m => m.type === 'sell' && m.date > date).forEach(m => units += m.units);
+        (inv.movements || []).filter(m => m.type === 'buy'  && m.date > date).forEach(m => units -= m.units);
+        totalValue += Math.max(0, units) * lastPrice;
+      }
+
+      // --- Capital invertido a esta fecha (compras acumuladas - ventas al precio de coste) ---
+      const buyMoves  = (inv.movements || []).filter(m => m.type === 'buy'  && m.date <= date);
+      const sellMoves = (inv.movements || []).filter(m => m.type === 'sell' && m.date <= date);
+      const totalBought = buyMoves.reduce((s, m) => s + m.total, 0);
+      // For sells, subtract cost basis (units sold × avg buy price at that point)
+      const totalSold = sellMoves.reduce((s, m) => {
+        const buysBeforeSell = (inv.movements || []).filter(b => b.type === 'buy' && b.date <= m.date);
+        const avgCost = buysBeforeSell.length > 0
+          ? buysBeforeSell.reduce((t, b) => t + b.total, 0) / buysBeforeSell.reduce((t, b) => t + b.units, 0)
+          : 0;
+        return s + m.units * avgCost;
+      }, 0);
+      totalInvested += Math.max(0, totalBought - totalSold);
+    });
+
+    currentValues.push(totalValue);
+    investedValues.push(totalInvested);
   });
 
   const fmtD = d => new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
@@ -5786,25 +5871,75 @@ function renderPortfolioChart() {
     type: 'line',
     data: {
       labels: sorted.map(fmtD),
-      datasets: [{
-        label: 'Valor cartera',
-        data: values,
-        borderColor: 'rgba(168,247,200,0.9)',
-        backgroundColor: 'rgba(168,247,200,0.08)',
-        borderWidth: 2, pointRadius: 4,
-        pointBackgroundColor: 'rgba(168,247,200,0.9)',
-        fill: true, tension: 0.3
-      }]
+      datasets: [
+        {
+          label: 'Capital invertido',
+          data: investedValues,
+          borderColor: 'rgba(96,200,245,0.9)',
+          backgroundColor: 'rgba(96,200,245,0.06)',
+          borderWidth: 2,
+          borderDash: [5, 4],
+          pointRadius: 3,
+          pointBackgroundColor: 'rgba(96,200,245,0.9)',
+          fill: false,
+          tension: 0.3,
+          order: 2
+        },
+        {
+          label: 'Valor actual',
+          data: currentValues,
+          borderColor: 'rgba(52,211,153,0.9)',
+          backgroundColor: 'rgba(52,211,153,0.08)',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: 'rgba(52,211,153,0.9)',
+          fill: true,
+          tension: 0.3,
+          order: 1
+        }
+      ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: €${fmt(ctx.raw)}`,
+            footer: items => {
+              const invested = items.find(i => i.dataset.label === 'Capital invertido')?.raw || 0;
+              const current  = items.find(i => i.dataset.label === 'Valor actual')?.raw    || 0;
+              const diff     = current - invested;
+              return diff >= 0
+                ? `Ganancia: +€${fmt(diff)}`
+                : `Pérdida: -€${fmt(Math.abs(diff))}`;
+            }
+          }
+        }
+      },
       scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => '€' + Number(v).toFixed(2) } }
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.4)', callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k' : '€'+v.toFixed(0) } }
       }
     }
   });
+
+  // Render custom legend below chart
+  const legEl = document.getElementById('inv-portfolio-legend');
+  if (legEl) {
+    legEl.innerHTML = `
+      <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);">
+          <svg width="20" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="rgba(96,200,245,0.9)" stroke-width="2" stroke-dasharray="4,3"/></svg>
+          Capital invertido
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);">
+          <div style="width:20px;height:3px;background:rgba(52,211,153,0.9);border-radius:2px;"></div>
+          Valor actual
+        </div>
+      </div>`;
+  }
 }
 
 // ---- CAROUSEL ----
@@ -6801,6 +6936,171 @@ function calcCompound() {
       }
     }
   });
+}
+
+// ===================== EDIT INVESTMENT MOVEMENT =====================
+let editInvPositionId = null;
+let editInvMovementId = null;
+let eimNoDeduct = false;
+
+function openEditInvMovement(positionId, movementId) {
+  const inv = getPositionById(positionId);
+  if (!inv) return;
+  const mov = (inv.movements || []).find(m => m.id === movementId);
+  if (!mov) return;
+
+  editInvPositionId = positionId;
+  editInvMovementId = movementId;
+  eimNoDeduct = !!mov.noDeduct;
+
+  const isBuy = mov.type === 'buy';
+  document.getElementById('eim-title').textContent = isBuy ? 'Editar compra' : 'Editar venta';
+  document.getElementById('eim-units-label').textContent = isBuy ? 'Participaciones compradas' : 'Participaciones vendidas';
+  document.getElementById('eim-units').value = mov.units;
+  document.getElementById('eim-price').value = mov.price;
+  document.getElementById('eim-date').value  = mov.date;
+  document.getElementById('eim-notes').value = mov.notes || '';
+  updateEimTotal();
+
+  // Toggle state
+  document.getElementById('eim-no-deduct-toggle').classList.toggle('active', eimNoDeduct);
+  document.getElementById('eim-account').style.opacity = eimNoDeduct ? '0.4' : '1';
+
+  // Populate accounts
+  const accounts = [...(state.accounts.mario || []), ...(state.accounts.miri || [])];
+  state.accounts.common.forEach(c => accounts.push({ ...c, name: c.name + ' (Común)' }));
+  const currentId = mov.sourceId || mov.destId || '';
+  document.getElementById('eim-account').innerHTML = accounts.length
+    ? accounts.map(a => `<option value="${a.id}" ${a.id === currentId ? 'selected' : ''}>${a.name} — €${fmt(a.balance)}</option>`).join('')
+    : '<option value="">Sin cuentas</option>';
+
+  document.getElementById('modalEditInvMove').classList.add('open');
+}
+
+function updateEimTotal() {
+  const u = parseFloat(document.getElementById('eim-units').value) || 0;
+  const p = parseFloat(document.getElementById('eim-price').value) || 0;
+  document.getElementById('eim-total').textContent = '€' + fmt(u * p);
+}
+
+function toggleEimNoDeduct() {
+  eimNoDeduct = !eimNoDeduct;
+  document.getElementById('eim-no-deduct-toggle').classList.toggle('active', eimNoDeduct);
+  document.getElementById('eim-account').style.opacity = eimNoDeduct ? '0.4' : '1';
+}
+
+function saveEditInvMovement() {
+  const inv = getPositionById(editInvPositionId);
+  if (!inv) return;
+  const mov = (inv.movements || []).find(m => m.id === editInvMovementId);
+  if (!mov) return;
+
+  const newUnits = parseFloat(document.getElementById('eim-units').value);
+  const newPrice = parseFloat(document.getElementById('eim-price').value);
+  const newDate  = document.getElementById('eim-date').value;
+  const newNotes = document.getElementById('eim-notes').value.trim();
+  const newAccId = document.getElementById('eim-account').value;
+
+  if (!newUnits || newUnits <= 0) { showToast('Introduce las unidades', 'error'); return; }
+  if (!newPrice || newPrice <= 0) { showToast('Introduce el precio', 'error'); return; }
+  if (!newDate)                   { showToast('Introduce la fecha', 'error'); return; }
+
+  const newTotal = newUnits * newPrice;
+  const isBuy   = mov.type === 'buy';
+
+  // Revert old account effect
+  if (!mov.noDeduct) {
+    const oldAccId = mov.sourceId || mov.destId;
+    const oldAcc   = findAccountById(oldAccId);
+    if (oldAcc) {
+      oldAcc.balance += isBuy ? mov.total : -mov.total;
+    }
+  }
+
+  // Apply new account effect
+  if (!eimNoDeduct) {
+    const newAcc = findAccountById(newAccId);
+    if (newAcc) {
+      newAcc.balance -= isBuy ? newTotal : -newTotal;
+    }
+  }
+
+  // Update movement
+  mov.units    = newUnits;
+  mov.price    = newPrice;
+  mov.total    = newTotal;
+  mov.date     = newDate;
+  mov.notes    = newNotes;
+  mov.noDeduct = eimNoDeduct;
+  if (isBuy) mov.sourceId = eimNoDeduct ? null : newAccId;
+  else        mov.destId   = eimNoDeduct ? null : newAccId;
+
+  // Recalculate position averages from scratch
+  recalcPositionFromMovements(inv);
+
+  // Update linked transaction if exists
+  const txDesc = isBuy ? `Compra: ${inv.name}` : `Venta: ${inv.name}`;
+  const tx = state.transactions.find(t =>
+    (t.accountId === (mov.sourceId || mov.destId) || t.desc?.includes(inv.name)) &&
+    t.category === 'Inversión' &&
+    Math.abs(t.amount - mov.total) < 0.01
+  );
+  if (tx) {
+    tx.amount    = newTotal;
+    tx.date      = newDate;
+    tx.accountId = newAccId;
+  }
+
+  saveState();
+  closeModal('modalEditInvMove');
+  openPositionDetail(editInvPositionId);
+  renderInvestCharts();
+  showToast('Movimiento actualizado ✓', 'success');
+}
+
+function deleteInvMovement() {
+  const inv = getPositionById(editInvPositionId);
+  if (!inv) return;
+  const mov = (inv.movements || []).find(m => m.id === editInvMovementId);
+  if (!mov) return;
+
+  showConfirm(
+    '¿Eliminar este movimiento?',
+    'Se revertirá el efecto en la cuenta y se recalculará la posición. Esta acción no se puede deshacer.',
+    () => {
+      // Revert account effect
+      if (!mov.noDeduct) {
+        const accId = mov.sourceId || mov.destId;
+        const acc   = findAccountById(accId);
+        if (acc) acc.balance += mov.type === 'buy' ? mov.total : -mov.total;
+      }
+      // Remove movement
+      inv.movements = inv.movements.filter(m => m.id !== editInvMovementId);
+      // Recalc
+      recalcPositionFromMovements(inv);
+      saveState();
+      closeModal('modalEditInvMove');
+      if (inv.units > 0) {
+        openPositionDetail(editInvPositionId);
+      } else {
+        closeModal('modalPositionDetail');
+      }
+      renderInvestCharts();
+      renderAll();
+      showToast('Movimiento eliminado', '');
+    }
+  );
+}
+
+function recalcPositionFromMovements(inv) {
+  // Recalculate units and avgBuyPrice from all buy/sell movements
+  const buys  = (inv.movements || []).filter(m => m.type === 'buy');
+  const sells = (inv.movements || []).filter(m => m.type === 'sell');
+  const totalBuyUnits = buys.reduce((s, m) => s + m.units, 0);
+  const totalBuyCost  = buys.reduce((s, m) => s + m.total, 0);
+  const totalSellUnits = sells.reduce((s, m) => s + m.units, 0);
+  inv.units        = Math.max(0, totalBuyUnits - totalSellUnits);
+  inv.avgBuyPrice  = totalBuyUnits > 0 ? totalBuyCost / totalBuyUnits : 0;
 }
 
 // ===================== VISIBILITY TOGGLE =====================
