@@ -2411,6 +2411,12 @@ body:not(.values-hidden) .account-rate-inline {
     </div>
 
     <div class="form-group">
+      <label class="form-label">Comisión de compra (€) — opcional</label>
+      <input class="form-input" id="inv-commission" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal" oninput="updateInvTotalWithCommission()">
+      <div id="inv-total-with-comm" style="font-size:11px;color:var(--muted);margin-top:5px;display:none;">Coste total con comisión: <span id="inv-total-comm-value" style="color:var(--expense);font-weight:600;"></span></div>
+    </div>
+
+    <div class="form-group">
       <label class="form-label">Cuenta origen</label>
       <select class="form-select" id="inv-source-account"></select>
     </div>
@@ -2554,11 +2560,13 @@ body:not(.values-hidden) .account-rate-inline {
 <div class="modal-overlay" id="modalUpdatePrice" onclick="closeModalOutside(event, 'modalUpdatePrice')">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Actualizar precio</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div class="modal-title" style="margin-bottom:0;" id="uprice-modal-title">Actualizar precio</div>
+    </div>
     <div id="uprice-name" style="font-size:13px;color:var(--muted);margin-bottom:16px;"></div>
 
     <div class="form-group">
-      <label class="form-label">Precio actual por unidad (€)</label>
+      <label class="form-label">Precio por unidad (€)</label>
       <input class="form-input" id="uprice-value" type="number" min="0" step="any" placeholder="0,00" inputmode="decimal">
     </div>
     <div class="form-group">
@@ -2566,6 +2574,7 @@ body:not(.values-hidden) .account-rate-inline {
       <input class="form-input" id="uprice-date" type="date">
     </div>
     <button class="btn-submit" onclick="saveUpdatePrice()">Guardar</button>
+    <button class="btn-danger" id="uprice-delete-btn" onclick="deleteUpdatePrice()" style="margin-top:8px;display:none;">🗑 Eliminar esta actualización</button>
   </div>
 </div>
 
@@ -5365,6 +5374,21 @@ function resetInvNoDeduct() {
   document.getElementById('inv-source-account').style.opacity = '1';
 }
 
+function updateInvTotalWithCommission() {
+  const u    = parseFloat(document.getElementById('inv-units').value)      || 0;
+  const p    = parseFloat(document.getElementById('inv-price').value)      || 0;
+  const comm = parseFloat(document.getElementById('inv-commission').value) || 0;
+  const total = u * p;
+  document.getElementById('inv-total-calc').textContent = '€' + fmt(total);
+  const commRow = document.getElementById('inv-total-with-comm');
+  if (comm > 0) {
+    document.getElementById('inv-total-comm-value').textContent = '€' + fmt(total + comm);
+    commRow.style.display = 'block';
+  } else {
+    commRow.style.display = 'none';
+  }
+}
+
 function openAddPosition() {
   addPositionMode = 'new';
   invType = 'index';
@@ -5375,6 +5399,8 @@ function openAddPosition() {
   document.getElementById('inv-units').value = '';
   document.getElementById('inv-price').value = '';
   document.getElementById('inv-notes').value = '';
+  document.getElementById('inv-commission').value = '';
+  document.getElementById('inv-total-with-comm').style.display = 'none';
   document.getElementById('inv-date').value  = new Date().toISOString().split('T')[0];
   document.getElementById('inv-total-calc').textContent = '€0,00';
   selectInvType('index');
@@ -5426,9 +5452,7 @@ function populateInvAccounts(selId) {
 // Live total calculation
 document.addEventListener('input', e => {
   if (e.target.id === 'inv-units' || e.target.id === 'inv-price') {
-    const u = parseFloat(document.getElementById('inv-units').value) || 0;
-    const p = parseFloat(document.getElementById('inv-price').value) || 0;
-    document.getElementById('inv-total-calc').textContent = '€' + fmt(u * p);
+    updateInvTotalWithCommission();
   }
   if (e.target.id === 'sell-units' || e.target.id === 'sell-price') {
     const u = parseFloat(document.getElementById('sell-units').value) || 0;
@@ -5439,11 +5463,12 @@ document.addEventListener('input', e => {
 
 function savePosition() {
   const units     = parseFloat(document.getElementById('inv-units').value) || 0;
-  const price     = parseFloat(document.getElementById('inv-price').value) || 0;
-  const sourceId  = document.getElementById('inv-source-account').value;
-  const date      = document.getElementById('inv-date').value;
-  const notes     = document.getElementById('inv-notes').value.trim();
-  const total     = units * price;
+  const price      = parseFloat(document.getElementById('inv-price').value) || 0;
+  const sourceId   = document.getElementById('inv-source-account').value;
+  const date       = document.getElementById('inv-date').value;
+  const notes      = document.getElementById('inv-notes').value.trim();
+  const commission = parseFloat(document.getElementById('inv-commission').value) || 0;
+  const total      = units * price;
 
   if (units <= 0) { showToast('Introduce el número de unidades', 'error'); return; }
   if (price <= 0) { showToast('Introduce el precio por unidad', 'error'); return; }
@@ -5458,15 +5483,15 @@ function savePosition() {
 
     if (!invNoDeduct) {
       const sourceAcc = findAccountById(sourceId);
-      if (!sourceAcc || sourceAcc.balance < total) { showToast('Saldo insuficiente', 'error'); return; }
-      sourceAcc.balance -= total;
+      if (!sourceAcc || sourceAcc.balance < total + commission) { showToast('Saldo insuficiente', 'error'); return; }
+      sourceAcc.balance -= total + commission;
     }
 
     state.investments.push({
       id: Date.now().toString(),
       name, type: invType,
       units, avgBuyPrice: price, currentPrice: price,
-      movements: [{ id: Date.now().toString(), type: 'buy', units, price, total, sourceId: invNoDeduct ? null : sourceId, noDeduct: invNoDeduct, date, notes }],
+      movements: [{ id: Date.now().toString(), type: 'buy', units, price, total, commission, sourceId: invNoDeduct ? null : sourceId, noDeduct: invNoDeduct, date, notes }],
       priceHistory: [{ date, price }]
     });
 
@@ -5476,26 +5501,27 @@ function savePosition() {
 
     if (!invNoDeduct) {
       const sourceAcc = findAccountById(sourceId);
-      if (!sourceAcc || sourceAcc.balance < total) { showToast('Saldo insuficiente', 'error'); return; }
-      sourceAcc.balance -= total;
+      if (!sourceAcc || sourceAcc.balance < total + commission) { showToast('Saldo insuficiente', 'error'); return; }
+      sourceAcc.balance -= total + commission;
     }
 
     const totalUnits = inv.units + units;
     inv.avgBuyPrice  = (inv.units * inv.avgBuyPrice + units * price) / totalUnits;
     inv.units        = totalUnits;
-    inv.movements.push({ id: Date.now().toString(), type: 'buy', units, price, total, sourceId: invNoDeduct ? null : sourceId, noDeduct: invNoDeduct, date, notes });
+    inv.movements.push({ id: Date.now().toString(), type: 'buy', units, price, total, commission, sourceId: invNoDeduct ? null : sourceId, noDeduct: invNoDeduct, date, notes });
     inv.priceHistory.push({ date, price });
     if (price > (inv.currentPrice || 0)) inv.currentPrice = price;
   }
 
   // Only record a transaction if money actually moved from an account
   if (!invNoDeduct) {
+    const invName = addPositionMode === 'new' ? document.getElementById('inv-name').value.trim() : getPositionById(currentPositionId)?.name;
     state.transactions.push({
       id: (Date.now() + 1).toString(),
       person: 'mario', type: 'expense', accountId: sourceId,
       category: 'Inversión',
-      desc: `Compra: ${addPositionMode === 'new' ? document.getElementById('inv-name').value.trim() : getPositionById(currentPositionId)?.name}`,
-      amount: total, date
+      desc: `Compra: ${invName}`,
+      amount: total + commission, date
     });
   }
 
@@ -5507,14 +5533,34 @@ function savePosition() {
 }
 
 // ---- UPDATE PRICE ----
+let editingUpdateMoveId = null;
+
 function openUpdatePrice() {
   closeInvMenu();
+  editingUpdateMoveId = null;
   const inv = getPositionById(currentPositionId);
   if (!inv) return;
-  document.getElementById('uprice-name').textContent = inv.name;
-  document.getElementById('uprice-value').value      = '';
-  document.getElementById('uprice-date').value       = new Date().toISOString().split('T')[0];
+  document.getElementById('uprice-modal-title').textContent  = 'Actualizar precio';
+  document.getElementById('uprice-name').textContent         = inv.name;
+  document.getElementById('uprice-value').value              = '';
+  document.getElementById('uprice-date').value               = new Date().toISOString().split('T')[0];
+  document.getElementById('uprice-delete-btn').style.display = 'none';
   closeModal('modalPositionDetail');
+  document.getElementById('modalUpdatePrice').classList.add('open');
+}
+
+function openEditUpdatePrice(positionId, movementId) {
+  const inv = getPositionById(positionId);
+  if (!inv) return;
+  const mov = (inv.movements || []).find(m => m.id === movementId);
+  if (!mov) return;
+  currentPositionId   = positionId;
+  editingUpdateMoveId = movementId;
+  document.getElementById('uprice-modal-title').textContent  = 'Editar actualización de precio';
+  document.getElementById('uprice-name').textContent         = inv.name;
+  document.getElementById('uprice-value').value              = mov.price;
+  document.getElementById('uprice-date').value               = mov.date;
+  document.getElementById('uprice-delete-btn').style.display = 'block';
   document.getElementById('modalUpdatePrice').classList.add('open');
 }
 
@@ -5526,15 +5572,54 @@ function saveUpdatePrice() {
 
   const inv = getPositionById(currentPositionId);
   if (!inv) return;
-  inv.currentPrice = price;
-  inv.priceHistory.push({ date, price });
-  inv.movements.push({ id: Date.now().toString(), type: 'update', price, date });
+
+  if (editingUpdateMoveId) {
+    // Edit existing update movement
+    const mov = (inv.movements || []).find(m => m.id === editingUpdateMoveId);
+    if (mov) { mov.price = price; mov.date = date; }
+    // Also update matching priceHistory entry
+    const ph = (inv.priceHistory || []).find(h => h.date === mov?.date || h.price === mov?.price);
+    if (ph) { ph.price = price; ph.date = date; }
+    else inv.priceHistory.push({ date, price });
+  } else {
+    // New update
+    inv.priceHistory.push({ date, price });
+    inv.movements.push({ id: Date.now().toString(), type: 'update', price, date });
+  }
+
+  // Recalc currentPrice as the most recent priceHistory entry
+  const sorted = [...(inv.priceHistory || [])].sort((a, b) => b.date.localeCompare(a.date));
+  if (sorted.length > 0) inv.currentPrice = sorted[0].price;
 
   saveState();
   closeModal('modalUpdatePrice');
+  if (editingUpdateMoveId) openPositionDetail(currentPositionId);
   renderAll();
   renderInvestCharts();
   showToast('Precio actualizado ✓', 'success');
+}
+
+function deleteUpdatePrice() {
+  const inv = getPositionById(currentPositionId);
+  if (!inv || !editingUpdateMoveId) return;
+  showConfirm(
+    '¿Eliminar esta actualización de precio?',
+    'Se eliminará este punto del historial de precios. El precio actual se recalculará automáticamente.',
+    () => {
+      const mov = (inv.movements || []).find(m => m.id === editingUpdateMoveId);
+      // Remove from priceHistory too
+      if (mov) inv.priceHistory = (inv.priceHistory || []).filter(h => !(h.date === mov.date && h.price === mov.price));
+      inv.movements = (inv.movements || []).filter(m => m.id !== editingUpdateMoveId);
+      // Recalc currentPrice
+      const sorted = [...(inv.priceHistory || [])].sort((a, b) => b.date.localeCompare(a.date));
+      if (sorted.length > 0) inv.currentPrice = sorted[0].price;
+      saveState();
+      closeModal('modalUpdatePrice');
+      openPositionDetail(currentPositionId);
+      renderInvestCharts();
+      showToast('Actualización eliminada', '');
+    }
+  );
 }
 
 // ---- SELL ----
@@ -5777,19 +5862,19 @@ function renderPositionHistory(inv) {
 
   el.innerHTML = moves.map(m => {
     let detail = '';
-    if (m.type === 'buy')    detail = `${m.units} u. × €${fmt(m.price)} = €${fmt(m.total)}`;
+    if (m.type === 'buy')    detail = `${m.units} u. × €${fmt(m.price)} = €${fmt(m.total)}${m.commission > 0 ? ` · Comisión: €${fmt(m.commission)}` : ''}`;
     if (m.type === 'sell')   detail = `${m.units} u. × €${fmt(m.price)} = €${fmt(m.total)}${m.pl ? ` · P&L: ${m.pl >= 0 ? '+' : ''}€${fmt(m.pl)}` : ''}`;
     if (m.type === 'update') detail = `Precio → €${fmt(m.price)}`;
-    const editable = m.type === 'buy' || m.type === 'sell';
+    const editable = true; // all movement types are now editable
 
     return `
-      <div class="inv-history-item${editable ? ' inv-history-editable' : ''}" ${editable ? `onclick="openEditInvMovement('${inv.id}','${m.id}')"` : ''}>
+      <div class="inv-history-item inv-history-editable" onclick="${m.type === 'update' ? `openEditUpdatePrice('${inv.id}','${m.id}')` : `openEditInvMovement('${inv.id}','${m.id}')`}">
         <span class="inv-history-type ${m.type}">${typeLabel[m.type]}</span>
         <div class="inv-history-info">
           <div style="font-weight:500;">${detail}</div>
           <div style="font-size:11px;color:var(--muted);">${fmtD(m.date)}${m.notes ? ' · ' + m.notes : ''}</div>
         </div>
-        ${editable ? '<div style="font-size:16px;color:var(--muted);flex-shrink:0;">›</div>' : ''}
+        <div style="font-size:16px;color:var(--muted);flex-shrink:0;">›</div>
       </div>`;
   }).join('');
 }
