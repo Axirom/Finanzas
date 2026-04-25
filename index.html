@@ -1211,6 +1211,34 @@ body::before {
 .debt-history-info { flex: 1; }
 .debt-history-amount { font-weight: 600; color: var(--expense); white-space: nowrap; }
 
+/* ===================== CATEGORY CHIPS ===================== */
+.cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 10px 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+}
+.cat-chip.default { opacity: 0.55; }
+.cat-chip-del {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+.cat-chip-del:hover { color: var(--expense); }
+
 /* ===================== MONTH PICKER ===================== */
 .month-picker-btn {
   background: rgba(255,255,255,0.04);
@@ -1677,6 +1705,15 @@ body::before {
   background: linear-gradient(90deg, #ff6b7a, #f472b6);
   transition: width 0.4s;
 }
+.debt-dual-bars { margin-bottom: 10px; }
+.debt-bar-row { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+.debt-bar-label { font-size:10px; color:var(--muted); width:62px; flex-shrink:0; }
+.debt-bar-track { flex:1; height:6px; background:rgba(255,255,255,0.04); border-radius:3px; overflow:hidden; }
+.debt-bar-fill { height:100%; border-radius:3px; transition:width 0.4s; }
+.debt-bar-fill.capital  { background: linear-gradient(90deg, #60c8f5, #a78bfa); }
+.debt-bar-fill.interest { background: linear-gradient(90deg, #f97316, #ef4444); }
+.debt-bar-fill.done     { background: var(--income); }
+.debt-bar-val { font-size:10px; font-weight:600; width:56px; text-align:right; flex-shrink:0; }
 .debt-amounts {
   display: flex; justify-content: space-between;
   font-size: 12px; color: var(--muted); margin-bottom: 12px;
@@ -2116,12 +2153,6 @@ body:not(.values-hidden) .account-rate-inline {
       <div class="section-header">
         <div class="section-title-row">
           <div class="section-name global">Global</div>
-          <!-- Year selector -->
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button class="month-picker-year-btn" onclick="changeGlobalYear(-1)" style="width:36px;height:36px;">‹</button>
-            <span id="global-year-label" style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;min-width:44px;text-align:center;color:var(--global)"></span>
-            <button class="month-picker-year-btn" onclick="changeGlobalYear(1)" id="global-year-next" style="width:36px;height:36px;">›</button>
-          </div>
         </div>
       </div>
 
@@ -2132,7 +2163,14 @@ body:not(.values-hidden) .account-rate-inline {
 
       <!-- Patrimony chart -->
       <div class="chart-card" style="margin-bottom:16px;">
-        <div class="chart-card-title">Evolución del patrimonio</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div class="chart-card-title" style="margin-bottom:0;">Evolución del patrimonio</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button class="month-picker-year-btn" onclick="changeGlobalYear(-1)" style="width:30px;height:30px;font-size:16px;">‹</button>
+            <span id="global-chart-year-label" style="font-size:14px;font-weight:600;color:var(--global);min-width:36px;text-align:center;"></span>
+            <button class="month-picker-year-btn" onclick="changeGlobalYear(1)" id="global-chart-year-next" style="width:30px;height:30px;font-size:16px;">›</button>
+          </div>
+        </div>
         <div id="global-chart-msg" style="display:none;text-align:center;padding:24px;color:var(--muted);font-size:12px;line-height:1.8;"></div>
         <div class="chart-wrap" id="global-chart-wrap" style="height:220px;"><canvas id="global-chart-patrimony"></canvas></div>
         <!-- Legend -->
@@ -2671,6 +2709,26 @@ body:not(.values-hidden) .account-rate-inline {
     </button>
     <input type="file" id="importInput" accept=".json" style="display:none" onchange="importBackup(event)">
 
+    <div class="settings-section-title" style="margin-top:20px;">Categorías</div>
+
+    <div style="margin-bottom:8px;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Ingresos</div>
+      <div id="cats-income-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input class="form-input" id="new-cat-income" type="text" placeholder="Nueva categoría…" style="flex:1;padding:9px 12px;font-size:13px;" onkeydown="if(event.key==='Enter')addCategory('income')">
+        <button class="btn-add-small" onclick="addCategory('income')" style="padding:9px 14px;">+ Añadir</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:8px;margin-top:16px;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Gastos</div>
+      <div id="cats-expense-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input class="form-input" id="new-cat-expense" type="text" placeholder="Nueva categoría…" style="flex:1;padding:9px 12px;font-size:13px;" onkeydown="if(event.key==='Enter')addCategory('expense')">
+        <button class="btn-add-small" onclick="addCategory('expense')" style="padding:9px 14px;">+ Añadir</button>
+      </div>
+    </div>
+
     <div class="settings-section-title" style="margin-top:20px;">Seguridad</div>
 
     <button class="settings-btn" onclick="openChangePIN()">
@@ -2750,25 +2808,15 @@ body:not(.values-hidden) .account-rate-inline {
     </div>
 
     <div class="form-group">
-      <label class="form-label">Importe total (€)</label>
-      <input class="form-input" id="debtTotal" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Importe ya pagado (€)</label>
-      <input class="form-input" id="debtPaid" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Cuota mensual (€) — opcional</label>
-      <input class="form-input" id="debtQuota" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal">
+      <label class="form-label">Capital prestado (€)</label>
+      <input class="form-input" id="debtTotal" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal" oninput="calcFrenchAmortization()">
     </div>
 
     <div id="debtRatesGroup">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">TIN (%)</label>
-          <input class="form-input" id="debtTIN" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal">
+          <input class="form-input" id="debtTIN" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal" oninput="calcFrenchAmortization()">
         </div>
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">TAE (%)</label>
@@ -2777,7 +2825,59 @@ body:not(.values-hidden) .account-rate-inline {
       </div>
     </div>
 
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Nº cuotas (meses)</label>
+        <input class="form-input" id="debtMonths" type="number" min="1" step="1" placeholder="Ej. 36" inputmode="numeric" oninput="calcFrenchAmortization()">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Cuota mensual (€)</label>
+        <input class="form-input" id="debtQuota" type="number" min="0" step="0.01" placeholder="Auto" inputmode="decimal" oninput="this.dataset.manual='1';calcFrenchAmortization()">
+      </div>
+    </div>
+
+    <!-- French amortization summary -->
+    <div id="debtAmortSummary" style="display:none;margin-top:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Resumen del préstamo</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Cuota mensual</div>
+          <div id="debt-calc-quota" style="font-size:16px;font-weight:600;color:var(--text);">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Total a pagar</div>
+          <div id="debt-calc-total" style="font-size:16px;font-weight:600;color:var(--text);">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Total intereses</div>
+          <div id="debt-calc-interest" style="font-size:16px;font-weight:600;color:var(--expense);">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Capital</div>
+          <div id="debt-calc-capital" style="font-size:16px;font-weight:600;color:var(--income);">—</div>
+        </div>
+      </div>
+    </div>
+
     <div class="form-group" style="margin-top:14px;">
+      <label class="form-label">Cuotas ya pagadas — opcional</label>
+      <input class="form-input" id="debtPaidQuotas" type="number" min="0" step="1" placeholder="0" inputmode="numeric" oninput="updatePaidSummary()">
+      <div id="debt-paid-summary" style="display:none;margin-top:8px;background:rgba(96,200,245,0.06);border:1px solid rgba(96,200,245,0.15);border-radius:var(--radius-sm);padding:10px 12px;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Desglose de lo ya pagado</div>
+        <div style="display:flex;gap:16px;">
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Capital amortizado</div>
+            <div id="debt-paid-capital" style="font-size:14px;font-weight:600;color:#60c8f5;"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Intereses pagados</div>
+            <div id="debt-paid-interest" style="font-size:14px;font-weight:600;color:#f97316;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
       <label class="form-label">Notas — opcional</label>
       <input class="form-input" id="debtNotes" type="text" placeholder="Ej. Banco Santander, vence 2028…">
     </div>
@@ -2816,6 +2916,18 @@ body:not(.values-hidden) .account-rate-inline {
   </div>
 </div>
 
+<!-- ==================== MODAL: AMORTIZATION TABLE ==================== -->
+<div class="modal-overlay" id="modalAmortTable" onclick="closeModalOutside(event, 'modalAmortTable')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="amort-table-title">Tabla de amortización</div>
+    <div id="amort-table-summary" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;font-size:12px;color:var(--muted);"></div>
+    <div style="overflow-x:auto;max-height:420px;overflow-y:auto;">
+      <table id="amort-table-body" style="width:100%;border-collapse:collapse;font-size:11px;"></table>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== MODAL: DEBT DETAIL ==================== -->
 <div class="modal-overlay" id="modalDebtDetail" onclick="closeModalOutside(event, 'modalDebtDetail')">
   <div class="modal">
@@ -2827,18 +2939,21 @@ body:not(.values-hidden) .account-rate-inline {
         <div class="modal-title" id="ddetail-name" style="margin-bottom:2px;"></div>
         <div id="ddetail-type-badge" style="display:inline-block;"></div>
       </div>
-      <button class="btn-delete-debt" onclick="deleteDebtFromDetail()" style="margin-top:4px;">🗑</button>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+        <button class="calc-btn" id="ddetail-table-btn" onclick="openAmortTable()" style="display:none;" title="Tabla de amortización">📋</button>
+        <button class="btn-delete-debt" onclick="deleteDebtFromDetail()">🗑</button>
+      </div>
     </div>
 
     <!-- Rates (TIN/TAE) - only shown if present -->
     <div id="ddetail-rates" style="display:flex;gap:8px;margin:12px 0;"></div>
 
-    <!-- Progress -->
-    <div class="debt-progress-bar" style="margin-bottom:8px;">
-      <div class="debt-progress-fill" id="ddetail-progress"></div>
+    <!-- Progress: dual bars if French, single otherwise -->
+    <div id="ddetail-progress-wrap">
+      <!-- filled by openDebtDetail -->
     </div>
     <div class="debt-amounts" style="margin-bottom:16px;">
-      <span>Total: <strong style="color:var(--text)" id="ddetail-total"></strong></span>
+      <span>Capital: <strong style="color:var(--text)" id="ddetail-total"></strong></span>
       <span class="paid" id="ddetail-paid-span"></span>
       <span class="remaining" id="ddetail-remaining-span"></span>
     </div>
@@ -2865,9 +2980,25 @@ body:not(.values-hidden) .account-rate-inline {
     <div class="modal-title" id="regpay-title">Registrar pago</div>
     <div id="regpay-debt-name" style="font-size:13px;color:var(--muted);margin-bottom:16px;"></div>
 
+    <!-- Amortization type selector — only shown for amortizations -->
+    <div id="regpay-amort-type-group" style="display:none;margin-bottom:14px;">
+      <label class="form-label">Modalidad de amortización</label>
+      <div class="op-type-row">
+        <button class="op-type-btn active-income" id="amort-reduce-time" onclick="selectAmortMode('time')" style="font-size:12px;">⏱ Reducir plazo<br><span style="font-size:10px;opacity:0.7;">Menos meses</span></button>
+        <button class="op-type-btn" id="amort-reduce-quota" onclick="selectAmortMode('quota')" style="font-size:12px;">💸 Reducir cuota<br><span style="font-size:10px;opacity:0.7;">Mismo plazo</span></button>
+      </div>
+      <!-- Preview of new terms -->
+      <div id="regpay-amort-preview" style="display:none;margin-top:10px;background:rgba(96,200,245,0.06);border:1px solid rgba(96,200,245,0.15);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.8;"></div>
+    </div>
+
     <div class="form-group">
-      <label class="form-label">Importe (€)</label>
-      <input class="form-input" id="regpay-amount" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal">
+      <label class="form-label">Importe amortizado (€)</label>
+      <input class="form-input" id="regpay-amount" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal" oninput="updateAmortPreview()">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Comisión por amortización anticipada (€) — opcional</label>
+      <input class="form-input" id="regpay-commission" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal">
     </div>
 
     <div class="form-group">
@@ -3467,15 +3598,16 @@ function renderTransactions(person) {
   const TYPE_ICON  = { income: '🟢', expense: '🔴', saving: '🏦' };
   const TYPE_COLOR = { income: 'var(--income)', expense: 'var(--expense)', saving: 'var(--saving)' };
 
+  // Exclude investment transactions (they belong only in the Inversión section)
+  const excludeInv = t => t.category !== 'Inversión' && t.category !== 'Amortización' || t.category === undefined;
+
   // Deduplicate internal transfers: if both accounts belong to same person, show only the expense record
   const filteredTxs = txs.filter(t => {
+    if (!excludeInv(t)) return false;
     if (t.category !== 'Transferencia' || !t.transferFromId || !t.transferToId) return true;
     const fromInPool = personAccIds.has(t.transferFromId);
     const toInPool   = personAccIds.has(t.transferToId);
-    if (fromInPool && toInPool) {
-      // Internal: only keep the outgoing (expense) record
-      return t.type === 'expense';
-    }
+    if (fromInPool && toInPool) return t.type === 'expense';
     return true;
   });
 
@@ -3834,8 +3966,13 @@ function metallicGradient(hex) {
 
 function isLightColor(hex) {
   const [r,g,b] = hexToRgb(hex);
-  // Perceived luminance
   return (0.299*r + 0.587*g + 0.114*b) > 160;
+}
+
+function isDarkColor(hex) {
+  const [r,g,b] = hexToRgb(hex);
+  // Consider dark if luminance below 60 (very dark, e.g. black, dark grey)
+  return (0.299*r + 0.587*g + 0.114*b) < 60;
 }
 
 function renderAccounts(person) {
@@ -3924,10 +4061,10 @@ function renderGlobal() {
   document.getElementById('global-deposits').textContent       = '€' + fmt(depositTotal);
   document.getElementById('global-deposits-count').textContent = activeDeposits.length;
 
-  // Year label
-  const el = document.getElementById('global-year-label');
+  // Year label on chart
+  const el = document.getElementById('global-chart-year-label');
   if (el) el.textContent = globalYear;
-  const nextBtn = document.getElementById('global-year-next');
+  const nextBtn = document.getElementById('global-chart-year-next');
   if (nextBtn) nextBtn.disabled = globalYear >= new Date().getFullYear();
 }
 
@@ -4065,11 +4202,11 @@ function renderGlobalPatrimonyChart() {
   if (wrapEl) wrapEl.style.display = 'block';
 
   const series = [
-    { label: getName('mario'), data: marioData,   color: '#60c8f5' },
-    { label: getName('miri'),  data: miriData,    color: '#f472b6' },
-    { label: 'Común',     data: commonData,  color: '#a78bfa' },
-    { label: 'Depósitos', data: depositData, color: '#56cfe1' },
-    { label: 'Inversión', data: investData,  color: '#34d399' },
+    { label: getName('mario'), data: marioData,   color: '#60c8f5' }, // azul
+    { label: getName('miri'),  data: miriData,    color: '#f472b6' }, // rosa
+    { label: 'Común',          data: commonData,  color: '#a78bfa' }, // violeta
+    { label: 'Depósitos',      data: depositData, color: '#fb923c' }, // naranja
+    { label: 'Inversión',      data: investData,  color: '#34d399' }, // verde
   ];
 
   globalPatrimonyChart = new Chart(ctx, {
@@ -4231,7 +4368,8 @@ function openAccountDetail(person, id) {
   document.getElementById('detailAccName').value = acc.name;
   document.getElementById('detailTitle').textContent = acc.name;
   document.getElementById('detailBalance').textContent = '€' + fmt(acc.balance);
-  document.getElementById('detailBalance').style.color = person === 'common' ? 'var(--common)' : acc.color;
+  const balColor = person === 'common' ? 'var(--common)' : (isLightColor(acc.color) ? acc.color : (isDarkColor(acc.color) ? 'var(--text)' : acc.color));
+  document.getElementById('detailBalance').style.color = balColor;
   document.getElementById('detailCommonBadge').style.display = person === 'common' ? 'inline-flex' : 'none';
   document.getElementById('detailAccRate').value = acc.rate != null ? acc.rate : '';
   detailBankId = acc.bankId || 'none';
@@ -4364,7 +4502,7 @@ function saveAccountEdit() {
   acc.bankId = detailBankId;
   acc.color  = detailSelectedColor;
   document.getElementById('detailTitle').textContent = name;
-  document.getElementById('detailBalance').style.color = detailPerson === 'common' ? 'var(--common)' : detailSelectedColor;
+  document.getElementById('detailBalance').style.color = detailPerson === 'common' ? 'var(--common)' : (isDarkColor(acc.color) ? 'var(--text)' : acc.color);
 
   saveState();
   closeDetailEdit();
@@ -4523,15 +4661,96 @@ function openAddDebt(person) {
   debtPerson = person;
   debtType = 'loan';
   document.getElementById('addDebtTitle').textContent = `Nueva deuda — ${getName(person)}`;
-  document.getElementById('debtName').value = '';
-  document.getElementById('debtTotal').value = '';
-  document.getElementById('debtPaid').value = '';
-  document.getElementById('debtQuota').value = '';
-  document.getElementById('debtTIN').value = '';
-  document.getElementById('debtTAE').value = '';
-  document.getElementById('debtNotes').value = '';
+  document.getElementById('debtName').value       = '';
+  document.getElementById('debtTotal').value      = '';
+  document.getElementById('debtPaidQuotas').value = '';
+  document.getElementById('debtQuota').value      = '';
+  document.getElementById('debtQuota').dataset.manual = '';
+  document.getElementById('debtTIN').value        = '';
+  document.getElementById('debtTAE').value        = '';
+  document.getElementById('debtMonths').value     = '';
+  document.getElementById('debtNotes').value      = '';
+  document.getElementById('debtAmortSummary').style.display = 'none';
+  document.getElementById('debt-paid-summary').style.display = 'none';
   updateDebtTypeBtns();
   document.getElementById('modalAddDebt').classList.add('open');
+}
+
+// French amortization: fixed monthly payment
+// C = P * r / (1 - (1+r)^-n)  where r = TIN/12/100, n = months
+function frenchQuota(principal, tinPct, months) {
+  if (!tinPct || tinPct === 0) return principal / months;
+  const r = tinPct / 100 / 12;
+  return principal * r / (1 - Math.pow(1 + r, -months));
+}
+
+// Build full amortization table: returns array of {capital, interest, balance}
+function buildAmortTable(principal, tinPct, months) {
+  const quota = frenchQuota(principal, tinPct, months);
+  const r     = (tinPct || 0) / 100 / 12;
+  let balance = principal;
+  const rows  = [];
+  for (let i = 0; i < months; i++) {
+    const interest = balance * r;
+    const capital  = Math.min(quota - interest, balance);
+    balance        = Math.max(0, balance - capital);
+    rows.push({ capital, interest, balance });
+  }
+  return rows;
+}
+
+function calcFrenchAmortization() {
+  const principal = parseFloat(document.getElementById('debtTotal').value)  || 0;
+  const tin       = parseFloat(document.getElementById('debtTIN').value)    || 0;
+  const months    = parseInt(document.getElementById('debtMonths').value)   || 0;
+  const summary   = document.getElementById('debtAmortSummary');
+
+  if (principal <= 0 || months <= 0) { summary.style.display = 'none'; return; }
+
+  const quota    = frenchQuota(principal, tin, months);
+  const totalPay = quota * months;
+  const totalInt = Math.max(0, totalPay - principal);
+
+  // Auto-fill quota field (only if not manually set)
+  const quotaEl = document.getElementById('debtQuota');
+  if (!quotaEl.dataset.manual) quotaEl.value = quota.toFixed(2);
+
+  document.getElementById('debt-calc-quota').textContent    = '€' + fmt(quota);
+  document.getElementById('debt-calc-total').textContent    = '€' + fmt(totalPay);
+  document.getElementById('debt-calc-interest').textContent = '€' + fmt(totalInt);
+  document.getElementById('debt-calc-capital').textContent  = '€' + fmt(principal);
+  summary.style.display = 'block';
+
+  // Update paid summary if paidQuotas filled
+  updatePaidSummary();
+}
+
+function updatePaidSummary() {
+  const principal   = parseFloat(document.getElementById('debtTotal').value)  || 0;
+  const tin         = parseFloat(document.getElementById('debtTIN').value)    || 0;
+  const months      = parseInt(document.getElementById('debtMonths').value)   || 0;
+  const paidQuotas  = parseInt(document.getElementById('debtPaidQuotas').value) || 0;
+  const paidSummary = document.getElementById('debt-paid-summary');
+
+  if (principal <= 0 || months <= 0 || paidQuotas <= 0) {
+    if (paidSummary) paidSummary.style.display = 'none';
+    return;
+  }
+
+  const table = buildAmortTable(principal, tin, months);
+  const n     = Math.min(paidQuotas, table.length);
+  let capitalAccum  = 0;
+  let interestAccum = 0;
+  for (let i = 0; i < n; i++) {
+    capitalAccum  += table[i].capital;
+    interestAccum += table[i].interest;
+  }
+
+  if (paidSummary) {
+    paidSummary.style.display = 'block';
+    document.getElementById('debt-paid-capital').textContent  = '€' + fmt(capitalAccum);
+    document.getElementById('debt-paid-interest').textContent = '€' + fmt(interestAccum);
+  }
 }
 
 function selectDebtType(type) {
@@ -4546,24 +4765,45 @@ function updateDebtTypeBtns() {
 }
 
 function saveDebt() {
-  const name = document.getElementById('debtName').value.trim();
-  const total = parseFloat(document.getElementById('debtTotal').value) || 0;
-  const paid = parseFloat(document.getElementById('debtPaid').value) || 0;
-  const quota = parseFloat(document.getElementById('debtQuota').value) || 0;
-  const tin = parseFloat(document.getElementById('debtTIN').value) || null;
-  const tae = parseFloat(document.getElementById('debtTAE').value) || null;
-  const notes = document.getElementById('debtNotes').value.trim();
+  const name        = document.getElementById('debtName').value.trim();
+  const total       = parseFloat(document.getElementById('debtTotal').value)     || 0;
+  const paidQuotas  = parseInt(document.getElementById('debtPaidQuotas').value)  || 0;
+  const quota       = parseFloat(document.getElementById('debtQuota').value)     || 0;
+  const tin         = parseFloat(document.getElementById('debtTIN').value)       || null;
+  const tae         = parseFloat(document.getElementById('debtTAE').value)       || null;
+  const months      = parseInt(document.getElementById('debtMonths').value)      || null;
+  const notes       = document.getElementById('debtNotes').value.trim();
 
-  if (!name) { showToast('Escribe el nombre de la deuda', 'error'); return; }
-  if (total <= 0) { showToast('Introduce el importe total', 'error'); return; }
-  if (paid > total) { showToast('Lo pagado no puede superar el total', 'error'); return; }
+  if (!name)     { showToast('Escribe el nombre de la deuda', 'error'); return; }
+  if (total <= 0){ showToast('Introduce el importe total', 'error'); return; }
+  if (months && paidQuotas > months) { showToast('Las cuotas pagadas no pueden superar el total de cuotas', 'error'); return; }
 
   if (!state.debts) state.debts = { mario: [], miri: [] };
 
+  // Build amortization table to get precise capital/interest split
+  let totalInterest = null;
+  let capitalPaid   = 0;
+  let interestPaid  = 0;
+
+  if (tin && months) {
+    const table   = buildAmortTable(total, tin, months);
+    totalInterest = table.reduce((s, r) => s + r.interest, 0);
+    const n = Math.min(paidQuotas, table.length);
+    for (let i = 0; i < n; i++) {
+      capitalPaid  += table[i].capital;
+      interestPaid += table[i].interest;
+    }
+  } else if (paidQuotas > 0 && quota > 0) {
+    // No TIN: assume all quota goes to capital
+    capitalPaid = paidQuotas * quota;
+  }
+
   state.debts[debtPerson].push({
     id: Date.now().toString(),
-    name, type: debtType, total, paid, quota,
-    tin, tae, notes,
+    name, type: debtType, total,
+    paid: capitalPaid,
+    capitalPaid, interestPaid,
+    paidQuotas, quota, tin, tae, months, totalInterest, notes,
     payments: [],
     createdAt: new Date().toISOString().split('T')[0]
   });
@@ -4574,6 +4814,7 @@ function saveDebt() {
   renderDebts('miri');
   showToast('Deuda añadida ✓', 'success');
 }
+
 
 function renderDebts(person) {
   const el = document.getElementById(person + '-debts-list');
@@ -4589,33 +4830,54 @@ function renderDebts(person) {
   const typeLabel = { loan: 'Préstamo', financed: 'Financiado', other: 'Otro' };
 
   el.innerHTML = debts.map(d => {
-    const remaining = d.total - d.paid;
-    const pct = Math.min(100, (d.paid / d.total) * 100);
-    const isFinished = remaining <= 0;
+    if (d.capitalPaid == null) d.capitalPaid = d.paid;
+    if (d.interestPaid == null) d.interestPaid = 0;
+
+    const capitalRem  = Math.max(0, d.total - d.capitalPaid);
+    const interestRem = Math.max(0, (d.totalInterest || 0) - d.interestPaid);
+    const isFinished  = capitalRem <= 0;
+    const hasFrench   = d.totalInterest != null && d.totalInterest > 0;
+    const capitalPct  = d.total > 0 ? Math.min(100, (d.capitalPaid / d.total) * 100) : 0;
+    const interestPct = d.totalInterest > 0 ? Math.min(100, (d.interestPaid / d.totalInterest) * 100) : 0;
+
     const ratesBadges = [
       d.tin != null ? `<span class="debt-rate-badge debt-rate-tin">TIN ${d.tin}%</span>` : '',
       d.tae != null ? `<span class="debt-rate-badge debt-rate-tae">TAE ${d.tae}%</span>` : ''
     ].filter(Boolean).join(' ');
+
+    const barsHtml = hasFrench ? `
+      <div class="debt-dual-bars">
+        <div class="debt-bar-row">
+          <span class="debt-bar-label">Capital</span>
+          <div class="debt-bar-track"><div class="debt-bar-fill capital${isFinished?' done':''}" style="width:${capitalPct}%"></div></div>
+          <span class="debt-bar-val" style="color:#60c8f5;">€${fmt(capitalRem)}</span>
+        </div>
+        <div class="debt-bar-row">
+          <span class="debt-bar-label">Intereses</span>
+          <div class="debt-bar-track"><div class="debt-bar-fill interest${interestRem<=0?' done':''}" style="width:${interestPct}%"></div></div>
+          <span class="debt-bar-val" style="color:#f97316;">€${fmt(interestRem)}</span>
+        </div>
+      </div>` : `
+      <div class="debt-progress-bar">
+        <div class="debt-progress-fill" style="width:${capitalPct}%;${isFinished?'background:var(--income)':''}"></div>
+      </div>`;
 
     return `
       <div class="debt-card" onclick="openDebtDetail('${person}','${d.id}')" style="cursor:pointer;">
         <div class="debt-card-header">
           <div style="flex:1;min-width:0;">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <div class="debt-card-name">${d.name}</div>
-              ${ratesBadges}
+              <div class="debt-card-name">${d.name}</div>${ratesBadges}
             </div>
-            ${d.quota > 0 ? `<div style="font-size:11px;color:var(--muted);margin-top:3px;">Cuota: €${fmt(d.quota)}/mes</div>` : ''}
+            ${d.quota > 0 ? `<div style="font-size:11px;color:var(--muted);margin-top:3px;">Cuota: €${fmt(d.quota)}/mes${d.months ? ' · ' + d.months + ' meses' : ''}</div>` : ''}
           </div>
           <div class="debt-card-type ${d.type}" style="flex-shrink:0;margin-left:8px;">${typeLabel[d.type]}</div>
         </div>
-        <div class="debt-progress-bar">
-          <div class="debt-progress-fill" style="width:${pct}%;${isFinished ? 'background:var(--income)' : ''}"></div>
-        </div>
+        ${barsHtml}
         <div class="debt-amounts">
-          <span>Total: <strong style="color:var(--text)">€${fmt(d.total)}</strong></span>
-          <span class="paid">Pagado: €${fmt(d.paid)}</span>
-          <span class="remaining">${isFinished ? '✅ Saldado' : 'Resta: €' + fmt(remaining)}</span>
+          <span>Capital: <strong style="color:var(--text)">€${fmt(d.total)}</strong></span>
+          ${hasFrench ? `<span style="color:var(--expense)">+ €${fmt(d.totalInterest)} int.</span>` : ''}
+          <span class="remaining">${isFinished ? '✅ Saldado' : 'Resta: €' + fmt(capitalRem + interestRem)}</span>
         </div>
       </div>`;
   }).join('');
@@ -4649,13 +4911,43 @@ function openDebtDetail(person, debtId) {
   ].filter(Boolean).join('');
   ratesEl.style.display = (d.tin != null || d.tae != null) ? 'flex' : 'none';
 
-  // Progress
-  document.getElementById('ddetail-progress').style.width = pct + '%';
-  document.getElementById('ddetail-progress').style.background = isFinished ? 'var(--income)' : '';
-  document.getElementById('ddetail-total').textContent = '€' + fmt(d.total);
-  document.getElementById('ddetail-paid-span').textContent = 'Pagado: €' + fmt(d.paid);
-  document.getElementById('ddetail-remaining-span').textContent = isFinished ? '✅ Saldado' : 'Resta: €' + fmt(remaining);
-  document.getElementById('ddetail-remaining-span').className = isFinished ? 'paid' : 'remaining';
+  // Progress bars
+  if (d.capitalPaid == null) d.capitalPaid = d.paid;
+  if (d.interestPaid == null) d.interestPaid = 0;
+  const capitalRem  = Math.max(0, d.total - d.capitalPaid);
+  const interestRem = Math.max(0, (d.totalInterest || 0) - d.interestPaid);
+  const capitalPct  = d.total > 0 ? Math.min(100, (d.capitalPaid / d.total) * 100) : 0;
+  const interestPct = d.totalInterest > 0 ? Math.min(100, (d.interestPaid / d.totalInterest) * 100) : 0;
+  const hasFrench   = d.totalInterest != null && d.totalInterest > 0;
+
+  const wrap = document.getElementById('ddetail-progress-wrap');
+  wrap.innerHTML = hasFrench ? `
+    <div class="debt-dual-bars" style="margin-bottom:8px;">
+      <div class="debt-bar-row">
+        <span class="debt-bar-label">Capital</span>
+        <div class="debt-bar-track"><div class="debt-bar-fill capital${isFinished?' done':''}" style="width:${capitalPct}%"></div></div>
+        <span class="debt-bar-val" style="color:#60c8f5;">€${fmt(capitalRem)}</span>
+      </div>
+      <div class="debt-bar-row">
+        <span class="debt-bar-label">Intereses</span>
+        <div class="debt-bar-track"><div class="debt-bar-fill interest${interestRem<=0?' done':''}" style="width:${interestPct}%"></div></div>
+        <span class="debt-bar-val" style="color:#f97316;">€${fmt(interestRem)}</span>
+      </div>
+    </div>` : `
+    <div class="debt-progress-bar" style="margin-bottom:8px;">
+      <div class="debt-progress-fill" style="width:${capitalPct}%;${isFinished?'background:var(--income)':''}"></div>
+    </div>`;
+
+  document.getElementById('ddetail-total').textContent         = '€' + fmt(d.total);
+  document.getElementById('ddetail-paid-span').textContent     = hasFrench
+    ? `Capital amortizado: €${fmt(d.capitalPaid)}`
+    : `Pagado: €${fmt(d.capitalPaid)}`;
+  document.getElementById('ddetail-remaining-span').textContent = isFinished ? '✅ Saldado' : `Resta: €${fmt(capitalRem + interestRem)}`;
+  document.getElementById('ddetail-remaining-span').className   = isFinished ? 'paid' : 'remaining';
+
+  // Show/hide table button
+  const tableBtn = document.getElementById('ddetail-table-btn');
+  if (tableBtn) tableBtn.style.display = (d.tin && d.months) ? 'flex' : 'none';
 
   // Notes
   const notesEl = document.getElementById('ddetail-notes');
@@ -4686,20 +4978,167 @@ function renderDebtHistory(d) {
     return;
   }
   const sorted = [...payments].sort((a, b) => b.date.localeCompare(a.date));
+  const hasFrench = d.totalInterest != null && d.totalInterest > 0;
   el.innerHTML = sorted.map(p => {
     const dateStr = new Date(p.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
     const accName = getAccountName(p.accountId);
-    const label = p.type === 'amortization' ? 'Amortización' : 'Cuota';
+    const label   = p.type === 'amortization' ? 'Amortización' : 'Cuota';
+    const splitHtml = hasFrench && p.capitalPortion != null ? `
+      <div style="font-size:10px;color:var(--muted);margin-top:2px;">
+        Capital: <span style="color:#60c8f5;">€${fmt(p.capitalPortion)}</span>
+        · Int.: <span style="color:#f97316;">€${fmt(p.interestPortion || 0)}</span>
+        ${p.commission > 0 ? `· Comisión: <span style="color:var(--expense);">€${fmt(p.commission)}</span>` : ''}
+        ${p.amortMode === 'time' ? '· ⏱ Reduce plazo' : p.amortMode === 'quota' ? '· 💸 Reduce cuota' : ''}
+      </div>` : (p.commission > 0 ? `<div style="font-size:10px;color:var(--muted);margin-top:2px;">Comisión: <span style="color:var(--expense);">€${fmt(p.commission)}</span></div>` : '');
     return `
       <div class="debt-history-item">
         <span class="debt-history-type ${p.type}">${label}</span>
         <div class="debt-history-info">
           <div style="font-weight:500;">${accName}</div>
           <div style="font-size:11px;color:var(--muted);">${dateStr}</div>
+          ${splitHtml}
         </div>
         <div class="debt-history-amount">-€${fmt(p.amount)}</div>
       </div>`;
   }).join('');
+}
+
+function openAmortTable() {
+  const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
+  if (!d || !d.tin || !d.months) return;
+
+  // Original quota — always the same regardless of amortizations
+  const originalQuota = d.quota || frenchQuota(d.total, d.tin, d.months);
+  const r             = d.tin / 100 / 12;
+
+  // How many quotas have been paid (initial paidQuotas + registered payments)
+  const paidCount = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
+
+  // Build the ACTUAL table: start from original capital, apply original quota,
+  // but after each amortization, jump the balance down and continue with SAME quota
+  // For simplicity: reconstruct chronologically using the amortization history
+  const rows = [];
+  let balance = d.total;
+
+  // Collect amortizations in order (by date), keyed to quota index they happen after
+  const amortPayments = (d.payments || [])
+    .filter(p => p.type === 'amortization' && p.capitalPortion != null)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  let amortIdx = 0; // which amortization to apply next
+  let quotasDone = d.paidQuotas || 0; // already-paid quota count at start
+
+  const totalMonths = d.months; // updated months after amortizations
+
+  for (let i = 0; i < totalMonths && balance > 0.005; i++) {
+    // Apply any amortizations that happened after previous quota
+    if (amortIdx < amortPayments.length) {
+      // Approximate: apply amortization before this quota
+      // (real timing not tracked precisely, so we spread them in order)
+      const amort = amortPayments[amortIdx];
+      if (amort) {
+        balance = Math.max(0, balance - amort.capitalPortion);
+        amortIdx++;
+      }
+    }
+
+    const interest = balance * r;
+    // Use original quota but cap at balance + interest
+    const quotaThisMonth = Math.min(originalQuota, balance + interest);
+    const capital  = Math.min(quotaThisMonth - interest, balance);
+    balance        = Math.max(0, balance - capital);
+    rows.push({ capital, interest, balance, quota: quotaThisMonth });
+  }
+
+  const totalInterest = rows.reduce((s, r) => s + r.interest, 0);
+  const totalPay      = rows.reduce((s, r) => s + r.quota, 0);
+
+  document.getElementById('amort-table-title').textContent = d.name;
+  document.getElementById('amort-table-summary').innerHTML = `
+    <span>Capital: <strong style="color:#60c8f5">€${fmt(d.total)}</strong></span>
+    <span>Cuota: <strong style="color:var(--text)">€${fmt(originalQuota)}</strong></span>
+    <span>Intereses totales: <strong style="color:#f97316">€${fmt(totalInterest)}</strong></span>
+    <span>Total a pagar: <strong style="color:var(--text)">€${fmt(totalPay)}</strong></span>
+    <span>Nº cuotas: <strong style="color:var(--text)">${rows.length}</strong></span>`;
+
+  const thStyle = 'padding:6px 8px;text-align:right;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);white-space:nowrap;';
+  const tdBase  = 'padding:6px 8px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.04);white-space:nowrap;font-size:11px;';
+
+  let html = `<thead><tr>
+    <th style="${thStyle}text-align:left;">#</th>
+    <th style="${thStyle}">Cuota</th>
+    <th style="${thStyle}color:#60c8f5;">Capital</th>
+    <th style="${thStyle}color:#f97316;">Intereses</th>
+    <th style="${thStyle}">Saldo</th>
+  </tr></thead><tbody>`;
+
+  rows.forEach((row, i) => {
+    const isPaid   = i < paidCount;
+    const rowStyle = isPaid ? 'opacity:0.4;' : '';
+    const paidMark = isPaid ? '✓ ' : '';
+    html += `<tr style="${rowStyle}">
+      <td style="${tdBase}text-align:left;color:var(--muted);">${paidMark}${i + 1}</td>
+      <td style="${tdBase}">€${fmt(row.quota)}</td>
+      <td style="${tdBase}color:#60c8f5;">€${fmt(row.capital)}</td>
+      <td style="${tdBase}color:#f97316;">€${fmt(row.interest)}</td>
+      <td style="${tdBase}color:var(--muted);">€${fmt(row.balance)}</td>
+    </tr>`;
+  });
+  html += '</tbody>';
+
+  document.getElementById('amort-table-body').innerHTML = html;
+  document.getElementById('modalAmortTable').classList.add('open');
+}
+
+let amortMode = 'time'; // 'time' = reduce term, 'quota' = reduce installment
+
+function selectAmortMode(mode) {
+  amortMode = mode;
+  document.getElementById('amort-reduce-time').className  = 'op-type-btn' + (mode === 'time'  ? ' active-income' : '');
+  document.getElementById('amort-reduce-quota').className = 'op-type-btn' + (mode === 'quota' ? ' active-income' : '');
+  updateAmortPreview();
+}
+
+function updateAmortPreview() {
+  const previewEl = document.getElementById('regpay-amort-preview');
+  if (!previewEl) return;
+  const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
+  if (!d || !d.tin || !d.months || regPayType !== 'amortization') {
+    previewEl.style.display = 'none'; return;
+  }
+
+  const amount    = parseFloat(document.getElementById('regpay-amount').value) || 0;
+  if (amount <= 0) { previewEl.style.display = 'none'; return; }
+
+  const capitalRem = Math.max(0, d.total - (d.capitalPaid || 0)) - amount;
+  if (capitalRem <= 0) { previewEl.innerHTML = '✅ Este pago saldaría el préstamo'; previewEl.style.display = 'block'; return; }
+
+  const paidSoFar   = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
+  const q           = d.quota || frenchQuota(d.total, d.tin, d.months);
+  const r           = d.tin / 100 / 12;
+  const monthsLeft  = Math.max(1, d.months - paidSoFar);
+  // Capital BEFORE this amortization
+  const capitalBefore = Math.max(0, d.total - (d.capitalPaid || 0));
+  // Capital AFTER this amortization
+  const capitalAfter  = Math.max(0, capitalBefore - amount);
+
+  // Interest remaining WITHOUT amortization (correct baseline)
+  const intWithout = r > 0 ? q * monthsLeft - capitalBefore : 0;
+
+  if (amortMode === 'time') {
+    const newMonths = r > 0
+      ? Math.ceil(-Math.log(1 - capitalAfter * r / q) / Math.log(1 + r))
+      : Math.ceil(capitalAfter / q);
+    const intWith = r > 0 ? q * newMonths - capitalAfter : 0;
+    const saving  = Math.max(0, intWithout - intWith);
+    previewEl.innerHTML = `Cuota: <strong style="color:var(--text)">\u20ac${fmt(q)}</strong> (sin cambio)<br>Meses restantes: <strong style="color:#60c8f5">${newMonths}</strong> (antes: ${monthsLeft})<br>Ahorro en intereses: <strong style="color:var(--income)">\u20ac${fmt(saving)}</strong>`;
+  } else {
+    const newQuota = frenchQuota(capitalAfter, d.tin, monthsLeft);
+    const intWith  = r > 0 ? newQuota * monthsLeft - capitalAfter : 0;
+    const saving   = Math.max(0, intWithout - intWith);
+    previewEl.innerHTML = `Meses restantes: <strong style="color:var(--text)">${monthsLeft}</strong> (sin cambio)<br>Nueva cuota: <strong style="color:#60c8f5">\u20ac${fmt(newQuota)}</strong> (antes: \u20ac${fmt(q)})<br>Ahorro en intereses: <strong style="color:var(--income)">\u20ac${fmt(saving)}</strong>`;
+  }
+  previewEl.style.display = 'block';
 }
 
 function openPayFromDetail(type) {
@@ -4707,10 +5146,21 @@ function openPayFromDetail(type) {
   const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
   if (!d) return;
 
-  document.getElementById('regpay-title').textContent = type === 'quota' ? 'Pagar cuota' : 'Amortización parcial';
+  document.getElementById('regpay-title').textContent     = type === 'quota' ? 'Pagar cuota' : 'Amortización anticipada';
   document.getElementById('regpay-debt-name').textContent = d.name;
-  document.getElementById('regpay-amount').value = (type === 'quota' && d.quota > 0) ? d.quota : '';
-  document.getElementById('regpay-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('regpay-amount').value          = (type === 'quota' && d.quota > 0) ? d.quota : '';
+  document.getElementById('regpay-commission').value      = '';
+  document.getElementById('regpay-date').value            = new Date().toISOString().split('T')[0];
+
+  // Show amortization mode selector only for amortizations with TIN+months
+  const amortGroup = document.getElementById('regpay-amort-type-group');
+  amortGroup.style.display = (type === 'amortization' && d.tin && d.months) ? 'block' : 'none';
+  document.getElementById('regpay-amort-preview').style.display = 'none';
+  selectAmortMode('time'); // reset to default
+
+  // Show commission field only for amortizations
+  document.getElementById('regpay-commission').closest('.form-group').style.display =
+    type === 'amortization' ? 'block' : 'none';
 
   const accounts = [...state.accounts[detailDebtPerson]];
   state.accounts.common.forEach(c => accounts.push({ ...c, name: c.name + ' (Común)' }));
@@ -4722,9 +5172,10 @@ function openPayFromDetail(type) {
 }
 
 function saveDebtPayment() {
-  const amount = parseFloat(document.getElementById('regpay-amount').value);
-  const accountId = document.getElementById('regpay-account').value;
-  const date = document.getElementById('regpay-date').value;
+  const amount     = parseFloat(document.getElementById('regpay-amount').value)     || 0;
+  const commission = parseFloat(document.getElementById('regpay-commission').value) || 0;
+  const accountId  = document.getElementById('regpay-account').value;
+  const date       = document.getElementById('regpay-date').value;
 
   if (!amount || amount <= 0) { showToast('Introduce un importe válido', 'error'); return; }
   if (!accountId) { showToast('Selecciona una cuenta', 'error'); return; }
@@ -4732,32 +5183,93 @@ function saveDebtPayment() {
   const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
   if (!d) return;
 
-  const remaining = d.total - d.paid;
-  const actualPay = Math.min(amount, remaining);
+  if (d.capitalPaid  == null) d.capitalPaid  = d.paid;
+  if (d.interestPaid == null) d.interestPaid = 0;
 
-  // Update debt
-  d.paid += actualPay;
-  if (!d.payments) d.payments = [];
-  d.payments.push({ id: Date.now().toString(), type: regPayType, amount: actualPay, accountId, date });
+  const capitalRem  = Math.max(0, d.total - d.capitalPaid);
+  const interestRem = Math.max(0, (d.totalInterest || 0) - d.interestPaid);
+  const totalRem    = capitalRem + interestRem;
+  const actualPay   = Math.min(amount, totalRem);
 
-  // Deduct from account
-  const commonAcc = state.accounts.common.find(a => a.id === accountId);
-  if (commonAcc) commonAcc.balance -= actualPay;
-  else {
-    const acc = state.accounts[detailDebtPerson].find(a => a.id === accountId);
-    if (acc) acc.balance -= actualPay;
+  let capitalPortion  = actualPay;
+  let interestPortion = 0;
+
+  if (regPayType === 'quota' && d.tin && d.capitalPaid < d.total && d.months) {
+    const table     = buildAmortTable(d.total, d.tin, d.months);
+    const paidSoFar = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
+    if (paidSoFar < table.length) {
+      interestPortion = Math.min(table[paidSoFar].interest, actualPay);
+      capitalPortion  = actualPay - interestPortion;
+    }
+  } else if (regPayType === 'quota' && d.tin) {
+    const r = d.tin / 100 / 12;
+    interestPortion = Math.min((d.total - d.capitalPaid) * r, actualPay);
+    capitalPortion  = actualPay - interestPortion;
+  } else if (regPayType === 'amortization') {
+    capitalPortion  = Math.min(actualPay, capitalRem);
+    interestPortion = 0;
   }
 
-  // Save transaction
+  capitalPortion  = Math.min(capitalPortion,  capitalRem);
+  interestPortion = Math.min(interestPortion, interestRem);
+
+  d.capitalPaid  += capitalPortion;
+  d.interestPaid += interestPortion;
+  d.paid          = d.capitalPaid;
+
+  // If amortization with TIN+months: recalculate terms
+  if (regPayType === 'amortization' && d.tin && d.months) {
+    const paidSoFar  = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
+    const monthsLeft = Math.max(1, d.months - paidSoFar);
+    const newCapital = Math.max(0, d.total - d.capitalPaid);
+
+    if (newCapital > 0) {
+      if (amortMode === 'time') {
+        // Recalculate months keeping same quota
+        const q = d.quota || frenchQuota(d.total, d.tin, d.months);
+        const r = d.tin / 100 / 12;
+        const newMonths = r > 0
+          ? Math.ceil(-Math.log(1 - newCapital * r / q) / Math.log(1 + r))
+          : Math.ceil(newCapital / q);
+        d.months = paidSoFar + newMonths;
+        // Recalc total interest
+        d.totalInterest = Math.max(0, q * newMonths - newCapital) + d.interestPaid;
+      } else {
+        // Recalculate quota keeping same remaining months
+        const newQuota = frenchQuota(newCapital, d.tin, monthsLeft);
+        d.quota = newQuota;
+        // Recalc total interest
+        d.totalInterest = Math.max(0, newQuota * monthsLeft - newCapital) + d.interestPaid;
+      }
+    }
+  }
+
+  if (!d.payments) d.payments = [];
+  d.payments.push({
+    id: Date.now().toString(),
+    type: regPayType,
+    amount: actualPay,
+    commission,
+    amortMode: regPayType === 'amortization' ? amortMode : null,
+    capitalPortion, interestPortion,
+    accountId, date
+  });
+
+  const totalDeducted = actualPay + commission;
+  const commonAcc = state.accounts.common.find(a => a.id === accountId);
+  if (commonAcc) commonAcc.balance -= totalDeducted;
+  else {
+    const acc = state.accounts[detailDebtPerson].find(a => a.id === accountId);
+    if (acc) acc.balance -= totalDeducted;
+  }
+
   state.transactions.push({
     id: Date.now().toString(),
     person: detailDebtPerson,
-    type: 'expense',
-    accountId,
+    type: 'expense', accountId,
     category: regPayType === 'amortization' ? 'Amortización' : 'Deuda',
-    desc: `${regPayType === 'amortization' ? 'Amortización' : 'Cuota'}: ${d.name}`,
-    amount: actualPay,
-    date
+    desc: `${regPayType === 'amortization' ? 'Amortización' : 'Cuota'}: ${d.name}${commission > 0 ? ` (+ €${fmt(commission)} comisión)` : ''}`,
+    amount: totalDeducted, date
   });
 
   saveState();
@@ -5919,16 +6431,26 @@ function renderPortfolioChart() {
   sorted.forEach(date => {
     let totalValue    = 0;
     let totalInvested = 0;
+    const isLastDate  = date === sorted[sorted.length - 1];
 
     state.investments.forEach(inv => {
       // --- Valor actual a esta fecha ---
-      const prices = (inv.priceHistory || []).filter(h => h.date <= date);
-      if (prices.length > 0) {
-        const lastPrice = prices[prices.length - 1].price;
+      // For the last (most recent) date, use inv.currentPrice directly
+      // to match exactly what getInvestCurrentTotal() returns
+      let priceToUse;
+      if (isLastDate) {
+        priceToUse = inv.currentPrice || inv.avgBuyPrice || 0;
+      } else {
+        const prices = (inv.priceHistory || []).filter(h => h.date <= date);
+        if (prices.length === 0) { /* skip */ }
+        else priceToUse = prices[prices.length - 1].price;
+      }
+
+      if (priceToUse != null) {
         let units = inv.units;
         (inv.movements || []).filter(m => m.type === 'sell' && m.date > date).forEach(m => units += m.units);
         (inv.movements || []).filter(m => m.type === 'buy'  && m.date > date).forEach(m => units -= m.units);
-        totalValue += Math.max(0, units) * lastPrice;
+        totalValue += Math.max(0, units) * priceToUse;
       }
 
       // --- Capital invertido a esta fecha (compras acumuladas - ventas al precio de coste) ---
@@ -6215,9 +6737,49 @@ function applyNames() {
   if (togDesc) togDesc.textContent = `Aparecerá en la sección de ${m} y de ${mi}`;
 }
 
+// ===================== CATEGORIES =====================
+function renderCategoryChips() {
+  ['income', 'expense'].forEach(type => {
+    const el   = document.getElementById(`cats-${type}-chips`);
+    if (!el) return;
+    const cats = state.categories[type] || [];
+    const defs = DEFAULT_CATEGORIES[type] || [];
+    el.innerHTML = cats.map(c => {
+      const isDef = defs.includes(c);
+      return `<span class="cat-chip${isDef ? ' default' : ''}">
+        ${c}
+        <button class="cat-chip-del" onclick="removeCategory('${type}','${c.replace(/'/g,"\\'")}')">✕</button>
+      </span>`;
+    }).join('');
+  });
+}
+
+function addCategory(type) {
+  const input = document.getElementById(`new-cat-${type}`);
+  const name  = input.value.trim();
+  if (!name) return;
+  if ((state.categories[type] || []).includes(name)) {
+    showToast('Esa categoría ya existe', 'error'); return;
+  }
+  if (!state.categories[type]) state.categories[type] = [...DEFAULT_CATEGORIES[type]];
+  state.categories[type].push(name);
+  input.value = '';
+  saveState();
+  renderCategoryChips();
+  showToast(`Categoría "${name}" añadida ✓`, 'success');
+}
+
+function removeCategory(type, name) {
+  if (!state.categories[type]) return;
+  state.categories[type] = state.categories[type].filter(c => c !== name);
+  saveState();
+  renderCategoryChips();
+}
+
 function openSettings() {
   document.getElementById('settings-name-mario').value = getName('mario');
   document.getElementById('settings-name-miri').value  = getName('miri');
+  renderCategoryChips();
   document.getElementById('modalSettings').classList.add('open');
 }
 
@@ -7157,12 +7719,31 @@ function deleteInvMovement() {
       if (!mov.noDeduct) {
         const accId = mov.sourceId || mov.destId;
         const acc   = findAccountById(accId);
-        if (acc) acc.balance += mov.type === 'buy' ? mov.total : -mov.total;
+        if (acc) acc.balance += mov.type === 'buy' ? (mov.total + (mov.commission || 0)) : -mov.total;
       }
+
+      // Remove the priceHistory entry that was created with this buy/sell
+      // Match by date and price to avoid removing unrelated updates
+      if (mov.type === 'buy' || mov.type === 'sell') {
+        inv.priceHistory = (inv.priceHistory || []).filter(h => {
+          // Keep if it's a different date, or same date but the price doesn't match
+          // (a manual update on the same day should stay)
+          const isFromThisMove = h.date === mov.date && h.price === mov.price;
+          // Only remove if it's the only one on that date matching that price
+          return !isFromThisMove;
+        });
+      }
+
       // Remove movement
       inv.movements = inv.movements.filter(m => m.id !== editInvMovementId);
-      // Recalc
+
+      // Recalc units/avgBuyPrice
       recalcPositionFromMovements(inv);
+
+      // Recalc currentPrice as most recent priceHistory
+      const sorted = [...(inv.priceHistory || [])].sort((a, b) => b.date.localeCompare(a.date));
+      inv.currentPrice = sorted.length > 0 ? sorted[0].price : 0;
+
       saveState();
       closeModal('modalEditInvMove');
       if (inv.units > 0) {
