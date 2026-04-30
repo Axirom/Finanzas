@@ -234,7 +234,14 @@ body::before {
 
 /* ===================== SECTION PAGES ===================== */
 .section-page { display: none; }
-.section-page.active { display: block; }
+.section-page.active {
+  display: block;
+  animation: sectionEnter 0.22s ease forwards;
+}
+@keyframes sectionEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 /* ===================== SECTION HEADER ===================== */
 .section-header {
@@ -1211,6 +1218,39 @@ body::before {
 .debt-history-info { flex: 1; }
 .debt-history-amount { font-weight: 600; color: var(--expense); white-space: nowrap; }
 
+/* ===================== ELEMENT ENTRANCE ANIMATIONS ===================== */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-6px); }
+}
+
+.tx-row          { animation: fadeSlideIn 0.25s ease forwards; }
+.account-card    { animation: fadeSlideIn 0.2s ease forwards; }
+.debt-card       { animation: fadeSlideIn 0.22s ease forwards; }
+.deposit-card    { animation: fadeSlideIn 0.22s ease forwards; }
+.goal-widget     { animation: fadeSlideIn 0.3s ease forwards; }
+.detail-tx-item  { animation: fadeSlideIn 0.2s ease forwards; }
+.inv-history-item { animation: fadeSlideIn 0.2s ease forwards; }
+
+/* Stagger children */
+.tx-row:nth-child(1)  { animation-delay: 0.02s; }
+.tx-row:nth-child(2)  { animation-delay: 0.05s; }
+.tx-row:nth-child(3)  { animation-delay: 0.08s; }
+.tx-row:nth-child(4)  { animation-delay: 0.10s; }
+.tx-row:nth-child(5)  { animation-delay: 0.12s; }
+.account-card:nth-child(1) { animation-delay: 0.02s; }
+.account-card:nth-child(2) { animation-delay: 0.06s; }
+.account-card:nth-child(3) { animation-delay: 0.10s; }
+.account-card:nth-child(4) { animation-delay: 0.14s; }
+.debt-card:nth-child(1)    { animation-delay: 0.02s; }
+.debt-card:nth-child(2)    { animation-delay: 0.06s; }
+.deposit-card:nth-child(1) { animation-delay: 0.02s; }
+.deposit-card:nth-child(2) { animation-delay: 0.06s; }
+
 /* ===================== SAVINGS GOAL ===================== */
 .goal-set-btn {
   width: 100%;
@@ -1255,8 +1295,14 @@ body::before {
   border-radius: 4px;
   background: linear-gradient(90deg, var(--saving), var(--global));
   transition: width 0.5s;
+  animation: barGrow 0.7s cubic-bezier(0.34, 1.1, 0.64, 1) forwards;
 }
 .goal-fill.done { background: var(--income); }
+
+@keyframes barGrow {
+  from { width: 0 !important; }
+  to   { /* width set inline */ }
+}
 .goal-amounts {
   display: flex;
   justify-content: space-between;
@@ -1773,8 +1819,29 @@ body::before {
   font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;
 }
 .debt-card-type.loan { background: rgba(247,217,120,0.15); color: var(--global); }
-.debt-card-type.financed { background: rgba(86,207,225,0.15); color: var(--saving); }
+.debt-card-type.mortgage { background: rgba(167,139,250,0.15); color: var(--common); }
 .debt-card-type.other { background: rgba(126,184,247,0.15); color: var(--mario); }
+.mortgage-phase-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; padding: 4px 10px;
+  border-radius: 20px; margin-bottom: 4px;
+}
+.mortgage-phase-badge.fixed { background: rgba(247,217,120,0.12); color: var(--global); border: 1px solid rgba(247,217,120,0.3); }
+.mortgage-phase-badge.variable { background: rgba(167,139,250,0.12); color: var(--common); border: 1px solid rgba(167,139,250,0.3); }
+.mortgage-rate-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0; border-bottom: 1px solid var(--border2);
+  font-size: 11px;
+}
+.mortgage-rate-row:last-child { border-bottom: none; }
+.btn-update-rate {
+  width: 100%; padding: 11px; border-radius: var(--radius-sm);
+  border: 1px solid rgba(167,139,250,0.35); background: rgba(167,139,250,0.08);
+  color: var(--common); font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; margin-bottom: 16px;
+}
+.btn-update-rate:active { transform: scale(0.97); }
 .debt-progress-bar {
   height: 6px; background: rgba(255,255,255,0.04);
   border-radius: 3px; margin-bottom: 10px; overflow: hidden;
@@ -1788,7 +1855,10 @@ body::before {
 .debt-bar-row { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
 .debt-bar-label { font-size:10px; color:var(--muted); width:62px; flex-shrink:0; }
 .debt-bar-track { flex:1; height:6px; background:rgba(255,255,255,0.04); border-radius:3px; overflow:hidden; }
-.debt-bar-fill { height:100%; border-radius:3px; transition:width 0.4s; }
+.debt-bar-fill {
+  height: 100%; border-radius: 3px; transition: width 0.4s;
+  animation: barGrow 0.65s cubic-bezier(0.34, 1.1, 0.64, 1) forwards;
+}
 .debt-bar-fill.capital  { background: linear-gradient(90deg, #60c8f5, #a78bfa); }
 .debt-bar-fill.interest { background: linear-gradient(90deg, #f97316, #ef4444); }
 .debt-bar-fill.done     { background: var(--income); }
@@ -2961,7 +3031,7 @@ body:not(.values-hidden) .account-rate-inline {
       <label class="form-label">Tipo</label>
       <div class="op-type-row" style="grid-template-columns:1fr 1fr 1fr;">
         <button class="op-type-btn active-income" id="dtype-loan" onclick="selectDebtType('loan')" style="font-size:12px;">🏦 Préstamo</button>
-        <button class="op-type-btn" id="dtype-financed" onclick="selectDebtType('financed')" style="font-size:12px;">💳 Financiado</button>
+        <button class="op-type-btn" id="dtype-mortgage" onclick="selectDebtType('mortgage')" style="font-size:12px;">🏠 Hipoteca</button>
         <button class="op-type-btn" id="dtype-other" onclick="selectDebtType('other')" style="font-size:12px;">📝 Otro</button>
       </div>
     </div>
@@ -2989,9 +3059,27 @@ body:not(.values-hidden) .account-rate-inline {
       </div>
     </div>
 
+    <!-- Mortgage-specific fields -->
+    <div id="mortgageFields" style="display:none;margin-top:14px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">Estructura de la hipoteca</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Plazo total (años)</label>
+          <input class="form-input" id="mortgageYears" type="number" min="1" step="1" placeholder="30" inputmode="numeric" oninput="onMortgageYearsChange()">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Años a tipo fijo</label>
+          <input class="form-input" id="mortgageFixedYears" type="number" min="0" step="1" placeholder="5" inputmode="numeric">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;padding:8px 10px;background:rgba(167,139,250,0.06);border-radius:8px;border:1px solid rgba(167,139,250,0.15);">
+        El TIN indicado es el tipo fijo inicial. Podrás actualizar el tipo variable desde el detalle de la hipoteca.
+      </div>
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
       <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Nº cuotas (meses)</label>
+        <label class="form-label" id="debtMonthsLabel">Nº cuotas (meses)</label>
         <input class="form-input" id="debtMonths" type="number" min="1" step="1" placeholder="Ej. 36" inputmode="numeric" oninput="calcFrenchAmortization()">
       </div>
       <div class="form-group" style="margin-bottom:0">
@@ -3080,6 +3168,27 @@ body:not(.values-hidden) .account-rate-inline {
   </div>
 </div>
 
+<!-- ==================== MODAL: UPDATE MORTGAGE RATE ==================== -->
+<div class="modal-overlay" id="modalUpdateMortgageRate" onclick="closeMortgageRateModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Actualizar tipo de interés</div>
+    <div id="umr-debt-name" style="font-size:13px;color:var(--muted);margin-bottom:12px;"></div>
+
+    <!-- Current phase indicator -->
+    <div id="umr-phase" style="margin-bottom:16px;"></div>
+
+    <div class="form-group">
+      <label class="form-label">Nuevo TIN (%)</label>
+      <input class="form-input" id="umr-tin" type="number" min="0" step="0.001" placeholder="0,000" inputmode="decimal" oninput="updateMortgageRatePreview()">
+    </div>
+
+    <div id="umr-preview" style="display:none;margin-top:4px;margin-bottom:14px;background:rgba(96,200,245,0.06);border:1px solid rgba(96,200,245,0.15);border-radius:var(--radius-sm);padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.9;"></div>
+
+    <button class="btn-submit" onclick="saveUpdateMortgageRate()">Aplicar nuevo tipo</button>
+  </div>
+</div>
+
 <!-- ==================== MODAL: AMORTIZATION TABLE ==================== -->
 <div class="modal-overlay" id="modalAmortTable" onclick="closeAmortTable(event)">
   <div class="modal">
@@ -3105,12 +3214,16 @@ body:not(.values-hidden) .account-rate-inline {
       </div>
       <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
         <button class="calc-btn" id="ddetail-table-btn" onclick="openAmortTable()" style="display:none;" title="Tabla de amortización">📋</button>
+        <button class="calc-btn" onclick="openEditDebt()" title="Editar deuda">✏️</button>
         <button class="btn-delete-debt" onclick="deleteDebtFromDetail()">🗑</button>
       </div>
     </div>
 
     <!-- Rates (TIN/TAE) - only shown if present -->
-    <div id="ddetail-rates" style="display:flex;gap:8px;margin:12px 0;"></div>
+    <div id="ddetail-rates" style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;align-items:center;"></div>
+
+    <!-- Mortgage info: phase, rate history, update button — only for mortgages -->
+    <div id="ddetail-mortgage-info" style="display:none;margin-bottom:16px;"></div>
 
     <!-- Progress: dual bars if French, single otherwise -->
     <div id="ddetail-progress-wrap">
@@ -3134,6 +3247,79 @@ body:not(.values-hidden) .account-rate-inline {
     <!-- Payment history -->
     <div class="block-title" style="margin-bottom:10px;">Historial de pagos</div>
     <div id="ddetail-history"></div>
+  </div>
+</div>
+
+<!-- ==================== MODAL: EDIT DEBT ==================== -->
+<div class="modal-overlay" id="modalEditDebt" onclick="closeEditDebtOutside(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="editDebtTitle">Editar deuda</div>
+
+    <div class="form-group">
+      <label class="form-label">Nombre / Concepto</label>
+      <input class="form-input" id="editDebtName" type="text">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Capital inicial (€)</label>
+      <input class="form-input" id="editDebtTotal" type="number" min="0" step="0.01" inputmode="decimal">
+    </div>
+
+    <div id="editDebtRatesGroup">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" id="editDebtTINLabel">TIN (%)</label>
+          <input class="form-input" id="editDebtTIN" type="number" min="0" step="0.001" inputmode="decimal">
+        </div>
+        <div class="form-group" style="margin-bottom:0" id="editDebtTAEGroup">
+          <label class="form-label">TAE (%)</label>
+          <input class="form-input" id="editDebtTAE" type="number" min="0" step="0.001" inputmode="decimal">
+        </div>
+      </div>
+    </div>
+
+    <!-- Mortgage-specific edit fields -->
+    <div id="editMortgageFields" style="display:none;margin-top:14px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Plazo total (años)</label>
+          <input class="form-input" id="editMortgageYears" type="number" min="1" step="1" inputmode="numeric" oninput="onEditMortgageYearsChange()">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Años a tipo fijo</label>
+          <input class="form-input" id="editMortgageFixedYears" type="number" min="0" step="1" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label" id="editDebtMonthsLabel">Nº cuotas (meses)</label>
+        <input class="form-input" id="editDebtMonths" type="number" min="1" step="1" inputmode="numeric">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Cuota mensual (€)</label>
+        <input class="form-input" id="editDebtQuota" type="number" min="0" step="0.01" inputmode="decimal">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:14px;">
+      <label class="form-label">Cuotas iniciales ya pagadas</label>
+      <input class="form-input" id="editDebtPaidQuotas" type="number" min="0" step="1" inputmode="numeric" placeholder="0">
+      <div style="font-size:11px;color:var(--muted);margin-top:5px;">Cuotas pagadas antes de empezar a registrar pagos en la app.</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notas — opcional</label>
+      <input class="form-input" id="editDebtNotes" type="text">
+    </div>
+
+    <div style="font-size:11px;color:var(--muted);padding:10px 12px;background:rgba(247,217,120,0.06);border:1px solid rgba(247,217,120,0.15);border-radius:var(--radius-sm);margin-bottom:16px;">
+      ⚠️ Editar el capital, TIN o plazo recalculará los intereses totales. El historial de pagos no se modifica.
+    </div>
+
+    <button class="btn-submit" onclick="saveEditDebt()">Guardar cambios</button>
   </div>
 </div>
 
@@ -3933,7 +4119,7 @@ function getMonthLabelForPerson(person) {
 function renderTotals(person) {
   const total = getPersonTotal(person);
   const commonTotal = getCommonBalance();
-  document.getElementById(person + '-total').textContent = fmt(total);
+  countUp(document.getElementById(person + '-total'), total);
   document.getElementById(person + '-common-balance').textContent = fmtShort(commonTotal);
   document.getElementById(person + '-month-label').textContent = getMonthLabelForPerson(person);
 
@@ -4218,13 +4404,13 @@ function renderGlobal() {
 
   const grandTotal = marioTotal + miriTotal + commonTotal + invCurrentTotal + depositTotal;
 
-  document.getElementById('global-total').textContent          = fmt(grandTotal);
-  document.getElementById('global-mario').textContent          = '€' + fmt(marioTotal);
-  document.getElementById('global-miri').textContent           = '€' + fmt(miriTotal);
-  document.getElementById('global-common').textContent         = '€' + fmt(commonTotal);
-  document.getElementById('global-invest').textContent         = '€' + fmt(invCurrentTotal);
+  countUp(document.getElementById('global-total'), grandTotal, 700);
+  countUpShort(document.getElementById('global-mario'),   marioTotal);
+  countUpShort(document.getElementById('global-miri'),    miriTotal);
+  countUpShort(document.getElementById('global-common'),  commonTotal);
+  countUpShort(document.getElementById('global-invest'),  invCurrentTotal);
   document.getElementById('global-invest-cost').textContent    = '€' + fmt(getInvestTotalCost());
-  document.getElementById('global-deposits').textContent       = '€' + fmt(depositTotal);
+  countUpShort(document.getElementById('global-deposits'), depositTotal);
   document.getElementById('global-deposits-count').textContent = activeDeposits.length;
 
   // Year label on chart
@@ -4835,7 +5021,13 @@ function openAddDebt(person) {
   document.getElementById('debtTIN').value        = '';
   document.getElementById('debtTAE').value        = '';
   document.getElementById('debtMonths').value     = '';
+  document.getElementById('debtMonths').readOnly  = false;
   document.getElementById('debtNotes').value      = '';
+  document.getElementById('mortgageYears').value  = '';
+  document.getElementById('mortgageFixedYears').value = '';
+  document.getElementById('mortgageFields').style.display = 'none';
+  const monthsLabel = document.getElementById('debtMonthsLabel');
+  if (monthsLabel) monthsLabel.textContent = 'Nº cuotas (meses)';
   document.getElementById('debtAmortSummary').style.display = 'none';
   document.getElementById('debt-paid-summary').style.display = 'none';
   updateDebtTypeBtns();
@@ -4861,6 +5053,37 @@ function buildAmortTable(principal, tinPct, months) {
     const capital  = Math.min(quota - interest, balance);
     balance        = Math.max(0, balance - capital);
     rows.push({ capital, interest, balance });
+  }
+  return rows;
+}
+
+// Build amortization table for mortgages respecting rateHistory segments
+function buildMortgageAmortTable(d) {
+  const rateHistory = [...(d.rateHistory || [{ fromQuota: 1, tin: d.tin || 0, quota: d.quota || 0 }])];
+  rateHistory.sort((a, b) => a.fromQuota - b.fromQuota);
+
+  const rows       = [];
+  let balance      = d.total;
+  const totalMonths = d.months || 0;
+
+  for (let i = 0; i < totalMonths && balance > 0.005; i++) {
+    const quotaNum = i + 1;
+    // Find which rate segment applies (last entry with fromQuota <= quotaNum)
+    let rateEntry = rateHistory[0];
+    for (const entry of rateHistory) {
+      if (entry.fromQuota <= quotaNum) rateEntry = entry;
+    }
+
+    const tin   = rateEntry.tin || 0;
+    const r     = tin / 100 / 12;
+    const quota = rateEntry.quota || (r > 0
+      ? balance * r / (1 - Math.pow(1 + r, -(totalMonths - i)))
+      : balance / (totalMonths - i));
+
+    const interest = balance * r;
+    const capital  = Math.min(quota - interest, balance);
+    balance        = Math.max(0, balance - capital);
+    rows.push({ capital, interest, balance, quota, tin });
   }
   return rows;
 }
@@ -4922,12 +5145,30 @@ function updatePaidSummary() {
 function selectDebtType(type) {
   debtType = type;
   updateDebtTypeBtns();
+  // Show/hide mortgage-specific fields
+  document.getElementById('mortgageFields').style.display = type === 'mortgage' ? 'block' : 'none';
+  // For mortgage: months label changes, field becomes auto-filled (but still editable)
+  const monthsLabel = document.getElementById('debtMonthsLabel');
+  if (monthsLabel) monthsLabel.textContent = type === 'mortgage' ? 'Nº cuotas (auto)' : 'Nº cuotas (meses)';
+  const monthsInput = document.getElementById('debtMonths');
+  if (monthsInput) monthsInput.readOnly = type === 'mortgage';
 }
 
 function updateDebtTypeBtns() {
-  ['loan','financed','other'].forEach(t => {
+  ['loan','mortgage','other'].forEach(t => {
     document.getElementById('dtype-' + t).className = 'op-type-btn' + (t === debtType ? ' active-income' : '');
   });
+}
+
+function onMortgageYearsChange() {
+  const years = parseInt(document.getElementById('mortgageYears').value) || 0;
+  if (years > 0) {
+    document.getElementById('debtMonths').value = years * 12;
+    calcFrenchAmortization();
+  } else {
+    document.getElementById('debtMonths').value = '';
+    document.getElementById('debtAmortSummary').style.display = 'none';
+  }
 }
 
 function saveDebt() {
@@ -4946,6 +5187,25 @@ function saveDebt() {
 
   if (!state.debts) state.debts = { mario: [], miri: [] };
 
+  // Mortgage-specific
+  let fixedYears = null;
+  let totalYears = null;
+  let rateHistory = null;
+  if (debtType === 'mortgage') {
+    totalYears = parseInt(document.getElementById('mortgageYears').value) || null;
+    fixedYears = parseInt(document.getElementById('mortgageFixedYears').value) || 0;
+    if (!totalYears) { showToast('Introduce el plazo en años', 'error'); return; }
+    if (!tin) { showToast('Introduce el TIN fijo inicial', 'error'); return; }
+    // Build initial rateHistory with the fixed rate
+    const initialQuota = quota || frenchQuota(total, tin, months || totalYears * 12);
+    rateHistory = [{
+      fromQuota: 1,
+      tin: tin,
+      quota: initialQuota,
+      label: fixedYears > 0 ? 'Fijo' : 'Variable'
+    }];
+  }
+
   // Build amortization table to get precise capital/interest split
   let totalInterest = null;
   let capitalPaid   = 0;
@@ -4960,11 +5220,10 @@ function saveDebt() {
       interestPaid += table[i].interest;
     }
   } else if (paidQuotas > 0 && quota > 0) {
-    // No TIN: assume all quota goes to capital
     capitalPaid = paidQuotas * quota;
   }
 
-  state.debts[debtPerson].push({
+  const debtObj = {
     id: Date.now().toString(),
     name, type: debtType, total,
     paid: capitalPaid,
@@ -4972,7 +5231,15 @@ function saveDebt() {
     paidQuotas, quota, tin, tae, months, totalInterest, notes,
     payments: [],
     createdAt: new Date().toISOString().split('T')[0]
-  });
+  };
+
+  if (debtType === 'mortgage') {
+    debtObj.totalYears  = totalYears;
+    debtObj.fixedYears  = fixedYears;
+    debtObj.rateHistory = rateHistory;
+  }
+
+  state.debts[debtPerson].push(debtObj);
 
   saveState();
   closeModal('modalAddDebt');
@@ -4993,7 +5260,7 @@ function renderDebts(person) {
     return;
   }
 
-  const typeLabel = { loan: 'Préstamo', financed: 'Financiado', other: 'Otro' };
+  const typeLabel = { loan: 'Préstamo', mortgage: 'Hipoteca', other: 'Otro' };
 
   el.innerHTML = debts.map(d => {
     if (d.capitalPaid == null) d.capitalPaid = d.paid;
@@ -5060,7 +5327,7 @@ function openDebtDetail(person, debtId) {
   const d = (state.debts[person] || []).find(x => x.id === debtId);
   if (!d) return;
 
-  const typeLabel = { loan: 'Préstamo', financed: 'Financiado', other: 'Otro' };
+  const typeLabel = { loan: 'Préstamo', mortgage: 'Hipoteca', other: 'Otro' };
   const remaining = d.total - d.paid;
   const pct = Math.min(100, (d.paid / d.total) * 100);
   const isFinished = remaining <= 0;
@@ -5076,6 +5343,39 @@ function openDebtDetail(person, debtId) {
     d.tae != null ? `<span class="debt-rate-badge debt-rate-tae">TAE ${d.tae}%</span>` : ''
   ].filter(Boolean).join('');
   ratesEl.style.display = (d.tin != null || d.tae != null) ? 'flex' : 'none';
+
+  // Mortgage info panel
+  const mortgageInfoEl = document.getElementById('ddetail-mortgage-info');
+  if (d.type === 'mortgage') {
+    const paidSoFar   = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
+    const fixedMonths = (d.fixedYears || 0) * 12;
+    const isFixed     = paidSoFar < fixedMonths;
+    const phaseLabel  = isFixed
+      ? `🔒 Fase fija · ${fixedMonths - paidSoFar} cuotas restantes`
+      : '📊 Fase variable';
+    const phaseCls    = isFixed ? 'fixed' : 'variable';
+
+    const rateRows = (d.rateHistory || []).map((entry, i) => {
+      const isCurrent = i === (d.rateHistory.length - 1);
+      return `<div class="mortgage-rate-row">
+        <span style="color:var(--muted);">${entry.label || (i === 0 ? 'Fijo' : 'Variable')} · desde cuota ${entry.fromQuota}</span>
+        <span style="font-weight:600;color:${isCurrent ? 'var(--text)' : 'var(--muted2)'};">TIN ${entry.tin}%${isCurrent ? ' <span style="color:var(--income);font-size:10px;">● actual</span>' : ''}</span>
+      </div>`;
+    }).join('');
+
+    mortgageInfoEl.innerHTML = `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span class="mortgage-phase-badge ${phaseCls}">${phaseLabel}</span>
+          <span style="font-size:11px;color:var(--muted);">${d.totalYears ? d.totalYears + ' años' : ''}</span>
+        </div>
+        ${rateRows}
+      </div>
+      <button class="btn-update-rate" onclick="openUpdateMortgageRate()" style="margin-top:10px;">📊 Actualizar tipo de interés</button>`;
+    mortgageInfoEl.style.display = 'block';
+  } else {
+    mortgageInfoEl.style.display = 'none';
+  }
 
   // Progress bars
   if (d.capitalPaid == null) d.capitalPaid = d.paid;
@@ -5179,47 +5479,41 @@ function openAmortTable() {
   const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
   if (!d || !d.tin || !d.months) return;
 
-  // Original quota — always the same regardless of amortizations
-  const originalQuota = d.quota || frenchQuota(d.total, d.tin, d.months);
-  const r             = d.tin / 100 / 12;
-
   // How many quotas have been paid (initial paidQuotas + registered payments)
   const paidCount = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
 
-  // Build the ACTUAL table: start from original capital, apply original quota,
-  // but after each amortization, jump the balance down and continue with SAME quota
-  // For simplicity: reconstruct chronologically using the amortization history
-  const rows = [];
-  let balance = d.total;
+  let rows = [];
+  let originalQuota;
+  let isMortgage = d.type === 'mortgage';
 
-  // Collect amortizations in order (by date), keyed to quota index they happen after
-  const amortPayments = (d.payments || [])
-    .filter(p => p.type === 'amortization' && p.capitalPortion != null)
-    .sort((a, b) => a.date.localeCompare(b.date));
+  if (isMortgage) {
+    // Use multi-segment amortization table for mortgages
+    rows = buildMortgageAmortTable(d);
+    originalQuota = d.quota; // current quota (may have changed with rate updates)
+  } else {
+    // Original quota — always the same regardless of amortizations
+    originalQuota = d.quota || frenchQuota(d.total, d.tin, d.months);
+    const r = d.tin / 100 / 12;
 
-  let amortIdx = 0; // which amortization to apply next
-  let quotasDone = d.paidQuotas || 0; // already-paid quota count at start
+    // Build ACTUAL table incorporating registered amortizations
+    let balance = d.total;
+    const amortPayments = (d.payments || [])
+      .filter(p => p.type === 'amortization' && p.capitalPortion != null)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    let amortIdx   = 0;
+    const totalMonths = d.months;
 
-  const totalMonths = d.months; // updated months after amortizations
-
-  for (let i = 0; i < totalMonths && balance > 0.005; i++) {
-    // Apply any amortizations that happened after previous quota
-    if (amortIdx < amortPayments.length) {
-      // Approximate: apply amortization before this quota
-      // (real timing not tracked precisely, so we spread them in order)
-      const amort = amortPayments[amortIdx];
-      if (amort) {
-        balance = Math.max(0, balance - amort.capitalPortion);
-        amortIdx++;
+    for (let i = 0; i < totalMonths && balance > 0.005; i++) {
+      if (amortIdx < amortPayments.length) {
+        const amort = amortPayments[amortIdx];
+        if (amort) { balance = Math.max(0, balance - amort.capitalPortion); amortIdx++; }
       }
+      const interest       = balance * r;
+      const quotaThisMonth = Math.min(originalQuota, balance + interest);
+      const capital        = Math.min(quotaThisMonth - interest, balance);
+      balance              = Math.max(0, balance - capital);
+      rows.push({ capital, interest, balance, quota: quotaThisMonth });
     }
-
-    const interest = balance * r;
-    // Use original quota but cap at balance + interest
-    const quotaThisMonth = Math.min(originalQuota, balance + interest);
-    const capital  = Math.min(quotaThisMonth - interest, balance);
-    balance        = Math.max(0, balance - capital);
-    rows.push({ capital, interest, balance, quota: quotaThisMonth });
   }
 
   const totalInterest = rows.reduce((s, r) => s + r.interest, 0);
@@ -5228,10 +5522,11 @@ function openAmortTable() {
   document.getElementById('amort-table-title').textContent = d.name;
   document.getElementById('amort-table-summary').innerHTML = `
     <span>Capital: <strong style="color:#60c8f5">€${fmt(d.total)}</strong></span>
-    <span>Cuota: <strong style="color:var(--text)">€${fmt(originalQuota)}</strong></span>
+    ${!isMortgage ? `<span>Cuota: <strong style="color:var(--text)">€${fmt(originalQuota)}</strong></span>` : ''}
     <span>Intereses totales: <strong style="color:#f97316">€${fmt(totalInterest)}</strong></span>
     <span>Total a pagar: <strong style="color:var(--text)">€${fmt(totalPay)}</strong></span>
-    <span>Nº cuotas: <strong style="color:var(--text)">${rows.length}</strong></span>`;
+    <span>Nº cuotas: <strong style="color:var(--text)">${rows.length}</strong></span>
+    ${isMortgage && d.fixedYears ? `<span>Fijo hasta cuota: <strong style="color:var(--global)">${(d.fixedYears * 12)}</strong></span>` : ''}`;
 
   const thStyle = 'padding:6px 8px;text-align:right;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);white-space:nowrap;';
   const tdBase  = 'padding:6px 8px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.04);white-space:nowrap;font-size:11px;';
@@ -5244,11 +5539,22 @@ function openAmortTable() {
     <th style="${thStyle}">Saldo</th>
   </tr></thead><tbody>`;
 
+  // For mortgage, detect segment changes to show rate separators
+  let prevTin = isMortgage && rows.length > 0 ? rows[0].tin : null;
+
   rows.forEach((row, i) => {
     const isPaid   = i < paidCount;
     const rowStyle = isPaid ? 'opacity:0.4;' : '';
     const paidMark = isPaid ? '✓ ' : '';
-    html += `<tr style="${rowStyle}">
+
+    // Mortgage: show a visual separator when TIN changes
+    let separatorHtml = '';
+    if (isMortgage && row.tin !== prevTin) {
+      separatorHtml = `<tr><td colspan="5" style="padding:4px 8px;font-size:10px;color:var(--common);background:rgba(167,139,250,0.06);border-bottom:1px solid rgba(167,139,250,0.2);font-weight:600;">📊 Tipo variable · TIN ${row.tin}%</td></tr>`;
+      prevTin = row.tin;
+    }
+
+    html += separatorHtml + `<tr style="${rowStyle}">
       <td style="${tdBase}text-align:left;color:var(--muted);">${paidMark}${i + 1}</td>
       <td style="${tdBase}">€${fmt(row.quota)}</td>
       <td style="${tdBase}color:#60c8f5;">€${fmt(row.capital)}</td>
@@ -5368,11 +5674,19 @@ function saveDebtPayment() {
   let interestPortion = 0;
 
   if (regPayType === 'quota' && d.tin && d.capitalPaid < d.total && d.months) {
-    const table     = buildAmortTable(d.total, d.tin, d.months);
-    const paidSoFar = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
-    if (paidSoFar < table.length) {
-      interestPortion = Math.min(table[paidSoFar].interest, actualPay);
+    if (d.type === 'mortgage') {
+      // Mortgage: interest = current balance × current rate (no table lookup needed)
+      const r = d.tin / 100 / 12;
+      const capitalRem = Math.max(0, d.total - (d.capitalPaid || 0));
+      interestPortion = Math.min(capitalRem * r, actualPay);
       capitalPortion  = actualPay - interestPortion;
+    } else {
+      const table     = buildAmortTable(d.total, d.tin, d.months);
+      const paidSoFar = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
+      if (paidSoFar < table.length) {
+        interestPortion = Math.min(table[paidSoFar].interest, actualPay);
+        capitalPortion  = actualPay - interestPortion;
+      }
     }
   } else if (regPayType === 'quota' && d.tin) {
     const r = d.tin / 100 / 12;
@@ -5413,6 +5727,10 @@ function saveDebtPayment() {
         d.quota = newQuota;
         // Recalc total interest
         d.totalInterest = Math.max(0, newQuota * monthsLeft - newCapital) + d.interestPaid;
+        // For mortgage: keep rateHistory in sync (update current segment's quota)
+        if (d.type === 'mortgage' && d.rateHistory && d.rateHistory.length > 0) {
+          d.rateHistory[d.rateHistory.length - 1].quota = newQuota;
+        }
       }
     }
   }
@@ -5473,6 +5791,258 @@ function deleteDebtFromDetail() {
       showToast('Deuda eliminada', '');
     }
   );
+}
+
+
+// ===================== MORTGAGE RATE UPDATE =====================
+
+function openUpdateMortgageRate() {
+  const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
+  if (!d) return;
+
+  const paidSoFar   = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
+  const fixedMonths = (d.fixedYears || 0) * 12;
+  const isFixed     = paidSoFar < fixedMonths;
+
+  document.getElementById('umr-debt-name').textContent = d.name;
+  document.getElementById('umr-tin').value = '';
+  document.getElementById('umr-preview').style.display = 'none';
+
+  // Show current phase
+  const phaseEl = document.getElementById('umr-phase');
+  if (isFixed) {
+    const remaining = fixedMonths - paidSoFar;
+    phaseEl.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(247,217,120,0.07);border:1px solid rgba(247,217,120,0.2);border-radius:var(--radius-sm);">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--global);">🔒 Fase fija actualmente</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Quedan ${remaining} cuota${remaining !== 1 ? 's' : ''} a tipo fijo</div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:var(--global);">TIN ${d.tin}%</div>
+      </div>`;
+  } else {
+    phaseEl.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:var(--radius-sm);">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--common);">📊 Fase variable actualmente</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Tipo en vigor desde cuota ${fixedMonths + 1}</div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:var(--common);">TIN ${d.tin}%</div>
+      </div>`;
+  }
+
+  closeModal('modalDebtDetail');
+  document.getElementById('modalUpdateMortgageRate').classList.add('open');
+}
+
+function closeMortgageRateModal(e) {
+  if (e && e.target !== document.getElementById('modalUpdateMortgageRate')) return;
+  closeModal('modalUpdateMortgageRate');
+  if (detailDebtPerson && detailDebtId) openDebtDetail(detailDebtPerson, detailDebtId);
+}
+
+function updateMortgageRatePreview() {
+  const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
+  const newTin    = parseFloat(document.getElementById('umr-tin').value);
+  const previewEl = document.getElementById('umr-preview');
+  if (!d || isNaN(newTin) || newTin < 0) { previewEl.style.display = 'none'; return; }
+
+  const paidSoFar   = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
+  const fixedMonths = (d.fixedYears || 0) * 12;
+  const willBeFixed = paidSoFar < fixedMonths;
+  const capitalRem  = Math.max(0, d.total - (d.capitalPaid || 0));
+  const monthsLeft  = Math.max(1, (d.months || 0) - paidSoFar);
+  const newQuota    = frenchQuota(capitalRem, newTin, monthsLeft);
+  const newIntRem   = Math.max(0, newQuota * monthsLeft - capitalRem);
+  const oldQuota    = d.quota || 0;
+  const diff        = newQuota - oldQuota;
+  const diffStr     = (diff >= 0 ? '+' : '') + '€' + fmt(Math.abs(diff));
+  const diffColor   = diff > 0 ? 'var(--expense)' : 'var(--income)';
+  const newPhaseLabel = willBeFixed ? '🔒 Fijo' : '📊 Variable';
+
+  previewEl.innerHTML = `
+    Se registrará como: <strong style="color:${willBeFixed ? 'var(--global)' : 'var(--common)'};">${newPhaseLabel}</strong><br>
+    Capital pendiente: <strong style="color:#60c8f5">€${fmt(capitalRem)}</strong><br>
+    Cuotas restantes: <strong style="color:var(--text)">${monthsLeft}</strong><br>
+    Nueva cuota: <strong style="color:var(--text)">€${fmt(newQuota)}</strong>
+      <span style="color:${diffColor};font-size:11px;">(${diffStr}/mes)</span><br>
+    Intereses restantes: <strong style="color:#f97316">€${fmt(newIntRem)}</strong>`;
+  previewEl.style.display = 'block';
+}
+
+function saveUpdateMortgageRate() {
+  const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
+  if (!d) return;
+
+  const newTin = parseFloat(document.getElementById('umr-tin').value);
+  if (isNaN(newTin) || newTin < 0) { showToast('Introduce un TIN válido', 'error'); return; }
+
+  const paidSoFar   = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
+  const fixedMonths = (d.fixedYears || 0) * 12;
+  const isFixed     = paidSoFar < fixedMonths;
+  const autoLabel   = isFixed ? 'Fijo' : 'Variable';
+
+  const capitalRem = Math.max(0, d.total - (d.capitalPaid || 0));
+  const monthsLeft = Math.max(1, (d.months || 0) - paidSoFar);
+  const newQuota   = frenchQuota(capitalRem, newTin, monthsLeft);
+  const newIntRem  = Math.max(0, newQuota * monthsLeft - capitalRem);
+
+  d.tin           = newTin;
+  d.quota         = newQuota;
+  d.totalInterest = (d.interestPaid || 0) + newIntRem;
+
+  if (!d.rateHistory) d.rateHistory = [];
+  d.rateHistory.push({
+    fromQuota: paidSoFar + 1,
+    tin: newTin,
+    quota: newQuota,
+    label: autoLabel
+  });
+
+  saveState();
+  closeModal('modalUpdateMortgageRate');
+  renderDebts('mario');
+  renderDebts('miri');
+  openDebtDetail(detailDebtPerson, detailDebtId);
+  showToast(`Tipo ${autoLabel.toLowerCase()} aplicado ✓ · Nueva cuota: €${fmt(newQuota)}`, 'success');
+}
+
+
+// ===================== EDIT DEBT =====================
+
+function openEditDebt() {
+  const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
+  if (!d) return;
+
+  const isMortgage = d.type === 'mortgage';
+
+  document.getElementById('editDebtTitle').textContent = `Editar ${isMortgage ? 'hipoteca' : 'deuda'}`;
+  document.getElementById('editDebtName').value    = d.name || '';
+  document.getElementById('editDebtTotal').value   = d.total || '';
+  document.getElementById('editDebtTIN').value     = d.tin != null ? d.tin : '';
+  document.getElementById('editDebtTAE').value     = d.tae != null ? d.tae : '';
+  document.getElementById('editDebtMonths').value  = d.months || '';
+  document.getElementById('editDebtMonths').readOnly = isMortgage;
+  document.getElementById('editDebtQuota').value   = d.quota || '';
+  document.getElementById('editDebtPaidQuotas').value = d.paidQuotas || 0;
+  document.getElementById('editDebtNotes').value   = d.notes || '';
+
+  const monthsLabel = document.getElementById('editDebtMonthsLabel');
+  monthsLabel.textContent = isMortgage ? 'Nº cuotas (auto)' : 'Nº cuotas (meses)';
+
+  const tinLabel = document.getElementById('editDebtTINLabel');
+  tinLabel.textContent = isMortgage ? 'TIN fijo inicial (%)' : 'TIN (%)';
+
+  // Show/hide mortgage fields
+  const mortEl = document.getElementById('editMortgageFields');
+  mortEl.style.display = isMortgage ? 'block' : 'none';
+  if (isMortgage) {
+    document.getElementById('editMortgageYears').value      = d.totalYears || '';
+    document.getElementById('editMortgageFixedYears').value = d.fixedYears != null ? d.fixedYears : '';
+  }
+
+  closeModal('modalDebtDetail');
+  document.getElementById('modalEditDebt').classList.add('open');
+}
+
+function closeEditDebtOutside(e) {
+  if (e && e.target !== document.getElementById('modalEditDebt')) return;
+  closeModal('modalEditDebt');
+  if (detailDebtPerson && detailDebtId) openDebtDetail(detailDebtPerson, detailDebtId);
+}
+
+function onEditMortgageYearsChange() {
+  const years = parseInt(document.getElementById('editMortgageYears').value) || 0;
+  if (years > 0) document.getElementById('editDebtMonths').value = years * 12;
+  else document.getElementById('editDebtMonths').value = '';
+}
+
+function saveEditDebt() {
+  const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
+  if (!d) return;
+
+  const name       = document.getElementById('editDebtName').value.trim();
+  const total      = parseFloat(document.getElementById('editDebtTotal').value)      || 0;
+  const tin        = parseFloat(document.getElementById('editDebtTIN').value)        || null;
+  const tae        = parseFloat(document.getElementById('editDebtTAE').value)        || null;
+  const months     = parseInt(document.getElementById('editDebtMonths').value)       || null;
+  const quota      = parseFloat(document.getElementById('editDebtQuota').value)      || 0;
+  const paidQuotas = parseInt(document.getElementById('editDebtPaidQuotas').value)   || 0;
+  const notes      = document.getElementById('editDebtNotes').value.trim();
+
+  if (!name)     { showToast('Escribe el nombre', 'error'); return; }
+  if (total <= 0){ showToast('Introduce el capital', 'error'); return; }
+  if (months && paidQuotas > months) { showToast('Las cuotas pagadas no pueden superar el total', 'error'); return; }
+
+  const isMortgage = d.type === 'mortgage';
+  if (isMortgage) {
+    const totalYears = parseInt(document.getElementById('editMortgageYears').value) || null;
+    const fixedYears = parseInt(document.getElementById('editMortgageFixedYears').value) ?? 0;
+    if (!totalYears) { showToast('Introduce el plazo en años', 'error'); return; }
+    d.totalYears = totalYears;
+    d.fixedYears = fixedYears;
+    if (d.rateHistory && d.rateHistory.length > 0 && tin != null) {
+      d.rateHistory[0].tin   = tin;
+      d.rateHistory[0].quota = frenchQuota(total, tin, months || totalYears * 12);
+    }
+  }
+
+  // Recalculate total interest with updated values
+  let totalInterest = null;
+  if (tin && months) {
+    if (isMortgage) {
+      const rows = buildMortgageAmortTable({ ...d, total, tin, months, quota: quota || frenchQuota(total, tin, months) });
+      totalInterest = rows.reduce((s, r) => s + r.interest, 0);
+    } else {
+      const table = buildAmortTable(total, tin, months);
+      totalInterest = table.reduce((s, r) => s + r.interest, 0);
+    }
+  }
+
+  // Recalculate paid amounts from scratch:
+  // initial paidQuotas (from amort table) + registered payments
+  let capitalPaid  = 0;
+  let interestPaid = 0;
+
+  if (tin && months && paidQuotas > 0) {
+    const tbl = buildAmortTable(total, tin, months);
+    const n   = Math.min(paidQuotas, tbl.length);
+    for (let i = 0; i < n; i++) {
+      capitalPaid  += tbl[i].capital;
+      interestPaid += tbl[i].interest;
+    }
+  } else if (!tin && paidQuotas > 0 && quota > 0) {
+    capitalPaid = paidQuotas * quota;
+  }
+
+  // Add registered payments on top
+  if (d.payments && d.payments.length > 0) {
+    d.payments.forEach(p => {
+      capitalPaid  += p.capitalPortion  || 0;
+      interestPaid += p.interestPortion || 0;
+    });
+  }
+
+  // Apply changes
+  d.name          = name;
+  d.total         = total;
+  d.tin           = tin;
+  d.tae           = tae;
+  d.months        = months;
+  d.quota         = quota || (tin && months ? frenchQuota(total, tin, months) : 0);
+  d.paidQuotas    = paidQuotas;
+  d.notes         = notes;
+  d.totalInterest = totalInterest;
+  d.capitalPaid   = capitalPaid;
+  d.interestPaid  = interestPaid;
+  d.paid          = capitalPaid;
+
+  saveState();
+  closeModal('modalEditDebt');
+  renderDebts('mario');
+  renderDebts('miri');
+  openDebtDetail(detailDebtPerson, detailDebtId);
+  showToast('Deuda actualizada ✓', 'success');
 }
 
 
@@ -6406,8 +6976,8 @@ function renderInvestments() {
   const returnPct    = totalCost > 0 ? (returnEur / totalCost) * 100 : 0;
   const returnColor  = returnEur >= 0 ? 'var(--income)' : 'var(--expense)';
 
-  document.getElementById('inv-total-invested').textContent  = fmtShort(totalCost);
-  document.getElementById('inv-total-current').textContent   = fmtShort(totalCurrent);
+  countUpShort(document.getElementById('inv-total-invested'), totalCost);
+  countUpShort(document.getElementById('inv-total-current'),  totalCurrent);
   document.getElementById('inv-total-return').textContent    = (returnEur >= 0 ? '+' : '') + returnPct.toFixed(2) + '%';
   document.getElementById('inv-total-return').style.color    = returnColor;
   document.getElementById('inv-total-positions').textContent = invs.length;
@@ -7281,7 +7851,7 @@ function exportExcel() {
   ['mario', 'miri'].forEach(p => {
     const label = p === 'mario' ? m : mi;
     (state.debts[p] || []).forEach(d => {
-      const typeLabel = { loan: 'Préstamo', financed: 'Financiado', other: 'Otro' }[d.type] || d.type;
+      const typeLabel = { loan: 'Préstamo', mortgage: 'Hipoteca', other: 'Otro' }[d.type] || d.type;
       debtRows.push([label, d.name, typeLabel, d.total, d.paid, d.total - d.paid, d.quota || 0, d.tin ?? '', d.tae ?? '']);
     });
   });
@@ -8192,6 +8762,42 @@ function initVisibility() {
   valuesVisible = false;
   document.body.classList.add('values-hidden');
   document.getElementById('visibilityIcon').textContent = '👁️‍🗨️';
+}
+
+// ===================== COUNT-UP ANIMATION =====================
+function countUp(el, targetVal, duration = 600) {
+  if (!el) return;
+  const start    = performance.now();
+  const startVal = 0;
+  const isNeg    = targetVal < 0;
+  const absTarget = Math.abs(targetVal);
+
+  function tick(now) {
+    const elapsed  = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease out cubic
+    const eased    = 1 - Math.pow(1 - progress, 3);
+    const current  = startVal + (absTarget - startVal) * eased;
+    el.textContent = (isNeg ? '-' : '') + fmt(current);
+    if (progress < 1) requestAnimationFrame(tick);
+    else el.textContent = (isNeg ? '-' : '') + fmt(targetVal);
+  }
+  requestAnimationFrame(tick);
+}
+
+function countUpShort(el, targetVal, duration = 500) {
+  if (!el) return;
+  const start = performance.now();
+  const absTarget = Math.abs(targetVal);
+  const prefix = targetVal < 0 ? '-€' : '€';
+  function tick(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased    = 1 - Math.pow(1 - progress, 3);
+    el.textContent = prefix + Math.round(absTarget * eased).toLocaleString('es-ES');
+    if (progress < 1) requestAnimationFrame(tick);
+    else el.textContent = prefix + Math.round(absTarget).toLocaleString('es-ES');
+  }
+  requestAnimationFrame(tick);
 }
 
 // ===================== MODALS =====================
