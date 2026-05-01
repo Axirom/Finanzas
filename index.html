@@ -1891,6 +1891,90 @@ body::before {
   border: 1px dashed var(--border);
 }
 
+/* ===================== SUBSCRIPTIONS ===================== */
+.sub-card {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius); padding: 14px 16px;
+  margin-bottom: 10px; cursor: pointer;
+  transition: transform 0.15s;
+  display: flex; align-items: center; gap: 14px;
+}
+.sub-card:active { transform: scale(0.98); }
+.sub-card.overdue { border-color: rgba(251,146,60,0.4); background: rgba(251,146,60,0.05); }
+.sub-card.common-card { border-color: rgba(167,139,250,0.25); }
+.sub-emoji {
+  font-size: 28px; width: 46px; height: 46px; border-radius: 14px;
+  background: rgba(255,255,255,0.06); display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0;
+}
+.sub-info { flex: 1; min-width: 0; }
+.sub-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub-desc { font-size: 11px; color: var(--muted); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.sub-cycle-badge {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+  padding: 2px 6px; border-radius: 5px;
+  background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.25);
+}
+.sub-date { font-size: 11px; color: var(--muted); }
+.sub-date.overdue { color: #fb923c; font-weight: 600; }
+.sub-amount { text-align: right; flex-shrink: 0; }
+.sub-amount-val { font-size: 17px; font-weight: 700; color: var(--expense); }
+.sub-amount-cycle { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.sub-common-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--common); flex-shrink: 0;
+}
+.sub-overdue-badge {
+  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 5px;
+  background: rgba(251,146,60,0.15); color: #fb923c; border: 1px solid rgba(251,146,60,0.3);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.sub-no-items {
+  text-align: center; padding: 32px 20px; color: var(--muted); font-size: 13px;
+  background: rgba(255,255,255,0.02); border-radius: var(--radius);
+  border: 1px dashed rgba(255,255,255,0.1);
+}
+.sub-total-bar {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius-sm); padding: 10px 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 14px; font-size: 12px;
+}
+.pending-sub-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--border2);
+}
+.pending-sub-item:last-child { border-bottom: none; }
+.btn-charge-sub {
+  background: rgba(16,217,160,0.1); border: 1px solid rgba(16,217,160,0.3);
+  border-radius: var(--radius-sm); padding: 7px 14px;
+  color: var(--income); font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; flex-shrink: 0;
+}
+.btn-charge-sub:active { transform: scale(0.96); }
+.btn-charge-all {
+  width: 100%; padding: 13px; border-radius: var(--radius-sm);
+  background: rgba(16,217,160,0.12); border: 1px solid rgba(16,217,160,0.3);
+  color: var(--income); font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px;
+  transition: all 0.15s;
+}
+.btn-charge-all:active { transform: scale(0.98); }
+.sub-history-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid var(--border2);
+}
+.sub-history-item:last-child { border-bottom: none; }
+.sub-detail-emoji {
+  font-size: 36px; width: 58px; height: 58px; border-radius: 18px;
+  background: rgba(255,255,255,0.06); display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; margin-bottom: 12px;
+}
+
 /* ===================== VISIBILITY TOGGLE ===================== */
 .visibility-btn {
   position: fixed;
@@ -2064,6 +2148,7 @@ body:not(.values-hidden) .account-rate-inline {
         <button class="sub-tab active" onclick="switchSubTab('mario', 'movimientos', this)">Movimientos</button>
         <button class="sub-tab" onclick="switchSubTab('mario', 'ahorro', this)">Ahorro</button>
         <button class="sub-tab" onclick="switchSubTab('mario', 'deudas', this)">Deudas</button>
+        <button class="sub-tab" onclick="switchSubTab('mario', 'suscripciones', this)">Suscripciones</button>
         <button class="sub-tab" onclick="switchSubTab('mario', 'graficas', this)">Gráficas</button>
       </div>
 
@@ -2096,6 +2181,17 @@ body:not(.values-hidden) .account-rate-inline {
           <button class="btn-add-small" onclick="openAddDebt('mario')">+ Añadir</button>
         </div>
         <div id="mario-debts-list"></div>
+      </div>
+      <div id="mario-sub-suscripciones" style="display:none">
+        <div class="accounts-header">
+          <div class="block-title">Suscripciones</div>
+          <button class="btn-add-small" onclick="openAddSubscription('mario')">+ Añadir</button>
+        </div>
+        <div id="mario-sub-total-bar" class="sub-total-bar" style="display:none">
+          <span style="color:var(--muted);">Gasto mensual estimado</span>
+          <span id="mario-sub-monthly" style="font-weight:700;color:var(--expense);"></span>
+        </div>
+        <div id="mario-subs-list"></div>
       </div>
       <div id="mario-sub-graficas" style="display:none">
         <div class="chart-card">
@@ -2183,6 +2279,7 @@ body:not(.values-hidden) .account-rate-inline {
         <button class="sub-tab active" onclick="switchSubTab('miri', 'movimientos', this)">Movimientos</button>
         <button class="sub-tab" onclick="switchSubTab('miri', 'ahorro', this)">Ahorro</button>
         <button class="sub-tab" onclick="switchSubTab('miri', 'deudas', this)">Deudas</button>
+        <button class="sub-tab" onclick="switchSubTab('miri', 'suscripciones', this)">Suscripciones</button>
         <button class="sub-tab" onclick="switchSubTab('miri', 'graficas', this)">Gráficas</button>
       </div>
 
@@ -2215,6 +2312,17 @@ body:not(.values-hidden) .account-rate-inline {
           <button class="btn-add-small" onclick="openAddDebt('miri')">+ Añadir</button>
         </div>
         <div id="miri-debts-list"></div>
+      </div>
+      <div id="miri-sub-suscripciones" style="display:none">
+        <div class="accounts-header">
+          <div class="block-title">Suscripciones</div>
+          <button class="btn-add-small" onclick="openAddSubscription('miri')">+ Añadir</button>
+        </div>
+        <div id="miri-sub-total-bar" class="sub-total-bar" style="display:none">
+          <span style="color:var(--muted);">Gasto mensual estimado</span>
+          <span id="miri-sub-monthly" style="font-weight:700;color:var(--expense);"></span>
+        </div>
+        <div id="miri-subs-list"></div>
       </div>
       <div id="miri-sub-graficas" style="display:none">
         <div class="chart-card">
@@ -3021,6 +3129,127 @@ body:not(.values-hidden) .account-rate-inline {
   </div>
 </div>
 
+<!-- ==================== MODAL: PENDING SUBSCRIPTIONS (unlock notification) ==================== -->
+<div class="modal-overlay" id="modalPendingSubs" onclick="closeModalOutside(event,'modalPendingSubs')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔔 Renovaciones pendientes</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Las siguientes suscripciones tienen fecha de renovación vencida.</div>
+    <div id="pending-subs-list"></div>
+    <button class="btn-charge-all" id="btn-charge-all" onclick="chargeAllPending()">✓ Cobrar todas</button>
+    <button class="btn-submit" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px;" onclick="closeModal('modalPendingSubs')">Recordar más tarde</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: ADD / EDIT SUBSCRIPTION ==================== -->
+<div class="modal-overlay" id="modalAddSubscription" onclick="closeModalOutside(event,'modalAddSubscription')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="addSubTitle">Nueva suscripción</div>
+
+    <div style="display:grid;grid-template-columns:56px 1fr;gap:10px;margin-bottom:14px;">
+      <div>
+        <label class="form-label">Emoji</label>
+        <input class="form-input" id="subEmoji" type="text" maxlength="2" placeholder="📱" style="text-align:center;font-size:22px;padding:8px;">
+      </div>
+      <div>
+        <label class="form-label">Nombre</label>
+        <input class="form-input" id="subName" type="text" placeholder="Ej. Netflix, Spotify…">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Descripción — opcional</label>
+      <input class="form-input" id="subDesc" type="text" placeholder="Ej. Plan familiar, 4 pantallas…">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Importe (€)</label>
+        <input class="form-input" id="subAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Ciclo</label>
+        <select class="form-select" id="subCycle">
+          <option value="monthly">Mensual</option>
+          <option value="quarterly">Trimestral</option>
+          <option value="biannual">Semestral</option>
+          <option value="annual">Anual</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:14px;">
+      <label class="form-label">Próxima renovación</label>
+      <input class="form-input" id="subNextDate" type="date">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Cuenta de cargo</label>
+      <select class="form-select" id="subAccount"></select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <div id="subCommonToggle" class="toggle-track" onclick="toggleSubCommon()" style="width:38px;height:22px;border-radius:11px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);position:relative;cursor:pointer;transition:background 0.2s;">
+          <div style="position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:all 0.2s;" id="subCommonThumb"></div>
+        </div>
+        <span>Suscripción compartida</span>
+      </label>
+    </div>
+
+    <button class="btn-submit" onclick="saveSubscription()">Guardar suscripción</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: SUBSCRIPTION DETAIL ==================== -->
+<div class="modal-overlay" id="modalSubDetail" onclick="closeModalOutside(event,'modalSubDetail')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+      <div id="subdetail-emoji" class="sub-detail-emoji"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+        <button class="calc-btn" onclick="openEditSubscription()" title="Editar">✏️</button>
+        <button class="btn-delete-debt" onclick="deleteSubFromDetail()">🗑</button>
+      </div>
+    </div>
+
+    <div class="modal-title" id="subdetail-name" style="margin-bottom:4px;"></div>
+    <div id="subdetail-desc" style="font-size:12px;color:var(--muted);margin-bottom:12px;"></div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="subdetail-badges"></div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Importe</div>
+          <div id="subdetail-amount" style="font-size:20px;font-weight:700;color:var(--expense);"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Próxima renovación</div>
+          <div id="subdetail-nextdate" style="font-size:14px;font-weight:600;"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Cuenta de cargo</div>
+          <div id="subdetail-account" style="font-size:13px;font-weight:500;"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Total pagado</div>
+          <div id="subdetail-total-paid" style="font-size:13px;font-weight:600;color:var(--income);"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="subdetail-overdue-banner" style="display:none;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.3);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px;font-size:12px;color:#fb923c;font-weight:500;"></div>
+
+    <button class="btn-charge-all" id="subdetail-charge-btn" onclick="chargeSubFromDetail()" style="margin-bottom:16px;">💳 Cobrar renovación</button>
+
+    <div class="block-title" style="margin-bottom:10px;">Historial de pagos</div>
+    <div id="subdetail-history"></div>
+  </div>
+</div>
+
 <!-- ==================== MODAL: ADD DEBT ==================== -->
 <div class="modal-overlay" id="modalAddDebt" onclick="closeModalOutside(event, 'modalAddDebt')">
   <div class="modal">
@@ -3072,8 +3301,12 @@ body:not(.values-hidden) .account-rate-inline {
           <input class="form-input" id="mortgageFixedYears" type="number" min="0" step="1" placeholder="5" inputmode="numeric">
         </div>
       </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0;">
+        <label class="form-label">Diferencial variable (%)</label>
+        <input class="form-input" id="mortgageSpread" type="number" min="0" step="0.001" placeholder="Ej. 0,75" inputmode="decimal">
+      </div>
       <div style="font-size:11px;color:var(--muted);margin-top:8px;padding:8px 10px;background:rgba(167,139,250,0.06);border-radius:8px;border:1px solid rgba(167,139,250,0.15);">
-        El TIN indicado es el tipo fijo inicial. Podrás actualizar el tipo variable desde el detalle de la hipoteca.
+        El TIN arriba es el tipo fijo inicial. Al pasar a variable, solo introduce el Euríbor y la app calcula el TIN sumando el diferencial automáticamente.
       </div>
     </div>
 
@@ -3178,9 +3411,23 @@ body:not(.values-hidden) .account-rate-inline {
     <!-- Current phase indicator -->
     <div id="umr-phase" style="margin-bottom:16px;"></div>
 
-    <div class="form-group">
-      <label class="form-label">Nuevo TIN (%)</label>
-      <input class="form-input" id="umr-tin" type="number" min="0" step="0.001" placeholder="0,000" inputmode="decimal" oninput="updateMortgageRatePreview()">
+    <div id="umr-euribor-group">
+      <div class="form-group">
+        <label class="form-label">Euríbor (%)</label>
+        <input class="form-input" id="umr-euribor" type="number" min="0" step="0.001" placeholder="0,000" inputmode="decimal" oninput="updateMortgageRatePreview()">
+      </div>
+      <div id="umr-tin-result" style="display:none;margin-top:-6px;margin-bottom:14px;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:var(--radius-sm);font-size:12px;color:var(--muted);">
+        TIN resultante: <strong id="umr-tin-val" style="color:var(--common);font-size:14px;"></strong>
+        <span id="umr-spread-formula" style="color:var(--muted2);"></span>
+      </div>
+    </div>
+
+    <!-- Fallback: if no spread defined, show direct TIN input -->
+    <div id="umr-direct-group" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Nuevo TIN (%)</label>
+        <input class="form-input" id="umr-tin" type="number" min="0" step="0.001" placeholder="0,000" inputmode="decimal" oninput="updateMortgageRatePreview()">
+      </div>
     </div>
 
     <div id="umr-preview" style="display:none;margin-top:4px;margin-bottom:14px;background:rgba(96,200,245,0.06);border:1px solid rgba(96,200,245,0.15);border-radius:var(--radius-sm);padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.9;"></div>
@@ -3290,6 +3537,10 @@ body:not(.values-hidden) .account-rate-inline {
           <label class="form-label">Años a tipo fijo</label>
           <input class="form-input" id="editMortgageFixedYears" type="number" min="0" step="1" inputmode="numeric">
         </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0;">
+        <label class="form-label">Diferencial variable (%)</label>
+        <input class="form-input" id="editMortgageSpread" type="number" min="0" step="0.001" placeholder="Ej. 0,75" inputmode="decimal">
       </div>
     </div>
 
@@ -3656,6 +3907,7 @@ function getDefaults() {
     transactions: [],
     debts: { mario: [], miri: [] },
     deposits: { mario: [], miri: [] },
+    subscriptions: { mario: [], miri: [] },
     snapshots: { mario: [], miri: [] },
     investments: [],
     goals: { mario: null, miri: null, global: null },
@@ -3685,6 +3937,9 @@ function migrateState(parsed) {
     if (!parsed[k].miri)  parsed[k].miri  = [];
   });
   if (!parsed.investments) parsed.investments = [];
+  if (!parsed.subscriptions) parsed.subscriptions = { mario: [], miri: [] };
+  if (!parsed.subscriptions.mario) parsed.subscriptions.mario = [];
+  if (!parsed.subscriptions.miri)  parsed.subscriptions.miri  = [];
   return parsed;
 }
 
@@ -3787,6 +4042,7 @@ function unlockApp() {
     applyNames();
     initVisibility();
     renderGlobalPatrimonyChart();
+    setTimeout(() => checkPendingSubscriptions(), 600);
   }, 400);
 }
 
@@ -3808,7 +4064,7 @@ function switchSection(section, tabEl, navId) {
 }
 
 function switchSubTab(person, tab, el) {
-  const tabs = ['movimientos','ahorro','deudas','graficas'];
+  const tabs = ['movimientos','ahorro','deudas','suscripciones','graficas'];
   tabs.forEach(t => {
     const el2 = document.getElementById(person + '-sub-' + t);
     if (el2) el2.style.display = t === tab ? 'block' : 'none';
@@ -3844,6 +4100,8 @@ function renderAll() {
   renderDebts('miri');
   renderDeposits('mario');
   renderDeposits('miri');
+  renderSubscriptions('mario');
+  renderSubscriptions('miri');
   renderGoals();
   renderInvestments();
   renderGlobal();
@@ -5004,7 +5262,481 @@ function closeConfirm() {
 }
 
 // ===================== DEBTS =====================
-let debtPerson = 'mario';
+// ===================== SUBSCRIPTIONS =====================
+
+// Map brand names to their domain (for Google favicon service)
+const SUBSCRIPTION_LOGOS = {
+  'netflix':        { domain: 'netflix.com',         color: '#E50914' },
+  'spotify':        { domain: 'spotify.com',          color: '#1ED760' },
+  'hbo':            { domain: 'hbomax.com',           color: '#9B59B6' },
+  'max':            { domain: 'max.com',              color: '#002BE7' },
+  'disney':         { domain: 'disneyplus.com',       color: '#113CCF' },
+  'disney+':        { domain: 'disneyplus.com',       color: '#113CCF' },
+  'amazon prime':   { domain: 'primevideo.com',       color: '#00A8E0' },
+  'prime video':    { domain: 'primevideo.com',       color: '#00A8E0' },
+  'prime':          { domain: 'primevideo.com',       color: '#00A8E0' },
+  'apple tv':       { domain: 'tv.apple.com',         color: '#555555' },
+  'apple tv+':      { domain: 'tv.apple.com',         color: '#555555' },
+  'apple music':    { domain: 'music.apple.com',      color: '#FA243C' },
+  'apple arcade':   { domain: 'apple.com',            color: '#555555' },
+  'icloud':         { domain: 'icloud.com',           color: '#3693F3' },
+  'apple one':      { domain: 'apple.com',            color: '#555555' },
+  'youtube':        { domain: 'youtube.com',          color: '#FF0000' },
+  'youtube premium':{ domain: 'youtube.com',          color: '#FF0000' },
+  'twitch':         { domain: 'twitch.tv',            color: '#9146FF' },
+  'hulu':           { domain: 'hulu.com',             color: '#1CE783' },
+  'crunchyroll':    { domain: 'crunchyroll.com',      color: '#F47521' },
+  'dazn':           { domain: 'dazn.com',             color: '#F8FF00' },
+  'playstation':    { domain: 'playstation.com',      color: '#003087' },
+  'ps plus':        { domain: 'playstation.com',      color: '#003087' },
+  'xbox':           { domain: 'xbox.com',             color: '#107C10' },
+  'xbox game pass': { domain: 'xbox.com',             color: '#107C10' },
+  'game pass':      { domain: 'xbox.com',             color: '#107C10' },
+  'nintendo':       { domain: 'nintendo.com',         color: '#E60012' },
+  'adobe':          { domain: 'adobe.com',            color: '#FF0000' },
+  'creative cloud': { domain: 'adobe.com',            color: '#FF0000' },
+  'microsoft 365':  { domain: 'microsoft.com',        color: '#D83B01' },
+  'office 365':     { domain: 'microsoft.com',        color: '#D83B01' },
+  'microsoft':      { domain: 'microsoft.com',        color: '#0078D4' },
+  'google one':     { domain: 'one.google.com',       color: '#4285F4' },
+  'dropbox':        { domain: 'dropbox.com',          color: '#0061FF' },
+  'github':         { domain: 'github.com',           color: '#333333' },
+  'notion':         { domain: 'notion.so',            color: '#333333' },
+  'slack':          { domain: 'slack.com',            color: '#4A154B' },
+  'figma':          { domain: 'figma.com',            color: '#F24E1E' },
+  'canva':          { domain: 'canva.com',            color: '#00C4CC' },
+  'duolingo':       { domain: 'duolingo.com',         color: '#58CC02' },
+  'chatgpt':        { domain: 'openai.com',           color: '#333333' },
+  'openai':         { domain: 'openai.com',           color: '#333333' },
+  'cursor':         { domain: 'cursor.com',           color: '#333333' },
+  'audible':        { domain: 'audible.com',          color: '#F8991C' },
+  'amazon':         { domain: 'amazon.com',           color: '#FF9900' },
+  'lastpass':       { domain: 'lastpass.com',         color: '#D32D27' },
+  '1password':      { domain: '1password.com',        color: '#0094F5' },
+  'nordvpn':        { domain: 'nordvpn.com',          color: '#4687FF' },
+  'todoist':        { domain: 'todoist.com',          color: '#DB4035' },
+  'strava':         { domain: 'strava.com',           color: '#FC4C02' },
+  'movistar':       { domain: 'movistar.es',          color: '#009900' },
+  'vodafone':       { domain: 'vodafone.es',          color: '#E60000' },
+  'orange':         { domain: 'orange.es',            color: '#FF7900' },
+};
+
+function getSubLogo(name) {
+  const key = (name || '').toLowerCase().trim();
+  if (SUBSCRIPTION_LOGOS[key]) return SUBSCRIPTION_LOGOS[key];
+  for (const [k, v] of Object.entries(SUBSCRIPTION_LOGOS)) {
+    if (key.includes(k) || k.includes(key)) return v;
+  }
+  return null;
+}
+
+function subLogoHTML(name, emoji, size = 28) {
+  const logo = getSubLogo(name);
+  const fallback = emoji || '📋';
+  if (!logo) return `<span style="font-size:${Math.round(size * 0.85)}px;line-height:1;">${fallback}</span>`;
+  const src = `https://www.google.com/s2/favicons?sz=64&domain_url=https://${logo.domain}`;
+  const id  = 'logo_' + Math.random().toString(36).slice(2);
+  return `<img id="${id}" src="${src}" width="${size}" height="${size}"
+    alt="${name}" style="object-fit:contain;border-radius:4px;"
+    onload="document.getElementById('${id}_fb').style.display='none';"
+    onerror="this.style.display='none';document.getElementById('${id}_fb').style.display='inline';">
+  <span id="${id}_fb" style="font-size:${Math.round(size * 0.85)}px;line-height:1;display:none;">${fallback}</span>`;
+}
+
+const CYCLE_LABELS  = { monthly: 'Mensual', quarterly: 'Trimestral', biannual: 'Semestral', annual: 'Anual' };
+const CYCLE_MONTHS  = { monthly: 1, quarterly: 3, biannual: 6, annual: 12 };
+const CYCLE_MONTHLY = { monthly: 1, quarterly: 1/3, biannual: 1/6, annual: 1/12 };
+
+function subNextDateAfter(dateStr, cycle) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setMonth(d.getMonth() + (CYCLE_MONTHS[cycle] || 1));
+  return d.toISOString().split('T')[0];
+}
+
+function isSubOverdue(sub) {
+  if (!sub.active) return false;
+  return sub.nextDate <= new Date().toISOString().split('T')[0];
+}
+
+function subMonthlyEquiv(amount, cycle) {
+  return amount * (CYCLE_MONTHLY[cycle] || 1);
+}
+
+let subPerson = 'mario';
+let subEditing = null;
+let subIsCommon = false;
+let detailSubPerson = null;
+let detailSubId = null;
+let pendingSubsQueue = [];
+
+function openAddSubscription(person) {
+  subPerson = person;
+  subEditing = null;
+  subIsCommon = false;
+
+  document.getElementById('addSubTitle').textContent = `Nueva suscripción — ${getName(person)}`;
+  document.getElementById('subEmoji').value    = '';
+  document.getElementById('subName').value     = '';
+  document.getElementById('subDesc').value     = '';
+  document.getElementById('subAmount').value   = '';
+  document.getElementById('subCycle').value    = 'monthly';
+  document.getElementById('subNextDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('subNextDate').value = (() => {
+    const d = new Date(); d.setMonth(d.getMonth() + 1);
+    return d.toISOString().split('T')[0];
+  })();
+
+  updateSubCommonToggle();
+  populateSubAccounts(person);
+  document.getElementById('modalAddSubscription').classList.add('open');
+}
+
+function populateSubAccounts(person) {
+  const all = [...(state.accounts[person] || [])];
+  state.accounts.common.forEach(c => all.push({ ...c, name: c.name + ' (Común)' }));
+  document.getElementById('subAccount').innerHTML = all.length
+    ? all.map(a => `<option value="${a.id}">${a.name} — €${fmt(a.balance)}</option>`).join('')
+    : '<option value="">Sin cuentas</option>';
+}
+
+function toggleSubCommon() {
+  subIsCommon = !subIsCommon;
+  updateSubCommonToggle();
+}
+
+function updateSubCommonToggle() {
+  const track = document.getElementById('subCommonToggle');
+  const thumb = document.getElementById('subCommonThumb');
+  if (!track || !thumb) return;
+  track.style.background  = subIsCommon ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.1)';
+  track.style.borderColor = subIsCommon ? 'rgba(167,139,250,0.8)' : 'rgba(255,255,255,0.15)';
+  thumb.style.left        = subIsCommon ? '19px' : '3px';
+  thumb.style.background  = subIsCommon ? 'var(--common)' : 'var(--muted)';
+}
+
+function saveSubscription() {
+  const emoji     = document.getElementById('subEmoji').value.trim()   || '📋';
+  const name      = document.getElementById('subName').value.trim();
+  const desc      = document.getElementById('subDesc').value.trim();
+  const amount    = parseFloat(document.getElementById('subAmount').value) || 0;
+  const cycle     = document.getElementById('subCycle').value;
+  const nextDate  = document.getElementById('subNextDate').value;
+  const accountId = document.getElementById('subAccount').value;
+
+  if (!name)          { showToast('Escribe el nombre', 'error'); return; }
+  if (amount <= 0)    { showToast('Introduce el importe', 'error'); return; }
+  if (!nextDate)      { showToast('Indica la próxima renovación', 'error'); return; }
+  if (!accountId)     { showToast('Selecciona una cuenta', 'error'); return; }
+
+  if (!state.subscriptions) state.subscriptions = { mario: [], miri: [] };
+
+  if (subEditing) {
+    // Edit mode
+    const sub = (state.subscriptions[subPerson] || []).find(s => s.id === subEditing);
+    if (sub) {
+      sub.emoji = emoji; sub.name = name; sub.desc = desc;
+      sub.amount = amount; sub.cycle = cycle; sub.nextDate = nextDate;
+      sub.accountId = accountId; sub.isCommon = subIsCommon;
+    }
+    showToast('Suscripción actualizada ✓', 'success');
+  } else {
+    state.subscriptions[subPerson].push({
+      id: Date.now().toString(),
+      emoji, name, desc, amount, cycle, nextDate,
+      accountId, isCommon: subIsCommon,
+      active: true, payments: [],
+      createdAt: new Date().toISOString().split('T')[0]
+    });
+    showToast('Suscripción añadida ✓', 'success');
+  }
+
+  saveState();
+  closeModal('modalAddSubscription');
+  renderSubscriptions('mario');
+  renderSubscriptions('miri');
+  if (subEditing && detailSubId) openSubDetail(detailSubPerson, detailSubId);
+}
+
+function renderSubscriptions(person) {
+  const el = document.getElementById(person + '-subs-list');
+  if (!el) return;
+  if (!state.subscriptions) state.subscriptions = { mario: [], miri: [] };
+
+  // Show own + common subs
+  const own    = (state.subscriptions[person] || []);
+  const other  = person === 'mario' ? 'miri' : 'mario';
+  const shared = (state.subscriptions[other] || []).filter(s => s.isCommon);
+  const all    = [...own, ...shared.map(s => ({ ...s, _fromOther: true }))];
+
+  // Monthly cost bar
+  const totalBar = document.getElementById(person + '-sub-total-bar');
+  const totalEl  = document.getElementById(person + '-sub-monthly');
+  if (all.length > 0 && totalBar && totalEl) {
+    const monthly = all.reduce((s, sub) => s + subMonthlyEquiv(sub.amount, sub.cycle), 0);
+    totalEl.textContent = '€' + fmt(monthly) + '/mes';
+    totalBar.style.display = 'flex';
+  } else if (totalBar) {
+    totalBar.style.display = 'none';
+  }
+
+  if (all.length === 0) {
+    el.innerHTML = `<div class="sub-no-items">Sin suscripciones registradas.<br>Pulsa "+ Añadir" para crear una.</div>`;
+    return;
+  }
+
+  // Sort: overdue first, then by nextDate
+  const today = new Date().toISOString().split('T')[0];
+  all.sort((a, b) => {
+    const ao = a.nextDate <= today, bo = b.nextDate <= today;
+    if (ao !== bo) return ao ? -1 : 1;
+    return a.nextDate.localeCompare(b.nextDate);
+  });
+
+  el.innerHTML = all.map(sub => {
+    const overdue   = isSubOverdue(sub);
+    const fromOther = sub._fromOther;
+    const dateObj   = new Date(sub.nextDate + 'T12:00:00');
+    const dateStr   = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+    const clickPerson = fromOther ? other : person;
+
+    return `<div class="sub-card${overdue ? ' overdue' : ''}${sub.isCommon ? ' common-card' : ''}" onclick="openSubDetail('${clickPerson}','${sub.id}')">
+      <div class="sub-emoji">${subLogoHTML(sub.name, sub.emoji, 26)}</div>
+      <div class="sub-info">
+        <div class="sub-name">${sub.name}</div>
+        ${sub.desc ? `<div class="sub-desc">${sub.desc}</div>` : ''}
+        <div class="sub-meta">
+          <span class="sub-cycle-badge">${CYCLE_LABELS[sub.cycle] || sub.cycle}</span>
+          ${sub.isCommon ? `<span class="sub-cycle-badge" style="background:rgba(167,139,250,0.15);color:var(--common);border-color:rgba(167,139,250,0.3);">Común</span>` : ''}
+          ${overdue
+            ? `<span class="sub-overdue-badge">Vencida</span>`
+            : `<span class="sub-date">Renueva ${dateStr}</span>`}
+        </div>
+      </div>
+      <div class="sub-amount">
+        <div class="sub-amount-val">€${fmt(sub.amount)}</div>
+        <div class="sub-amount-cycle">${CYCLE_LABELS[sub.cycle]?.toLowerCase() || ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openSubDetail(person, subId) {
+  detailSubPerson = person;
+  detailSubId     = subId;
+  const sub = (state.subscriptions[person] || []).find(s => s.id === subId);
+  if (!sub) return;
+
+  const today   = new Date().toISOString().split('T')[0];
+  const overdue = isSubOverdue(sub);
+  const dateObj = new Date(sub.nextDate + 'T12:00:00');
+  const dateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  const totalPaid = (sub.payments || []).reduce((s, p) => s + p.amount, 0);
+
+  document.getElementById('subdetail-emoji').innerHTML = subLogoHTML(sub.name, sub.emoji, 34);
+  document.getElementById('subdetail-name').textContent   = sub.name;
+  document.getElementById('subdetail-desc').textContent   = sub.desc || '';
+  document.getElementById('subdetail-desc').style.display = sub.desc ? 'block' : 'none';
+  document.getElementById('subdetail-amount').textContent = '€' + fmt(sub.amount);
+  document.getElementById('subdetail-account').textContent = getAccountName(sub.accountId);
+  document.getElementById('subdetail-total-paid').textContent = '€' + fmt(totalPaid);
+
+  const nextEl = document.getElementById('subdetail-nextdate');
+  nextEl.textContent = dateStr;
+  nextEl.style.color = overdue ? '#fb923c' : 'var(--text)';
+
+  // Badges
+  document.getElementById('subdetail-badges').innerHTML = `
+    <span class="sub-cycle-badge" style="font-size:10px;">${CYCLE_LABELS[sub.cycle] || sub.cycle}</span>
+    ${sub.isCommon ? `<span class="sub-cycle-badge" style="background:rgba(167,139,250,0.15);color:var(--common);border-color:rgba(167,139,250,0.3);font-size:10px;">Común</span>` : ''}
+    ${overdue ? `<span class="sub-overdue-badge">Renovación vencida</span>` : ''}`;
+
+  // Overdue banner
+  const banner = document.getElementById('subdetail-overdue-banner');
+  if (overdue) {
+    const days = Math.round((new Date(today) - new Date(sub.nextDate + 'T12:00:00')) / 86400000);
+    banner.textContent = `⚠️ La renovación venció hace ${days} día${days !== 1 ? 's' : ''}. Pulsa "Cobrar renovación" para registrar el pago y avanzar la fecha.`;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
+
+  // Charge button
+  const chargeBtn = document.getElementById('subdetail-charge-btn');
+  chargeBtn.textContent = overdue ? `💳 Cobrar renovación vencida · €${fmt(sub.amount)}` : `💳 Cobrar renovación anticipada · €${fmt(sub.amount)}`;
+
+  renderSubHistory(sub);
+  document.getElementById('modalSubDetail').classList.add('open');
+}
+
+function renderSubHistory(sub) {
+  const el = document.getElementById('subdetail-history');
+  const payments = [...(sub.payments || [])].sort((a, b) => b.date.localeCompare(a.date));
+  if (payments.length === 0) {
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">Sin pagos registrados aún</div>`;
+    return;
+  }
+  el.innerHTML = payments.map(p => {
+    const d = new Date(p.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `<div class="sub-history-item">
+      <div style="width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${subLogoHTML(sub.name, sub.emoji, 18)}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;">${getAccountName(p.accountId)}</div>
+        <div style="font-size:11px;color:var(--muted);">${d}</div>
+      </div>
+      <div style="font-weight:600;color:var(--expense);">-€${fmt(p.amount)}</div>
+    </div>`;
+  }).join('');
+}
+
+function chargeSubFromDetail() {
+  chargeSub(detailSubPerson, detailSubId);
+  openSubDetail(detailSubPerson, detailSubId);
+}
+
+function chargeSub(person, subId) {
+  const sub = (state.subscriptions[person] || []).find(s => s.id === subId);
+  if (!sub) return;
+
+  // Deduct from account
+  const acc = findAccountById(sub.accountId);
+  if (acc) acc.balance -= sub.amount;
+
+  // Register transaction
+  state.transactions.push({
+    id: Date.now().toString(),
+    person,
+    type: 'expense',
+    accountId: sub.accountId,
+    category: 'Suscripción',
+    desc: `Suscripción: ${sub.name}`,
+    amount: sub.amount,
+    date: new Date().toISOString().split('T')[0]
+  });
+
+  // Record payment and advance next date
+  if (!sub.payments) sub.payments = [];
+  sub.payments.push({
+    id: Date.now().toString(),
+    amount: sub.amount,
+    accountId: sub.accountId,
+    date: new Date().toISOString().split('T')[0]
+  });
+  sub.nextDate = subNextDateAfter(sub.nextDate, sub.cycle);
+
+  saveState();
+  renderAll();
+  showToast(`${sub.name} cobrado ✓ · Próxima: ${new Date(sub.nextDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`, 'success');
+}
+
+function openEditSubscription() {
+  const sub = (state.subscriptions[detailSubPerson] || []).find(s => s.id === detailSubId);
+  if (!sub) return;
+
+  subPerson  = detailSubPerson;
+  subEditing = detailSubId;
+  subIsCommon = !!sub.isCommon;
+
+  document.getElementById('addSubTitle').textContent = 'Editar suscripción';
+  document.getElementById('subEmoji').value    = sub.emoji || '';
+  document.getElementById('subName').value     = sub.name;
+  document.getElementById('subDesc').value     = sub.desc || '';
+  document.getElementById('subAmount').value   = sub.amount;
+  document.getElementById('subCycle').value    = sub.cycle;
+  document.getElementById('subNextDate').value = sub.nextDate;
+
+  updateSubCommonToggle();
+  populateSubAccounts(subPerson);
+  // Select current account
+  setTimeout(() => { document.getElementById('subAccount').value = sub.accountId; }, 50);
+
+  closeModal('modalSubDetail');
+  document.getElementById('modalAddSubscription').classList.add('open');
+}
+
+function deleteSubFromDetail() {
+  const sub = (state.subscriptions[detailSubPerson] || []).find(s => s.id === detailSubId);
+  if (!sub) return;
+  showConfirm(
+    `¿Eliminar "${sub.name}"?`,
+    'Se eliminará la suscripción. Los pagos registrados en las cuentas no se revertirán.',
+    () => {
+      state.subscriptions[detailSubPerson] = state.subscriptions[detailSubPerson].filter(s => s.id !== detailSubId);
+      saveState();
+      closeModal('modalSubDetail');
+      renderSubscriptions('mario');
+      renderSubscriptions('miri');
+      showToast('Suscripción eliminada', '');
+    }
+  );
+}
+
+// ---- Pending subscriptions on unlock ----
+
+function checkPendingSubscriptions() {
+  if (!state.subscriptions) return;
+  const today = new Date().toISOString().split('T')[0];
+  pendingSubsQueue = [];
+
+  ['mario', 'miri'].forEach(person => {
+    (state.subscriptions[person] || []).forEach(sub => {
+      if (sub.active && sub.nextDate <= today) {
+        pendingSubsQueue.push({ person, sub });
+      }
+    });
+  });
+
+  // Deduplicate common subs (appear in both persons)
+  const seen = new Set();
+  pendingSubsQueue = pendingSubsQueue.filter(({ sub }) => {
+    if (seen.has(sub.id)) return false;
+    seen.add(sub.id); return true;
+  });
+
+  if (pendingSubsQueue.length === 0) return;
+
+  renderPendingSubsList();
+  document.getElementById('modalPendingSubs').classList.add('open');
+}
+
+function renderPendingSubsList() {
+  const el = document.getElementById('pending-subs-list');
+  el.innerHTML = pendingSubsQueue.map(({ person, sub }) => {
+    const days = Math.round((new Date(new Date().toISOString().split('T')[0]) - new Date(sub.nextDate + 'T12:00:00')) / 86400000);
+    const daysStr = days === 0 ? 'hoy' : `hace ${days} día${days !== 1 ? 's' : ''}`;
+    return `<div class="pending-sub-item">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${subLogoHTML(sub.name, sub.emoji, 22)}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;">${sub.name}</div>
+        <div style="font-size:11px;color:var(--muted);">${getAccountName(sub.accountId)} · Venció ${daysStr}</div>
+        ${sub.isCommon ? `<div style="font-size:10px;color:var(--common);font-weight:600;">Común</div>` : ''}
+      </div>
+      <div style="text-align:right;margin-right:8px;">
+        <div style="font-size:14px;font-weight:700;color:var(--expense);">€${fmt(sub.amount)}</div>
+        <div style="font-size:10px;color:var(--muted);">${CYCLE_LABELS[sub.cycle] || ''}</div>
+      </div>
+      <button class="btn-charge-sub" onclick="chargePendingOne('${person}','${sub.id}')">✓</button>
+    </div>`;
+  }).join('');
+}
+
+function chargePendingOne(person, subId) {
+  chargeSub(person, subId);
+  pendingSubsQueue = pendingSubsQueue.filter(p => p.sub.id !== subId);
+  if (pendingSubsQueue.length === 0) {
+    closeModal('modalPendingSubs');
+    return;
+  }
+  renderPendingSubsList();
+}
+
+function chargeAllPending() {
+  [...pendingSubsQueue].forEach(({ person, sub }) => chargeSub(person, sub.id));
+  pendingSubsQueue = [];
+  closeModal('modalPendingSubs');
+}
+
+
+// ===================== DEBTS =====================
 let debtType = 'loan';
 let payingDebtId = null;
 let payingDebtPerson = null;
@@ -5025,6 +5757,7 @@ function openAddDebt(person) {
   document.getElementById('debtNotes').value      = '';
   document.getElementById('mortgageYears').value  = '';
   document.getElementById('mortgageFixedYears').value = '';
+  document.getElementById('mortgageSpread').value = '';
   document.getElementById('mortgageFields').style.display = 'none';
   const monthsLabel = document.getElementById('debtMonthsLabel');
   if (monthsLabel) monthsLabel.textContent = 'Nº cuotas (meses)';
@@ -5188,12 +5921,14 @@ function saveDebt() {
   if (!state.debts) state.debts = { mario: [], miri: [] };
 
   // Mortgage-specific
-  let fixedYears = null;
-  let totalYears = null;
+  let fixedYears  = null;
+  let totalYears  = null;
   let rateHistory = null;
+  let spread      = 0;
   if (debtType === 'mortgage') {
     totalYears = parseInt(document.getElementById('mortgageYears').value) || null;
     fixedYears = parseInt(document.getElementById('mortgageFixedYears').value) || 0;
+    spread     = parseFloat(document.getElementById('mortgageSpread').value) || 0;
     if (!totalYears) { showToast('Introduce el plazo en años', 'error'); return; }
     if (!tin) { showToast('Introduce el TIN fijo inicial', 'error'); return; }
     // Build initial rateHistory with the fixed rate
@@ -5236,6 +5971,7 @@ function saveDebt() {
   if (debtType === 'mortgage') {
     debtObj.totalYears  = totalYears;
     debtObj.fixedYears  = fixedYears;
+    debtObj.spread      = spread;
     debtObj.rateHistory = rateHistory;
   }
 
@@ -5803,20 +6539,28 @@ function openUpdateMortgageRate() {
   const paidSoFar   = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
   const fixedMonths = (d.fixedYears || 0) * 12;
   const isFixed     = paidSoFar < fixedMonths;
+  const hasSpread   = d.spread != null && d.spread > 0;
 
   document.getElementById('umr-debt-name').textContent = d.name;
-  document.getElementById('umr-tin').value = '';
-  document.getElementById('umr-preview').style.display = 'none';
+  document.getElementById('umr-euribor').value = '';
+  document.getElementById('umr-tin').value     = '';
+  document.getElementById('umr-preview').style.display    = 'none';
+  document.getElementById('umr-tin-result').style.display = 'none';
 
-  // Show current phase
+  // Show Euribor input if spread is defined, else show direct TIN input
+  document.getElementById('umr-euribor-group').style.display = hasSpread ? 'block' : 'none';
+  document.getElementById('umr-direct-group').style.display  = hasSpread ? 'none'  : 'block';
+
+  // Current phase indicator
   const phaseEl = document.getElementById('umr-phase');
+  const spreadStr = hasSpread ? ` · Diferencial: +${d.spread}%` : '';
   if (isFixed) {
     const remaining = fixedMonths - paidSoFar;
     phaseEl.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(247,217,120,0.07);border:1px solid rgba(247,217,120,0.2);border-radius:var(--radius-sm);">
         <div>
           <div style="font-size:11px;font-weight:600;color:var(--global);">🔒 Fase fija actualmente</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Quedan ${remaining} cuota${remaining !== 1 ? 's' : ''} a tipo fijo</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Quedan ${remaining} cuota${remaining !== 1 ? 's' : ''} a tipo fijo${spreadStr}</div>
         </div>
         <div style="font-size:12px;font-weight:700;color:var(--global);">TIN ${d.tin}%</div>
       </div>`;
@@ -5825,7 +6569,7 @@ function openUpdateMortgageRate() {
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:var(--radius-sm);">
         <div>
           <div style="font-size:11px;font-weight:600;color:var(--common);">📊 Fase variable actualmente</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Tipo en vigor desde cuota ${fixedMonths + 1}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Tipo en vigor desde cuota ${fixedMonths + 1}${spreadStr}</div>
         </div>
         <div style="font-size:12px;font-weight:700;color:var(--common);">TIN ${d.tin}%</div>
       </div>`;
@@ -5843,25 +6587,38 @@ function closeMortgageRateModal(e) {
 
 function updateMortgageRatePreview() {
   const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
-  const newTin    = parseFloat(document.getElementById('umr-tin').value);
   const previewEl = document.getElementById('umr-preview');
-  if (!d || isNaN(newTin) || newTin < 0) { previewEl.style.display = 'none'; return; }
+  if (!d) { previewEl.style.display = 'none'; return; }
 
-  const paidSoFar   = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
+  const hasSpread = d.spread != null && d.spread > 0;
+  let newTin;
+
+  if (hasSpread) {
+    const euribor = parseFloat(document.getElementById('umr-euribor').value);
+    if (isNaN(euribor) || euribor < 0) { previewEl.style.display = 'none'; document.getElementById('umr-tin-result').style.display = 'none'; return; }
+    newTin = Math.round((euribor + d.spread) * 1000) / 1000;
+    document.getElementById('umr-tin-val').textContent = newTin + '%';
+    document.getElementById('umr-spread-formula').textContent = ` (${euribor}% + ${d.spread}%)`;
+    document.getElementById('umr-tin-result').style.display = 'block';
+  } else {
+    newTin = parseFloat(document.getElementById('umr-tin').value);
+    if (isNaN(newTin) || newTin < 0) { previewEl.style.display = 'none'; return; }
+  }
+
+  const paidSoFar  = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
   const fixedMonths = (d.fixedYears || 0) * 12;
   const willBeFixed = paidSoFar < fixedMonths;
   const capitalRem  = Math.max(0, d.total - (d.capitalPaid || 0));
   const monthsLeft  = Math.max(1, (d.months || 0) - paidSoFar);
   const newQuota    = frenchQuota(capitalRem, newTin, monthsLeft);
   const newIntRem   = Math.max(0, newQuota * monthsLeft - capitalRem);
-  const oldQuota    = d.quota || 0;
-  const diff        = newQuota - oldQuota;
+  const diff        = newQuota - (d.quota || 0);
   const diffStr     = (diff >= 0 ? '+' : '') + '€' + fmt(Math.abs(diff));
   const diffColor   = diff > 0 ? 'var(--expense)' : 'var(--income)';
-  const newPhaseLabel = willBeFixed ? '🔒 Fijo' : '📊 Variable';
+  const phaseLabel  = willBeFixed ? '🔒 Fijo' : '📊 Variable';
 
   previewEl.innerHTML = `
-    Se registrará como: <strong style="color:${willBeFixed ? 'var(--global)' : 'var(--common)'};">${newPhaseLabel}</strong><br>
+    Se registrará como: <strong style="color:${willBeFixed ? 'var(--global)' : 'var(--common)'};">${phaseLabel}</strong><br>
     Capital pendiente: <strong style="color:#60c8f5">€${fmt(capitalRem)}</strong><br>
     Cuotas restantes: <strong style="color:var(--text)">${monthsLeft}</strong><br>
     Nueva cuota: <strong style="color:var(--text)">€${fmt(newQuota)}</strong>
@@ -5874,8 +6631,17 @@ function saveUpdateMortgageRate() {
   const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
   if (!d) return;
 
-  const newTin = parseFloat(document.getElementById('umr-tin').value);
-  if (isNaN(newTin) || newTin < 0) { showToast('Introduce un TIN válido', 'error'); return; }
+  const hasSpread = d.spread != null && d.spread > 0;
+  let newTin;
+
+  if (hasSpread) {
+    const euribor = parseFloat(document.getElementById('umr-euribor').value);
+    if (isNaN(euribor) || euribor < 0) { showToast('Introduce el Euríbor', 'error'); return; }
+    newTin = Math.round((euribor + d.spread) * 1000) / 1000;
+  } else {
+    newTin = parseFloat(document.getElementById('umr-tin').value);
+    if (isNaN(newTin) || newTin < 0) { showToast('Introduce un TIN válido', 'error'); return; }
+  }
 
   const paidSoFar   = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
   const fixedMonths = (d.fixedYears || 0) * 12;
@@ -5892,19 +6658,14 @@ function saveUpdateMortgageRate() {
   d.totalInterest = (d.interestPaid || 0) + newIntRem;
 
   if (!d.rateHistory) d.rateHistory = [];
-  d.rateHistory.push({
-    fromQuota: paidSoFar + 1,
-    tin: newTin,
-    quota: newQuota,
-    label: autoLabel
-  });
+  d.rateHistory.push({ fromQuota: paidSoFar + 1, tin: newTin, quota: newQuota, label: autoLabel });
 
   saveState();
   closeModal('modalUpdateMortgageRate');
   renderDebts('mario');
   renderDebts('miri');
   openDebtDetail(detailDebtPerson, detailDebtId);
-  showToast(`Tipo ${autoLabel.toLowerCase()} aplicado ✓ · Nueva cuota: €${fmt(newQuota)}`, 'success');
+  showToast(`Tipo ${autoLabel.toLowerCase()} aplicado ✓ · TIN ${newTin}% · Cuota €${fmt(newQuota)}`, 'success');
 }
 
 
@@ -5939,6 +6700,7 @@ function openEditDebt() {
   if (isMortgage) {
     document.getElementById('editMortgageYears').value      = d.totalYears || '';
     document.getElementById('editMortgageFixedYears').value = d.fixedYears != null ? d.fixedYears : '';
+    document.getElementById('editMortgageSpread').value     = d.spread != null ? d.spread : '';
   }
 
   closeModal('modalDebtDetail');
@@ -5978,9 +6740,11 @@ function saveEditDebt() {
   if (isMortgage) {
     const totalYears = parseInt(document.getElementById('editMortgageYears').value) || null;
     const fixedYears = parseInt(document.getElementById('editMortgageFixedYears').value) ?? 0;
+    const spread     = parseFloat(document.getElementById('editMortgageSpread').value) || 0;
     if (!totalYears) { showToast('Introduce el plazo en años', 'error'); return; }
     d.totalYears = totalYears;
     d.fixedYears = fixedYears;
+    d.spread     = spread;
     if (d.rateHistory && d.rateHistory.length > 0 && tin != null) {
       d.rateHistory[0].tin   = tin;
       d.rateHistory[0].quota = frenchQuota(total, tin, months || totalYears * 12);
