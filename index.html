@@ -4498,34 +4498,61 @@ function mkSvgLogo(bg, label, fg) {
 }
 
 const BANKS = [
-  { id: 'none',          name: 'Otro',          logo: null },
-  { id: 'ing',           name: 'ING',            logo: mkSvgLogo('#FF6200','ING') },
-  { id: 'bbva',          name: 'BBVA',           logo: mkSvgLogo('#004481','BBVA','#89d0f5') },
-  { id: 'bankinter',     name: 'Bankinter',      logo: mkSvgLogo('#E5001E','BK') },
-  { id: 'santander',     name: 'Santander',      logo: mkSvgLogo('#EC0000','SAN') },
-  { id: 'traderepublic', name: 'Trade Rep.',     logo: mkSvgLogo('#1E1E1E','TR') },
-  { id: 'myinvestor',    name: 'MyInvestor',     logo: mkSvgLogo('#6C2DC7','MI') },
-  { id: 'caixabank',     name: 'CaixaBank',      logo: mkSvgLogo('#007BC4','CB') },
-  { id: 'sabadell',      name: 'Sabadell',       logo: mkSvgLogo('#0066CC','SAB') },
-  { id: 'unicaja',       name: 'Unicaja',        logo: mkSvgLogo('#00703C','UNI') },
-  { id: 'openbank',      name: 'Openbank',       logo: mkSvgLogo('#DF1131','OB') },
-  { id: 'revolut',       name: 'Revolut',        logo: mkSvgLogo('#191C1F','REV') },
+  { id: 'none',          name: 'Otro',          domain: null },
+  { id: 'ing',           name: 'ING',            domain: 'ing.es',             color: '#FF6200' },
+  { id: 'bbva',          name: 'BBVA',           domain: 'bbva.es',            color: '#004481' },
+  { id: 'bankinter',     name: 'Bankinter',      domain: 'bankinter.com',      color: '#E5001E' },
+  { id: 'santander',     name: 'Santander',      domain: 'santander.com',      color: '#EC0000' },
+  { id: 'traderepublic', name: 'Trade Rep.',     domain: 'traderepublic.com',  color: '#1E1E1E' },
+  { id: 'myinvestor',    name: 'MyInvestor',     domain: 'myinvestor.es',      color: '#6C2DC7' },
+  { id: 'caixabank',     name: 'CaixaBank',      domain: 'caixabank.es',       color: '#007BC4' },
+  { id: 'sabadell',      name: 'Sabadell',       domain: 'bancsabadell.com',   color: '#0066CC' },
+  { id: 'unicaja',       name: 'Unicaja',        domain: 'unicajabanco.es',    color: '#00703C' },
+  { id: 'openbank',      name: 'Openbank',       domain: 'openbank.es',        color: '#DF1131' },
+  { id: 'revolut',       name: 'Revolut',        domain: 'revolut.com',        color: '#191C1F' },
+  { id: 'n26',           name: 'N26',            domain: 'n26.com',            color: '#26282B' },
+  { id: 'wise',          name: 'Wise',           domain: 'wise.com',           color: '#00B9FF' },
+  { id: 'ibercaja',      name: 'Ibercaja',       domain: 'ibercaja.es',        color: '#E2001A' },
+  { id: 'kutxabank',     name: 'Kutxabank',      domain: 'kutxabank.es',       color: '#E20016' },
+  { id: 'abanca',        name: 'Abanca',         domain: 'abanca.com',         color: '#00AEEF' },
+  { id: 'cajamar',       name: 'Cajamar',        domain: 'cajamar.es',         color: '#006633' },
+  { id: 'coinbase',      name: 'Coinbase',       domain: 'coinbase.com',       color: '#1652F0' },
+  { id: 'degiro',        name: 'DEGIRO',         domain: 'degiro.es',          color: '#1D6A96' },
 ];
+
+function getBankFaviconUrl(domain) {
+  return `https://www.google.com/s2/favicons?sz=64&domain_url=https://${domain}`;
+}
+
+function getBankLogoHtml(bankId, isCommon) {
+  if (!bankId || bankId === 'none') return null;
+  const bank = BANKS.find(b => b.id === bankId);
+  if (!bank || !bank.domain) return null;
+  const size = isCommon ? 32 : 36;
+  const uid  = 'bk_' + bankId + '_' + Math.random().toString(36).slice(2,6);
+  return `<img id="${uid}" class="account-bank-logo" src="${getBankFaviconUrl(bank.domain)}"
+    alt="${bank.name}" style="width:${size}px;height:${size}px;background:rgba(255,255,255,0.92);padding:4px;border-radius:10px;object-fit:contain;"
+    onload="document.getElementById('${uid}').style.display='block';"
+    onerror="this.style.display='none';">`;
+}
 
 let selectedBankId = 'none';
 let detailBankId   = 'none';
 
 function renderBankSelector(containerId, currentBankId, callbackName) {
-  var el = document.getElementById(containerId);
+  const el = document.getElementById(containerId);
   if (!el) return;
-  var html = '';
-  for (var i = 0; i < BANKS.length; i++) {
-    var b = BANKS[i];
-    var sel = b.id === currentBankId ? ' selected' : '';
-    var imgHtml = b.logo
-      ? '<img src="' + b.logo + '" style="width:32px;height:32px;border-radius:8px;" alt="' + b.name + '">'
-      : '<div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:16px;">🏦</div>';
-    html += '<div class="bank-option' + sel + '" onclick="' + callbackName + '(&quot;' + b.id + '&quot;)">' + imgHtml + '<span>' + b.name + '</span></div>';
+  let html = '';
+  for (const b of BANKS) {
+    const sel = b.id === currentBankId ? ' selected' : '';
+    const imgHtml = b.domain
+      ? `<img src="${getBankFaviconUrl(b.domain)}" style="width:32px;height:32px;border-radius:8px;object-fit:contain;background:rgba(255,255,255,0.92);padding:3px;" alt="${b.name}"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+         <div style="display:none;width:32px;height:32px;border-radius:8px;background:${b.color || 'rgba(255,255,255,0.1)'};align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">
+           ${b.name.slice(0,2).toUpperCase()}
+         </div>`
+      : `<div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:16px;">🏦</div>`;
+    html += `<div class="bank-option${sel}" onclick="${callbackName}(&quot;${b.id}&quot;)">${imgHtml}<span>${b.name}</span></div>`;
   }
   el.innerHTML = html;
 }
@@ -4538,14 +4565,6 @@ function selectBank(bankId) {
 function selectDetailBank(bankId) {
   detailBankId = bankId;
   renderBankSelector('detailBankSelector', bankId, 'selectDetailBank');
-}
-
-function getBankLogoHtml(bankId) {
-  if (!bankId || bankId === 'none') return null;
-  var bank = null;
-  for (var i = 0; i < BANKS.length; i++) { if (BANKS[i].id === bankId) { bank = BANKS[i]; break; } }
-  if (!bank || !bank.logo) return null;
-  return '<img class="account-bank-logo" src="' + bank.logo + '" alt="' + bank.name + '">';
 }
 
 // ===================== METALLIC GRADIENT =====================
