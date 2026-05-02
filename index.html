@@ -1580,6 +1580,8 @@ body::before {
 .position-type-badge.index  { background: rgba(126,184,247,0.15); color: var(--mario); }
 .position-type-badge.active { background: rgba(168,247,200,0.15); color: var(--invest); }
 .position-type-badge.crypto { background: rgba(247,217,120,0.15); color: var(--global); }
+.position-type-badge.etf    { background: rgba(196,168,247,0.15); color: #c4a8f7; }
+.position-type-badge.stock  { background: rgba(247,168,168,0.15); color: #f7a8a8; }
 .position-values {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1611,9 +1613,12 @@ body::before {
   font-size: 10px; font-weight: 600; padding: 2px 7px;
   border-radius: 5px; flex-shrink: 0; text-transform: uppercase;
 }
-.inv-history-type.buy    { background: rgba(111,207,151,0.12); color: var(--income); }
-.inv-history-type.sell   { background: rgba(235,87,87,0.12); color: var(--expense); }
-.inv-history-type.update { background: rgba(247,217,120,0.12); color: var(--global); }
+.inv-history-type.buy          { background: rgba(111,207,151,0.12); color: var(--income); }
+.inv-history-type.sell         { background: rgba(235,87,87,0.12);   color: var(--expense); }
+.inv-history-type.update       { background: rgba(247,217,120,0.12); color: var(--global); }
+.inv-history-type.dividend     { background: rgba(249,217,120,0.18); color: var(--global); }
+.inv-history-type.transfer_out { background: rgba(167,139,250,0.15); color: #a78bfa; }
+.inv-history-type.transfer_in  { background: rgba(167,139,250,0.15); color: #a78bfa; }
 .inv-history-info { flex: 1; }
 .inv-history-amount { font-weight: 600; white-space: nowrap; }
 
@@ -2349,7 +2354,11 @@ body:not(.values-hidden) .account-rate-inline {
       <div class="section-header">
         <div class="section-title-row">
           <div class="section-name invest">Inversión</div>
-          <button class="calc-btn" onclick="openCompoundCalc()" title="Calculadora de interés compuesto">🧮</button>
+          <div style="display:flex;gap:8px;">
+            <button class="calc-btn" onclick="openGoalSimulator()" title="Simulador ¿cuándo llego a X?">🎯</button>
+            <button class="calc-btn" onclick="openFiscalSettings()" title="Parámetros fiscales">⚙️</button>
+            <button class="calc-btn" onclick="openCompoundCalc()" title="Calculadora de interés compuesto">🧮</button>
+          </div>
         </div>
       </div>
 
@@ -2386,7 +2395,7 @@ body:not(.values-hidden) .account-rate-inline {
       <!-- Period return summary -->
       <div id="inv-period-summary" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;display:none;">
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;" id="inv-period-label"></div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
           <div>
             <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Valor inicio</div>
             <div id="inv-period-start-val" style="font-size:15px;font-weight:600;color:var(--text);"></div>
@@ -2396,12 +2405,25 @@ body:not(.values-hidden) .account-rate-inline {
             <div id="inv-period-end-val" style="font-size:15px;font-weight:600;color:var(--text);"></div>
           </div>
           <div>
-            <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Rentabilidad periodo</div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">MWR (rentabilidad simple)</div>
             <div id="inv-period-return" style="font-size:15px;font-weight:600;"></div>
           </div>
           <div>
             <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Ganancia / Pérdida</div>
             <div id="inv-period-diff" style="font-size:15px;font-weight:600;"></div>
+          </div>
+        </div>
+        <!-- TWR row -->
+        <div id="inv-twr-row" style="display:none;padding-top:10px;border-top:1px solid var(--border);">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <div>
+              <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">
+                TWR — Rentabilidad ponderada por tiempo
+                <span style="margin-left:4px;cursor:pointer;color:var(--mario);" onclick="showTwrInfo()" title="¿Qué es el TWR?">ⓘ</span>
+              </div>
+              <div id="inv-twr-val" style="font-size:18px;font-weight:700;"></div>
+            </div>
+            <div id="inv-twr-subperiods" style="font-size:10px;color:var(--muted);text-align:right;line-height:1.6;"></div>
           </div>
         </div>
       </div>
@@ -2450,6 +2472,13 @@ body:not(.values-hidden) .account-rate-inline {
         <button class="btn-add-small" onclick="openAddPosition()">+ Añadir</button>
       </div>
       <div id="inv-positions-list"></div>
+
+      <!-- Aportaciones periódicas -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px;margin:20px 0 10px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text);">📅 Aportaciones periódicas</div>
+        <button class="btn-add-small" onclick="openAddContribution()">+ Nueva</button>
+      </div>
+      <div id="inv-contributions-list"></div>
 
     </div>
 
@@ -2683,6 +2712,96 @@ body:not(.values-hidden) .account-rate-inline {
 </div>
 
 <!-- ==================== MODAL: COMPOUND CALCULATOR ==================== -->
+<!-- ==================== MODAL: GOAL SIMULATOR ==================== -->
+<div class="modal-overlay" id="modalGoalSimulator" onclick="closeModalOutside(event,'modalGoalSimulator')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+      <div class="modal-title" style="margin-bottom:0;flex:1;">🎯 ¿Cuándo llego a mi objetivo?</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Capital actual (€)</label>
+        <input class="form-input" id="sim-current" type="number" min="0" step="any" inputmode="decimal" oninput="runSimulator()">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Objetivo (€)</label>
+        <input class="form-input" id="sim-target" type="number" min="0" step="any" inputmode="decimal" oninput="runSimulator()">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Aportación mensual (€)</label>
+        <input class="form-input" id="sim-monthly" type="number" min="0" step="any" placeholder="0" inputmode="decimal" oninput="runSimulator()">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Rentabilidad anual esperada (%)</label>
+        <input class="form-input" id="sim-rate" type="number" min="0" step="0.1" placeholder="7" inputmode="decimal" oninput="runSimulator()">
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;">MSCI World hist. ≈ 7-10% real · Renta fija ≈ 3-4%</div>
+      </div>
+    </div>
+
+    <!-- Scenario presets -->
+    <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
+      <button class="inv-period-btn" onclick="simPreset(4)"  style="font-size:10px;padding:4px 8px;">Conservador 4%</button>
+      <button class="inv-period-btn" onclick="simPreset(7)"  style="font-size:10px;padding:4px 8px;">Moderado 7%</button>
+      <button class="inv-period-btn" onclick="simPreset(10)" style="font-size:10px;padding:4px 8px;">Optimista 10%</button>
+    </div>
+
+    <div id="sim-placeholder" style="text-align:center;padding:32px 20px;color:var(--muted);font-size:13px;line-height:1.6;">
+      Rellena los campos para ver la proyección.
+    </div>
+
+    <div id="sim-result" style="display:none;margin-top:16px;">
+      <!-- Main result -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;text-align:center;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Alcanzarás tu objetivo en</div>
+        <div id="sim-time-result" style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:500;color:var(--invest);letter-spacing:-1px;"></div>
+        <div id="sim-date-result" style="font-size:13px;color:var(--muted);margin-top:4px;"></div>
+      </div>
+
+      <!-- Breakdown stats -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">Total aportado</div>
+          <div id="sim-total-contributed" style="font-size:14px;font-weight:700;color:var(--text);"></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">Generado por mercado</div>
+          <div id="sim-total-gains" style="font-size:14px;font-weight:700;color:var(--income);"></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">Multiplicador</div>
+          <div id="sim-multiplier" style="font-size:14px;font-weight:700;color:var(--global);"></div>
+        </div>
+      </div>
+
+      <!-- Milestones -->
+      <div id="sim-milestones" style="margin-bottom:12px;"></div>
+
+      <!-- Chart -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Proyección del capital</div>
+        <div style="height:180px;"><canvas id="sim-chart"></canvas></div>
+        <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);">
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(99,102,241,0.6);flex-shrink:0;"></div>Aportado
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);">
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(52,211,153,0.7);flex-shrink:0;"></div>Rendimiento
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);">
+            <div style="width:10px;height:10px;border-radius:2px;background:rgba(249,217,120,0.8);flex-shrink:0;"></div>Objetivo
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL: COMPOUND CALC ==================== -->
 <div class="modal-overlay" id="modalCompoundCalc" onclick="closeModalOutside(event, 'modalCompoundCalc')">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -2760,9 +2879,13 @@ body:not(.values-hidden) .account-rate-inline {
 
     <div class="form-group" id="inv-type-group">
       <label class="form-label">Tipo de activo</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
         <button class="op-type-btn active-income" id="invtype-index" onclick="selectInvType('index')" style="font-size:11px;padding:10px 4px;">📊 Fondo<br>indexado</button>
         <button class="op-type-btn" id="invtype-active" onclick="selectInvType('active')" style="font-size:11px;padding:10px 4px;">🏦 Gestión<br>activa</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <button class="op-type-btn" id="invtype-etf" onclick="selectInvType('etf')" style="font-size:11px;padding:10px 4px;">📈 ETF</button>
+        <button class="op-type-btn" id="invtype-stock" onclick="selectInvType('stock')" style="font-size:11px;padding:10px 4px;">🏢 Acción</button>
         <button class="op-type-btn" id="invtype-crypto" onclick="selectInvType('crypto')" style="font-size:11px;padding:10px 4px;">₿ Cripto</button>
       </div>
     </div>
@@ -2820,6 +2943,27 @@ body:not(.values-hidden) .account-rate-inline {
       <input class="form-input" id="inv-notes" type="text" placeholder="Observaciones…">
     </div>
 
+    <div class="form-group">
+      <label class="form-label">ISIN — opcional</label>
+      <input class="form-input" id="inv-isin" type="text" placeholder="Ej. IE00B4L5Y983" maxlength="12" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+    </div>
+
+    <!-- Fund-specific fields: only for index, active, etf -->
+    <div id="inv-fund-fields" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Política de dividendos</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="op-type-btn active-income" id="invdist-acc" onclick="selectInvDist('acc')" style="font-size:11px;padding:10px 4px;">♻️ Acumulación</button>
+          <button class="op-type-btn" id="invdist-dist" onclick="selectInvDist('dist')" style="font-size:11px;padding:10px 4px;">💰 Distribución</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">TER / Costes anuales (%)</label>
+        <input class="form-input" id="inv-ter" type="number" min="0" step="0.01" placeholder="Ej. 0,20" inputmode="decimal">
+        <div style="font-size:11px;color:var(--muted);margin-top:5px;">Ratio de gastos totales del fondo o ETF</div>
+      </div>
+    </div>
+
     <button class="btn-submit" onclick="savePosition()">Guardar</button>
   </div>
 </div>
@@ -2832,12 +2976,17 @@ body:not(.values-hidden) .account-rate-inline {
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;">
       <div style="flex:1;">
         <div class="modal-title" id="pd-name" style="margin-bottom:2px;"></div>
-        <div id="pd-type-badge" style="display:inline-block;margin-bottom:8px;"></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <div id="pd-type-badge" style="display:inline-block;"></div>
+          <div id="pd-isin-badge" style="display:none;font-size:11px;font-family:monospace;padding:2px 8px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--muted);cursor:pointer;" onclick="copyIsin()" title="Tap para copiar"></div>
+        </div>
       </div>
       <button class="detail-menu-btn" onclick="toggleInvMenu()">···</button>
       <div class="detail-menu-dropdown" id="invMenuDropdown">
         <button class="detail-menu-item" onclick="openExpandPosition()">➕ Ampliar posición</button>
         <button class="detail-menu-item" onclick="openSellPosition()">💸 Venta parcial</button>
+        <button class="detail-menu-item" id="pd-transfer-btn" onclick="openTransfer()" style="display:none;">🔄 Traspasar fondo</button>
+        <button class="detail-menu-item" id="pd-dividend-btn" onclick="openDividend()">💰 Registrar dividendo</button>
         <button class="detail-menu-item" onclick="openUpdatePrice()">🔄 Actualizar precio</button>
         <button class="detail-menu-item danger" onclick="deletePosition()">🗑 Eliminar</button>
       </div>
@@ -2864,10 +3013,43 @@ body:not(.values-hidden) .account-rate-inline {
     </div>
 
     <!-- Return -->
-    <div id="pd-return-card" style="border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;text-align:center;">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Rentabilidad</div>
+    <div id="pd-return-card" style="border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;text-align:center;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Rentabilidad bruta</div>
       <div style="font-size:24px;font-weight:700;font-family:'Playfair Display',serif;" id="pd-return-pct"></div>
       <div style="font-size:14px;font-weight:500;margin-top:2px;" id="pd-return-eur"></div>
+    </div>
+
+    <!-- Real & net return (inflation + taxes) -->
+    <div id="pd-real-return-card" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;">Real (−inflación)</div>
+          <div id="pd-real-pct" style="font-size:16px;font-weight:700;"></div>
+          <div id="pd-real-eur" style="font-size:11px;color:var(--muted);margin-top:1px;"></div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;">Neta (−IRPF)</div>
+          <div id="pd-net-pct" style="font-size:16px;font-weight:700;"></div>
+          <div id="pd-net-eur" style="font-size:11px;color:var(--muted);margin-top:1px;"></div>
+        </div>
+      </div>
+      <div id="pd-dividends-total" style="display:none;text-align:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+        <span style="font-size:11px;color:var(--muted);">Dividendos cobrados: </span>
+        <span id="pd-dividends-val" style="font-size:12px;font-weight:600;color:var(--income);"></span>
+      </div>
+      <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:6px;" id="pd-fiscal-params"></div>
+    </div>
+
+    <!-- Fund info: accumulation/distribution + TER (only for funds/ETF) -->
+    <div id="pd-fund-info" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="pd-dist-badge" style="font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;"></span>
+        </div>
+        <div id="pd-ter-wrap" style="font-size:12px;color:var(--muted);display:none;">
+          TER: <span id="pd-ter-val" style="color:var(--expense);font-weight:600;"></span>
+        </div>
+      </div>
     </div>
 
     <!-- Price evolution chart -->
@@ -2882,7 +3064,211 @@ body:not(.values-hidden) .account-rate-inline {
   </div>
 </div>
 
-<!-- ==================== MODAL: EDIT INVESTMENT MOVEMENT ==================== -->
+<!-- ==================== MODAL: DIVIDEND ==================== -->
+<div class="modal-overlay" id="modalDividend" onclick="closeModalOutside(event,'modalDividend')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💰 Registrar dividendo</div>
+    <div id="div-name" style="font-size:13px;color:var(--muted);margin-bottom:16px;"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Importe bruto (€)</label>
+        <input class="form-input" id="div-amount" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal" oninput="updateDivNet()">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Retención IRPF (%)</label>
+        <input class="form-input" id="div-withholding" type="number" min="0" max="100" step="0.1" placeholder="19" inputmode="decimal" oninput="updateDivNet()">
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:10px 0 4px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Importe neto a cobrar</div>
+      <div id="div-net-calc" style="font-size:22px;font-weight:600;font-family:'Playfair Display',serif;color:var(--income);">€0,00</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Cuenta destino</label>
+      <select class="form-select" id="div-account"></select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Fecha de cobro</label>
+      <input class="form-input" id="div-date" type="date">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notas — opcional</label>
+      <input class="form-input" id="div-notes" type="text" placeholder="Ej. Dividendo Q1 2025…">
+    </div>
+
+    <button class="btn-submit" onclick="saveDividend()">Registrar dividendo</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: ADD/EDIT CONTRIBUTION ==================== -->
+<div class="modal-overlay" id="modalContribution" onclick="closeModalOutside(event,'modalContribution')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="contrib-modal-title">Nueva aportación periódica</div>
+
+    <div class="form-group">
+      <label class="form-label">Fondo / activo</label>
+      <select class="form-select" id="contrib-fund"></select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Importe (€)</label>
+        <input class="form-input" id="contrib-amount" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Frecuencia</label>
+        <select class="form-select" id="contrib-cycle">
+          <option value="monthly">Mensual</option>
+          <option value="bimonthly">Bimensual</option>
+          <option value="quarterly">Trimestral</option>
+          <option value="biannual">Semestral</option>
+          <option value="annual">Anual</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Próxima aportación</label>
+      <input class="form-input" id="contrib-next-date" type="date">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Cuenta de cargo</label>
+      <select class="form-select" id="contrib-account"></select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notas — opcional</label>
+      <input class="form-input" id="contrib-notes" type="text" placeholder="Ej. Aportación mensual MSCI World…">
+    </div>
+
+    <button class="btn-submit" onclick="saveContribution()">Guardar</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: PENDING CONTRIBUTIONS ==================== -->
+<div class="modal-overlay" id="modalPendingContributions">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📅 Aportaciones pendientes</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Las siguientes aportaciones programadas están vencidas. Puedes ejecutarlas ahora o posponer.</div>
+    <div id="pending-contrib-list"></div>
+    <button class="btn-submit" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);margin-top:8px;" onclick="closeModal('modalPendingContributions')">Posponer todas</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: FUND TRANSFER ==================== -->
+<div class="modal-overlay" id="modalTransfer" onclick="closeModalOutside(event,'modalTransfer')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔄 Traspaso de fondo</div>
+    <div id="tr-origin-name" style="font-size:13px;color:var(--muted);margin-bottom:4px;"></div>
+    <div style="font-size:11px;color:var(--invest);background:rgba(111,207,151,0.08);border:1px solid rgba(111,207,151,0.2);border-radius:8px;padding:8px 12px;margin-bottom:16px;line-height:1.5;">
+      ♻️ El traspaso entre fondos no tributa. El coste fiscal de los lotes originales se hereda en el fondo destino.
+    </div>
+
+    <!-- Origin NAV + units to transfer -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">NAV origen (€/participación)</label>
+        <input class="form-input" id="tr-nav-origin" type="number" min="0" step="any" placeholder="0,0000" inputmode="decimal" oninput="updateTransferCalc()">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label" id="tr-units-label">Participaciones a traspasar</label>
+        <input class="form-input" id="tr-units" type="number" min="0" step="any" placeholder="Todas" inputmode="decimal" oninput="updateTransferCalc()">
+      </div>
+    </div>
+
+    <!-- Transfer value summary -->
+    <div id="tr-value-summary" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin:12px 0;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Participaciones</div>
+          <div id="tr-calc-units" style="font-size:14px;font-weight:600;color:var(--text);"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Valor a traspasar</div>
+          <div id="tr-calc-value" style="font-size:14px;font-weight:600;color:var(--global);"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Coste fiscal</div>
+          <div id="tr-calc-cost" style="font-size:14px;font-weight:600;color:var(--mario);"></div>
+        </div>
+      </div>
+      <div id="tr-lots-preview" style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.7;"></div>
+    </div>
+
+    <!-- Destination: existing fund or new -->
+    <div class="form-group">
+      <label class="form-label">Fondo destino</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <button class="op-type-btn active-income" id="tr-dest-existing-btn" onclick="selectTransferDest('existing')" style="font-size:11px;padding:10px 4px;">📂 Fondo existente</button>
+        <button class="op-type-btn" id="tr-dest-new-btn" onclick="selectTransferDest('new')" style="font-size:11px;padding:10px 4px;">✨ Fondo nuevo</button>
+      </div>
+      <div id="tr-dest-existing-wrap">
+        <select class="form-select" id="tr-dest-fund"></select>
+      </div>
+      <div id="tr-dest-new-wrap" style="display:none;">
+        <input class="form-input" id="tr-dest-new-name" type="text" placeholder="Nombre del fondo destino…">
+      </div>
+    </div>
+
+    <!-- Destination NAV -->
+    <div class="form-group">
+      <label class="form-label">NAV destino (€/participación)</label>
+      <input class="form-input" id="tr-nav-dest" type="number" min="0" step="any" placeholder="0,0000" inputmode="decimal" oninput="updateTransferCalc()">
+      <div style="font-size:11px;color:var(--muted);margin-top:5px;">Se usa para calcular las nuevas participaciones que recibes</div>
+    </div>
+
+    <!-- New units preview -->
+    <div id="tr-dest-units-preview" style="display:none;text-align:center;padding:8px 0 4px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Participaciones que recibirás</div>
+      <div id="tr-dest-units-val" style="font-size:20px;font-weight:700;color:var(--invest);"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Fecha del traspaso</label>
+      <input class="form-input" id="tr-date" type="date">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notas — opcional</label>
+      <input class="form-input" id="tr-notes" type="text" placeholder="Ej. Traspaso a fondo global…">
+    </div>
+
+    <button class="btn-submit" onclick="saveTransfer()">Confirmar traspaso</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: FISCAL SETTINGS ==================== -->
+<div class="modal-overlay" id="modalFiscalSettings" onclick="closeModalOutside(event,'modalFiscalSettings')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ Parámetros fiscales</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5;">Estos valores se usan para calcular la rentabilidad real (tras inflación) y la rentabilidad neta (tras impuestos) de tus inversiones.</div>
+
+    <div class="form-group">
+      <label class="form-label">Inflación anual estimada (%)</label>
+      <input class="form-input" id="fs-inflation" type="number" min="0" step="0.1" placeholder="2.0" inputmode="decimal">
+      <div style="font-size:11px;color:var(--muted);margin-top:5px;">Media histórica zona euro ≈ 2%. IPC actual España ≈ 2-3%</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Tipo IRPF sobre plusvalías (%)</label>
+      <input class="form-input" id="fs-irpf" type="number" min="0" max="30" step="0.5" placeholder="19" inputmode="decimal">
+      <div style="font-size:11px;color:var(--muted);margin-top:5px;">España 2024: 19% (≤€6k) · 21% (€6k–€50k) · 23% (€50k–€200k) · 28% (>€300k)</div>
+    </div>
+
+    <button class="btn-submit" onclick="saveFiscalSettings()">Guardar</button>
+  </div>
+</div>
 <div class="modal-overlay" id="modalEditInvMove" onclick="closeModalOutside(event, 'modalEditInvMove')">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -2985,9 +3371,30 @@ body:not(.values-hidden) .account-rate-inline {
       <select class="form-select" id="sell-dest-account"></select>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Ganancia / Pérdida (€) — introduce tú</label>
-      <input class="form-input" id="sell-pl" type="number" step="any" placeholder="Positivo = ganancia, negativo = pérdida" inputmode="decimal">
+    <!-- FIFO fiscal result (auto-calculated) -->
+    <div id="sell-fifo-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;display:none;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Resultado fiscal (FIFO)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Coste fiscal (FIFO)</div>
+          <div id="sell-fifo-cost" style="font-size:14px;font-weight:600;color:var(--text);"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Ganancia / Pérdida</div>
+          <div id="sell-fifo-pl" style="font-size:14px;font-weight:700;"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">IRPF estimado</div>
+          <div id="sell-fifo-tax" style="font-size:13px;font-weight:600;color:var(--expense);"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Neto tras impuestos</div>
+          <div id="sell-fifo-net" style="font-size:13px;font-weight:600;color:var(--income);"></div>
+        </div>
+      </div>
+      <div id="sell-fifo-lots" style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.6;"></div>
     </div>
 
     <div class="form-group">
@@ -3943,7 +4350,10 @@ function getDefaults() {
     investments: [],
     goals: { mario: null, miri: null, global: null },
     categories: { income: [...DEFAULT_CATEGORIES.income], expense: [...DEFAULT_CATEGORIES.expense] },
-    activeProfiles: { mario: true, miri: true }
+    activeProfiles: { mario: true, miri: true },
+    names: { mario: 'Mario', miri: 'Miri' },
+    investSettings: { inflation: 2.0, irpf: 19 },
+    contributions: []
   };
 }
 
@@ -3953,7 +4363,9 @@ function migrateState(parsed) {
   if (parsed.accounts && parsed.accounts.common && !Array.isArray(parsed.accounts.common)) {
     parsed.accounts.common = [parsed.accounts.common];
   }
-  if (!parsed.names) parsed.names = defaults.names;
+  if (!parsed.names) parsed.names = { mario: 'Mario', miri: 'Miri' };
+  if (!parsed.names.mario) parsed.names.mario = 'Mario';
+  if (!parsed.names.miri)  parsed.names.miri  = 'Miri';
   if (!parsed.goals) parsed.goals = defaults.goals;
   if (!Array.isArray(parsed.accounts.common)) parsed.accounts.common = [];
   if (!parsed.categories) parsed.categories = defaults.categories;
@@ -3969,6 +4381,26 @@ function migrateState(parsed) {
     if (!parsed[k].miri)  parsed[k].miri  = [];
   });
   if (!parsed.investments) parsed.investments = [];
+  if (!parsed.investSettings) parsed.investSettings = { inflation: 2.0, irpf: 19 };
+  if (!parsed.contributions)  parsed.contributions  = [];
+  // Ensure each investment has a lots array (FIFO migration)
+  const FUND_TYPES_LOCAL = new Set(['index', 'active', 'etf']);
+  (parsed.investments || []).forEach(inv => {
+    if (!inv.lots) {
+      inv.lots = (inv.movements || [])
+        .filter(m => m.type === 'buy')
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .map(m => ({ id: m.id, units: m.units, price: m.price, commission: m.commission || 0, date: m.date }));
+      let unitsToRemove = (inv.movements || []).filter(m => m.type === 'sell').reduce((s, m) => s + m.units, 0);
+      for (const lot of inv.lots) {
+        if (unitsToRemove <= 0) break;
+        const consumed = Math.min(lot.units, unitsToRemove);
+        lot.units -= consumed;
+        unitsToRemove -= consumed;
+      }
+      inv.lots = inv.lots.filter(l => l.units > 0);
+    }
+  });
   if (!parsed.subscriptions) parsed.subscriptions = { mario: [], miri: [] };
   if (!parsed.subscriptions.mario) parsed.subscriptions.mario = [];
   if (!parsed.subscriptions.miri)  parsed.subscriptions.miri  = [];
@@ -4077,6 +4509,7 @@ function unlockApp() {
     initVisibility();
     renderGlobalPatrimonyChart();
     setTimeout(() => checkPendingSubscriptions(), 600);
+    setTimeout(() => checkPendingContributions(), 1200);
   }, 400);
 }
 
@@ -7411,8 +7844,9 @@ let pdChartInstance   = null;
 let invPortfolioChart = null;
 let invBarChart       = null;
 
-const INV_TYPE_LABELS = { index: 'Fondo indexado', active: 'Gestión activa', crypto: 'Cripto' };
-const INV_UNITS_LABEL = { index: 'Participaciones', active: 'Participaciones', crypto: 'Unidades' };
+const INV_TYPE_LABELS = { index: 'Fondo indexado', active: 'Gestión activa', etf: 'ETF', stock: 'Acción', crypto: 'Cripto' };
+const INV_UNITS_LABEL = { index: 'Participaciones', active: 'Participaciones', etf: 'Participaciones', stock: 'Acciones', crypto: 'Unidades' };
+const INV_FUND_TYPES  = new Set(['index', 'active', 'etf']);
 
 function ensureInvestments() {
   if (!state.investments) state.investments = [];
@@ -7474,11 +7908,15 @@ function openAddPosition() {
   document.getElementById('inv-units').value = '';
   document.getElementById('inv-price').value = '';
   document.getElementById('inv-notes').value = '';
+  document.getElementById('inv-isin').value  = '';
   document.getElementById('inv-commission').value = '';
   document.getElementById('inv-total-with-comm').style.display = 'none';
   document.getElementById('inv-date').value  = new Date().toISOString().split('T')[0];
   document.getElementById('inv-total-calc').textContent = '€0,00';
   selectInvType('index');
+  invDistType = 'acc';
+  selectInvDist('acc');
+  document.getElementById('inv-ter').value = '';
   populateInvAccounts('inv-source-account');
   resetInvNoDeduct();
   document.getElementById('modalAddPosition').classList.add('open');
@@ -7505,12 +7943,22 @@ function openExpandPosition() {
   document.getElementById('modalAddPosition').classList.add('open');
 }
 
+let invDistType = 'acc';
+
 function selectInvType(type) {
   invType = type;
-  ['index','active','crypto'].forEach(t => {
+  ['index','active','etf','stock','crypto'].forEach(t => {
     document.getElementById('invtype-' + t).className = 'op-type-btn' + (t === type ? ' active-income' : '');
   });
   document.getElementById('inv-units-label').textContent = INV_UNITS_LABEL[type];
+  const fundFields = document.getElementById('inv-fund-fields');
+  if (fundFields) fundFields.style.display = INV_FUND_TYPES.has(type) ? 'block' : 'none';
+}
+
+function selectInvDist(dist) {
+  invDistType = dist;
+  document.getElementById('invdist-acc').className  = 'op-type-btn' + (dist === 'acc'  ? ' active-income' : '');
+  document.getElementById('invdist-dist').className = 'op-type-btn' + (dist === 'dist' ? ' active-income' : '');
 }
 
 function populateInvAccounts(selId) {
@@ -7533,6 +7981,7 @@ document.addEventListener('input', e => {
     const u = parseFloat(document.getElementById('sell-units').value) || 0;
     const p = parseFloat(document.getElementById('sell-price').value) || 0;
     document.getElementById('sell-total-calc').textContent = '€' + fmt(u * p);
+    updateSellFifoPanel(u, p);
   }
 });
 
@@ -7565,7 +8014,11 @@ function savePosition() {
     state.investments.push({
       id: Date.now().toString(),
       name, type: invType,
+      isin: document.getElementById('inv-isin').value.trim() || undefined,
       units, avgBuyPrice: price, currentPrice: price,
+      distribution: INV_FUND_TYPES.has(invType) ? invDistType : undefined,
+      ter: INV_FUND_TYPES.has(invType) ? (parseFloat(document.getElementById('inv-ter').value) || undefined) : undefined,
+      lots: [{ id: Date.now().toString(), units, price, commission, date }],
       movements: [{ id: Date.now().toString(), type: 'buy', units, price, total, commission, sourceId: invNoDeduct ? null : sourceId, noDeduct: invNoDeduct, date, notes }],
       priceHistory: [{ date, price }]
     });
@@ -7583,6 +8036,8 @@ function savePosition() {
     const totalUnits = inv.units + units;
     inv.avgBuyPrice  = (inv.units * inv.avgBuyPrice + units * price) / totalUnits;
     inv.units        = totalUnits;
+    if (!inv.lots) inv.lots = [];
+    inv.lots.push({ id: Date.now().toString(), units, price, commission, date });
     inv.movements.push({ id: Date.now().toString(), type: 'buy', units, price, total, commission, sourceId: invNoDeduct ? null : sourceId, noDeduct: invNoDeduct, date, notes });
     inv.priceHistory.push({ date, price });
     if (price > (inv.currentPrice || 0)) inv.currentPrice = price;
@@ -7707,10 +8162,10 @@ function openSellPosition() {
   document.getElementById('sell-units-label').textContent = `${INV_UNITS_LABEL[inv.type]} vendidas`;
   document.getElementById('sell-units').value  = '';
   document.getElementById('sell-price').value  = inv.currentPrice || '';
-  document.getElementById('sell-pl').value     = '';
   document.getElementById('sell-notes').value  = '';
   document.getElementById('sell-date').value   = new Date().toISOString().split('T')[0];
   document.getElementById('sell-total-calc').textContent = '€0,00';
+  document.getElementById('sell-fifo-panel').style.display = 'none';
   populateInvAccounts('sell-dest-account');
   closeModal('modalPositionDetail');
   document.getElementById('modalSellPosition').classList.add('open');
@@ -7720,10 +8175,8 @@ function saveSell() {
   const units  = parseFloat(document.getElementById('sell-units').value) || 0;
   const price  = parseFloat(document.getElementById('sell-price').value) || 0;
   const destId = document.getElementById('sell-dest-account').value;
-  const pl     = parseFloat(document.getElementById('sell-pl').value) || 0;
   const date   = document.getElementById('sell-date').value;
   const notes  = document.getElementById('sell-notes').value.trim();
-  const total  = units * price;
 
   const inv = getPositionById(currentPositionId);
   if (!inv) return;
@@ -7733,29 +8186,627 @@ function saveSell() {
   if (!destId)           { showToast('Selecciona una cuenta destino', 'error'); return; }
   if (!date)             { showToast('Selecciona una fecha', 'error'); return; }
 
+  // FIFO: calculate fiscal cost and update lots
+  const fifo    = calcFifoPl(inv, units);
+  const saleVal = units * price;
+  const pl      = saleVal - fifo.cost;
+
+  // Consume lots (FIFO)
+  let remaining = units;
+  for (const lot of (inv.lots || [])) {
+    if (remaining <= 0) break;
+    const consumed = Math.min(lot.units, remaining);
+    lot.units  -= consumed;
+    remaining  -= consumed;
+  }
+  inv.lots = (inv.lots || []).filter(l => l.units > 0);
+
   // Update position
   inv.units -= units;
-  inv.movements.push({ id: Date.now().toString(), type: 'sell', units, price, total, destId, pl, date, notes });
+  inv.movements.push({ id: Date.now().toString(), type: 'sell', units, price, total: saleVal, destId, fifoCost: fifo.cost, pl, date, notes });
   inv.priceHistory.push({ date, price });
   inv.currentPrice = price;
 
   // Credit destination account
   const destAcc = findAccountById(destId);
-  if (destAcc) destAcc.balance += total;
+  if (destAcc) destAcc.balance += saleVal;
 
   // Record transaction
+  const irpf   = state.investSettings?.irpf || 19;
+  const taxEst = pl > 0 ? pl * irpf / 100 : 0;
   state.transactions.push({
     id: Date.now().toString(),
     person: 'mario', type: 'income', accountId: destId,
     category: 'Inversión', desc: `Venta: ${inv.name}`,
-    amount: total, date
+    amount: saleVal, date
   });
 
   saveState();
   closeModal('modalSellPosition');
   renderAll();
   renderInvestCharts();
-  showToast(`Venta registrada ✓ · €${fmt(total)} ingresados`, 'success');
+  const plSign = pl >= 0 ? '+' : '';
+  showToast(`Venta registrada ✓ · €${fmt(saleVal)} ingresados · P&L fiscal: ${plSign}€${fmt(pl)}`, pl >= 0 ? 'success' : '');
+}
+
+// ══════════════════════════════════════════════════════════
+// FIFO — calculates fiscal cost basis for a given number of units
+// ══════════════════════════════════════════════════════════
+function calcFifoPl(inv, unitsSelling) {
+  const lots = [...(inv.lots || [])].sort((a, b) => a.date.localeCompare(b.date));
+  let remaining = unitsSelling;
+  let cost = 0;
+  const usedLots = [];
+  for (const lot of lots) {
+    if (remaining <= 0) break;
+    const consumed = Math.min(lot.units, remaining);
+    cost      += consumed * lot.price;
+    remaining -= consumed;
+    usedLots.push({ date: lot.date, units: consumed, price: lot.price, cost: consumed * lot.price });
+  }
+  return { cost, usedLots };
+}
+
+function updateSellFifoPanel(units, price) {
+  const inv = getPositionById(currentPositionId);
+  if (!inv || units <= 0 || price <= 0) {
+    document.getElementById('sell-fifo-panel').style.display = 'none';
+    return;
+  }
+  const fifo    = calcFifoPl(inv, units);
+  const saleVal = units * price;
+  const pl      = saleVal - fifo.cost;
+  const irpf    = state.investSettings ? state.investSettings.irpf : 19;
+  const tax     = pl > 0 ? pl * irpf / 100 : 0;
+  const net     = saleVal - tax;
+  const plColor = pl >= 0 ? 'var(--income)' : 'var(--expense)';
+
+  document.getElementById('sell-fifo-panel').style.display = 'block';
+  document.getElementById('sell-fifo-cost').textContent    = '€' + fmt(fifo.cost);
+  document.getElementById('sell-fifo-pl').textContent      = (pl >= 0 ? '+' : '') + '€' + fmt(pl);
+  document.getElementById('sell-fifo-pl').style.color      = plColor;
+  document.getElementById('sell-fifo-tax').textContent     = tax > 0 ? '-€' + fmt(tax) + ' (' + irpf + '%)' : '€0,00';
+  document.getElementById('sell-fifo-net').textContent     = '€' + fmt(net);
+
+  const fmtD = function(d) { return new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day:'numeric', month:'short', year:'numeric' }); };
+  document.getElementById('sell-fifo-lots').innerHTML =
+    'Lotes consumidos (FIFO): ' + fifo.usedLots.map(function(l) {
+      return l.units.toFixed(4) + ' u. x EUR' + fmt(l.price) + ' [' + fmtD(l.date) + ']';
+    }).join(' · ');
+}
+
+// ══════════════════════════════════════════════════════════
+// DIVIDENDS
+// ══════════════════════════════════════════════════════════
+function openDividend() {
+  closeInvMenu();
+  const inv = getPositionById(currentPositionId);
+  if (!inv) return;
+  document.getElementById('div-name').textContent     = inv.name;
+  document.getElementById('div-amount').value         = '';
+  document.getElementById('div-withholding').value    = (state.investSettings && state.investSettings.irpf) || 19;
+  document.getElementById('div-net-calc').textContent = '€0,00';
+  document.getElementById('div-date').value           = new Date().toISOString().split('T')[0];
+  document.getElementById('div-notes').value          = '';
+  populateInvAccounts('div-account');
+  closeModal('modalPositionDetail');
+  document.getElementById('modalDividend').classList.add('open');
+}
+
+function updateDivNet() {
+  const gross = parseFloat(document.getElementById('div-amount').value) || 0;
+  const wh    = parseFloat(document.getElementById('div-withholding').value) || 0;
+  const net   = gross * (1 - wh / 100);
+  document.getElementById('div-net-calc').textContent = '€' + fmt(net);
+}
+
+function saveDividend() {
+  const gross  = parseFloat(document.getElementById('div-amount').value) || 0;
+  const wh     = parseFloat(document.getElementById('div-withholding').value) || 0;
+  const accId  = document.getElementById('div-account').value;
+  const date   = document.getElementById('div-date').value;
+  const notes  = document.getElementById('div-notes').value.trim();
+
+  if (gross <= 0) { showToast('Introduce el importe del dividendo', 'error'); return; }
+  if (!accId)     { showToast('Selecciona una cuenta destino', 'error'); return; }
+  if (!date)      { showToast('Selecciona una fecha', 'error'); return; }
+
+  const inv = getPositionById(currentPositionId);
+  if (!inv) return;
+
+  const net = gross * (1 - wh / 100);
+  const acc = findAccountById(accId);
+  if (acc) acc.balance += net;
+
+  inv.movements.push({
+    id: Date.now().toString(),
+    type: 'dividend',
+    gross: gross, withholding: wh, net: net, accId: accId, date: date, notes: notes
+  });
+
+  state.transactions.push({
+    id: (Date.now() + 1).toString(),
+    person: 'mario', type: 'income', accountId: accId,
+    category: 'Inversión',
+    desc: 'Dividendo: ' + inv.name,
+    amount: net, date: date
+  });
+
+  saveState();
+  closeModal('modalDividend');
+  renderAll();
+  showToast('Dividendo registrado · EUR' + fmt(net) + ' netos ingresados', 'success');
+}
+
+// ══════════════════════════════════════════════════════════
+// FISCAL SETTINGS
+// ══════════════════════════════════════════════════════════
+function openFiscalSettings() {
+  if (!state.investSettings) state.investSettings = { inflation: 2.0, irpf: 19 };
+  document.getElementById('fs-inflation').value = state.investSettings.inflation !== undefined ? state.investSettings.inflation : 2.0;
+  document.getElementById('fs-irpf').value      = state.investSettings.irpf !== undefined ? state.investSettings.irpf : 19;
+  document.getElementById('modalFiscalSettings').classList.add('open');
+}
+
+function saveFiscalSettings() {
+  if (!state.investSettings) state.investSettings = {};
+  state.investSettings.inflation = parseFloat(document.getElementById('fs-inflation').value) || 2.0;
+  state.investSettings.irpf      = parseFloat(document.getElementById('fs-irpf').value) || 19;
+  saveState();
+  closeModal('modalFiscalSettings');
+  renderAll();
+  showToast('Parámetros fiscales guardados', 'success');
+}
+
+// ══════════════════════════════════════════════════════════
+// ISIN COPY
+// ══════════════════════════════════════════════════════════
+function copyIsin() {
+  const badge = document.getElementById('pd-isin-badge');
+  if (!badge) return;
+  const isin = badge.dataset.isin;
+  if (!isin) return;
+  navigator.clipboard.writeText(isin).then(() => {
+    showToast('ISIN copiado: ' + isin, 'success');
+  }).catch(() => {
+    showToast('ISIN: ' + isin, '');
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// SCHEDULED CONTRIBUTIONS (Aportaciones periódicas)
+// ══════════════════════════════════════════════════════════
+const CONTRIB_CYCLE_MONTHS = { monthly: 1, bimonthly: 2, quarterly: 3, biannual: 6, annual: 12 };
+const CONTRIB_CYCLE_LABELS = { monthly: 'Mensual', bimonthly: 'Bimensual', quarterly: 'Trimestral', biannual: 'Semestral', annual: 'Anual' };
+let editingContribId = null;
+
+function openAddContribution() {
+  editingContribId = null;
+  document.getElementById('contrib-modal-title').textContent = 'Nueva aportación periódica';
+  document.getElementById('contrib-amount').value    = '';
+  document.getElementById('contrib-cycle').value     = 'monthly';
+  document.getElementById('contrib-next-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('contrib-notes').value     = '';
+  populateContribFundSelect();
+  populateInvAccounts('contrib-account');
+  document.getElementById('modalContribution').classList.add('open');
+}
+
+function openEditContribution(id) {
+  const c = (state.contributions || []).find(x => x.id === id);
+  if (!c) return;
+  editingContribId = id;
+  document.getElementById('contrib-modal-title').textContent = 'Editar aportación';
+  populateContribFundSelect(c.fundId);
+  populateInvAccounts('contrib-account', c.accountId);
+  document.getElementById('contrib-amount').value    = c.amount;
+  document.getElementById('contrib-cycle').value     = c.cycle;
+  document.getElementById('contrib-next-date').value = c.nextDate;
+  document.getElementById('contrib-notes').value     = c.notes || '';
+  document.getElementById('modalContribution').classList.add('open');
+}
+
+function populateContribFundSelect(selectedId) {
+  const sel = document.getElementById('contrib-fund');
+  const positions = state.investments || [];
+  sel.innerHTML = positions.length
+    ? positions.map(i => `<option value="${i.id}" ${i.id === selectedId ? 'selected' : ''}>${i.name}</option>`).join('')
+    : '<option value="">— Sin posiciones —</option>';
+}
+
+function saveContribution() {
+  const fundId  = document.getElementById('contrib-fund').value;
+  const amount  = parseFloat(document.getElementById('contrib-amount').value) || 0;
+  const cycle   = document.getElementById('contrib-cycle').value;
+  const nextDate = document.getElementById('contrib-next-date').value;
+  const accId   = document.getElementById('contrib-account').value;
+  const notes   = document.getElementById('contrib-notes').value.trim();
+
+  if (!fundId)    { showToast('Selecciona un fondo', 'error'); return; }
+  if (amount <= 0){ showToast('Introduce un importe', 'error'); return; }
+  if (!nextDate)  { showToast('Selecciona la próxima fecha', 'error'); return; }
+  if (!accId)     { showToast('Selecciona la cuenta de cargo', 'error'); return; }
+
+  if (!state.contributions) state.contributions = [];
+
+  if (editingContribId) {
+    const c = state.contributions.find(x => x.id === editingContribId);
+    if (c) { c.fundId = fundId; c.amount = amount; c.cycle = cycle; c.nextDate = nextDate; c.accountId = accId; c.notes = notes; }
+  } else {
+    state.contributions.push({ id: Date.now().toString(), fundId, amount, cycle, nextDate, accountId: accId, notes, active: true });
+  }
+
+  saveState();
+  closeModal('modalContribution');
+  renderInvestments();
+  renderContributions();
+  showToast('Aportación guardada ✓', 'success');
+}
+
+function deleteContribution(id) {
+  showConfirm('¿Eliminar aportación programada?', 'Se eliminará el plan. Las aportaciones ya ejecutadas no se modifican.',
+    () => {
+      state.contributions = (state.contributions || []).filter(c => c.id !== id);
+      saveState();
+      renderContributions();
+      showToast('Aportación eliminada', '');
+    }
+  );
+}
+
+function advanceContribDate(c) {
+  const months = CONTRIB_CYCLE_MONTHS[c.cycle] || 1;
+  const d = new Date(c.nextDate + 'T12:00:00');
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().split('T')[0];
+}
+
+function executeContribution(id) {
+  const c   = (state.contributions || []).find(x => x.id === id);
+  const inv = getPositionById(c.fundId);
+  const acc = findAccountById(c.accountId);
+  if (!c || !inv) { showToast('Posición no encontrada', 'error'); return; }
+  if (!acc || acc.balance < c.amount) { showToast('Saldo insuficiente en la cuenta de cargo', 'error'); return; }
+
+  const date  = c.nextDate;
+  const price = inv.currentPrice || inv.avgBuyPrice;
+  const units = c.amount / price;
+  const total = c.amount;
+
+  acc.balance -= total;
+
+  const totalUnits = inv.units + units;
+  inv.avgBuyPrice  = (inv.units * inv.avgBuyPrice + units * price) / totalUnits;
+  inv.units        = totalUnits;
+  if (!inv.lots) inv.lots = [];
+  inv.lots.push({ id: Date.now().toString(), units, price, commission: 0, date });
+  inv.movements.push({ id: Date.now().toString(), type: 'buy', units, price, total, commission: 0, sourceId: c.accountId, date, notes: 'Aportación periódica' });
+  inv.priceHistory.push({ date, price });
+
+  state.transactions.push({
+    id: (Date.now() + 1).toString(),
+    person: 'mario', type: 'expense', accountId: c.accountId,
+    category: 'Inversión', desc: 'Aportación: ' + inv.name,
+    amount: total, date
+  });
+
+  c.nextDate = advanceContribDate(c);
+  saveState();
+  renderAll();
+  renderContributions();
+  renderInvestCharts();
+  showToast('Aportación ejecutada ✓ · ' + units.toFixed(4) + ' nuevas participaciones en ' + inv.name, 'success');
+}
+
+function renderContributions() {
+  const el = document.getElementById('inv-contributions-list');
+  if (!el) return;
+  const list = (state.contributions || []);
+  if (!list.length) {
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Sin aportaciones programadas</div>`;
+    return;
+  }
+  const today = new Date().toISOString().split('T')[0];
+  el.innerHTML = list.map(c => {
+    const inv      = getPositionById(c.fundId);
+    const acc      = findAccountById(c.accountId);
+    const overdue  = c.nextDate <= today;
+    const fmtDate2 = d => new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+    const statusColor = overdue ? 'var(--expense)' : 'var(--income)';
+    const statusIcon  = overdue ? '⚠️' : '📅';
+    return `
+      <div style="background:var(--surface);border:1px solid ${overdue ? 'rgba(235,87,87,0.3)' : 'var(--border)'};border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;">
+          <div>
+            <div style="font-weight:600;font-size:14px;">${inv ? inv.name : '— fondo eliminado —'}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">${CONTRIB_CYCLE_LABELS[c.cycle] || c.cycle} · ${acc ? acc.name : '—'}${c.notes ? ' · ' + c.notes : ''}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:16px;font-weight:700;color:var(--global);">€${fmt(c.amount)}</div>
+            <div style="font-size:11px;color:${statusColor};">${statusIcon} ${fmtDate2(c.nextDate)}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="executeContribution('${c.id}')" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(111,207,151,0.3);background:rgba(111,207,151,0.08);color:var(--income);font-size:12px;font-weight:600;cursor:pointer;">▶ Ejecutar</button>
+          <button onclick="openEditContribution('${c.id}')" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;cursor:pointer;">✏️</button>
+          <button onclick="deleteContribution('${c.id}')" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(235,87,87,0.2);background:rgba(235,87,87,0.06);color:var(--expense);font-size:12px;cursor:pointer;">🗑</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function checkPendingContributions() {
+  const today   = new Date().toISOString().split('T')[0];
+  const pending = (state.contributions || []).filter(c => c.nextDate <= today);
+  if (!pending.length) return;
+
+  const listEl = document.getElementById('pending-contrib-list');
+  if (!listEl) return;
+  const fmtDate2 = d => new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+
+  listEl.innerHTML = pending.map(c => {
+    const inv = getPositionById(c.fundId);
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-weight:600;font-size:13px;">${inv ? inv.name : '?'}</div>
+          <div style="font-size:11px;color:var(--muted);">${CONTRIB_CYCLE_LABELS[c.cycle]} · vencía ${fmtDate2(c.nextDate)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-weight:700;color:var(--global);">€${fmt(c.amount)}</span>
+          <button onclick="executeContribution('${c.id}');renderPendingContributions();" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(111,207,151,0.3);background:rgba(111,207,151,0.08);color:var(--income);font-size:11px;font-weight:600;cursor:pointer;">Ejecutar</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('modalPendingContributions').classList.add('open');
+}
+
+function renderPendingContributions() {
+  const today   = new Date().toISOString().split('T')[0];
+  const pending = (state.contributions || []).filter(c => c.nextDate <= today);
+  if (!pending.length) { closeModal('modalPendingContributions'); return; }
+  checkPendingContributions(); // re-render
+}
+
+// ══════════════════════════════════════════════════════════
+// FUND TRANSFER (traspaso sin tributación)
+// ══════════════════════════════════════════════════════════
+const TRANSFER_ELIGIBLE = new Set(['index', 'active']);
+let transferDestMode = 'existing';
+
+function openTransfer() {
+  closeInvMenu();
+  const inv = getPositionById(currentPositionId);
+  if (!inv || !TRANSFER_ELIGIBLE.has(inv.type)) return;
+
+  document.getElementById('tr-origin-name').textContent = 'Origen: ' + inv.name;
+  document.getElementById('tr-units-label').textContent = 'Participaciones (' + inv.units.toLocaleString('es-ES', {maximumFractionDigits:6}) + ' disponibles)';
+  document.getElementById('tr-nav-origin').value = inv.currentPrice || '';
+  document.getElementById('tr-units').value      = '';
+  document.getElementById('tr-nav-dest').value   = '';
+  document.getElementById('tr-date').value       = new Date().toISOString().split('T')[0];
+  document.getElementById('tr-notes').value      = '';
+  document.getElementById('tr-value-summary').style.display     = 'none';
+  document.getElementById('tr-dest-units-preview').style.display = 'none';
+  document.getElementById('tr-dest-new-name').value = '';
+
+  const eligible = (state.investments || []).filter(i => TRANSFER_ELIGIBLE.has(i.type) && i.id !== currentPositionId);
+  const sel = document.getElementById('tr-dest-fund');
+  sel.innerHTML = eligible.length
+    ? eligible.map(i => '<option value="' + i.id + '">' + i.name + '</option>').join('')
+    : '<option value="">— No hay otros fondos —</option>';
+
+  transferDestMode = eligible.length ? 'existing' : 'new';
+  selectTransferDest(transferDestMode);
+
+  closeModal('modalPositionDetail');
+  document.getElementById('modalTransfer').classList.add('open');
+}
+
+function selectTransferDest(mode) {
+  transferDestMode = mode;
+  document.getElementById('tr-dest-existing-btn').className = 'op-type-btn' + (mode === 'existing' ? ' active-income' : '');
+  document.getElementById('tr-dest-new-btn').className      = 'op-type-btn' + (mode === 'new'      ? ' active-income' : '');
+  document.getElementById('tr-dest-existing-wrap').style.display = mode === 'existing' ? 'block' : 'none';
+  document.getElementById('tr-dest-new-wrap').style.display      = mode === 'new'      ? 'block' : 'none';
+  updateTransferCalc();
+}
+
+function updateTransferCalc() {
+  const inv = getPositionById(currentPositionId);
+  if (!inv) return;
+
+  const navOrigin  = parseFloat(document.getElementById('tr-nav-origin').value) || 0;
+  const navDest    = parseFloat(document.getElementById('tr-nav-dest').value)   || 0;
+  const inputUnits = parseFloat(document.getElementById('tr-units').value);
+  const unitsOut   = isNaN(inputUnits) || inputUnits <= 0 ? inv.units : Math.min(inputUnits, inv.units);
+
+  const fifo     = calcFifoPl(inv, unitsOut);
+  const valueOut = unitsOut * navOrigin;
+  const unitsIn  = navDest > 0 ? valueOut / navDest : 0;
+
+  const summaryEl = document.getElementById('tr-value-summary');
+  if (navOrigin > 0 && unitsOut > 0) {
+    summaryEl.style.display = 'block';
+    document.getElementById('tr-calc-units').textContent = unitsOut.toLocaleString('es-ES', {maximumFractionDigits:6});
+    document.getElementById('tr-calc-value').textContent = '\u20ac' + fmt(valueOut);
+    document.getElementById('tr-calc-cost').textContent  = '\u20ac' + fmt(fifo.cost);
+    const fmtD = function(d) { return new Date(d + 'T12:00:00').toLocaleDateString('es-ES', {day:'numeric', month:'short', year:'numeric'}); };
+    document.getElementById('tr-lots-preview').innerHTML =
+      'Lotes (FIFO): ' + fifo.usedLots.map(function(l) {
+        return l.units.toFixed(4) + ' u. a \u20ac' + fmt(l.price) + ' [' + fmtD(l.date) + ']';
+      }).join(' \u00b7 ');
+  } else {
+    summaryEl.style.display = 'none';
+  }
+
+  const destPreview = document.getElementById('tr-dest-units-preview');
+  if (navDest > 0 && unitsIn > 0) {
+    destPreview.style.display = 'block';
+    document.getElementById('tr-dest-units-val').textContent =
+      unitsIn.toLocaleString('es-ES', {maximumFractionDigits:6}) + ' participaciones';
+  } else {
+    destPreview.style.display = 'none';
+  }
+}
+
+function saveTransfer() {
+  const inv = getPositionById(currentPositionId);
+  if (!inv) return;
+
+  const navOrigin  = parseFloat(document.getElementById('tr-nav-origin').value) || 0;
+  const navDest    = parseFloat(document.getElementById('tr-nav-dest').value)   || 0;
+  const inputUnits = parseFloat(document.getElementById('tr-units').value);
+  const date       = document.getElementById('tr-date').value;
+  const notes      = document.getElementById('tr-notes').value.trim();
+  const unitsOut   = isNaN(inputUnits) || inputUnits <= 0 ? inv.units : Math.min(inputUnits, inv.units);
+
+  if (navOrigin <= 0) { showToast('Introduce el NAV del fondo origen', 'error'); return; }
+  if (navDest   <= 0) { showToast('Introduce el NAV del fondo destino', 'error'); return; }
+  if (!date)          { showToast('Selecciona una fecha', 'error'); return; }
+  if (unitsOut > inv.units + 0.0001) { showToast('No tienes suficientes participaciones', 'error'); return; }
+
+  let destInv;
+  if (transferDestMode === 'new') {
+    const newName = document.getElementById('tr-dest-new-name').value.trim();
+    if (!newName) { showToast('Escribe el nombre del fondo destino', 'error'); return; }
+    destInv = {
+      id: Date.now().toString(),
+      name: newName,
+      type: inv.type,
+      distribution: inv.distribution,
+      ter: inv.ter,
+      units: 0,
+      avgBuyPrice: navDest,
+      currentPrice: navDest,
+      lots: [],
+      movements: [],
+      priceHistory: [{ date: date, price: navDest }]
+    };
+    if (!state.investments) state.investments = [];
+    state.investments.push(destInv);
+  } else {
+    const destId = document.getElementById('tr-dest-fund').value;
+    destInv = getPositionById(destId);
+    if (!destInv) { showToast('Selecciona un fondo destino v\u00e1lido', 'error'); return; }
+  }
+
+  const fifo     = calcFifoPl(inv, unitsOut);
+  const valueOut = unitsOut * navOrigin;
+  const unitsIn  = valueOut / navDest;
+
+  // Consume lots from origin
+  let remaining = unitsOut;
+  const transferredLots = [];
+  for (const lot of (inv.lots || [])) {
+    if (remaining <= 0) break;
+    const consumed = Math.min(lot.units, remaining);
+    transferredLots.push({ id: Date.now().toString() + '_' + lot.date, units: consumed, price: lot.price, commission: 0, date: lot.date });
+    lot.units -= consumed;
+    remaining -= consumed;
+  }
+  inv.lots  = (inv.lots || []).filter(function(l) { return l.units > 0; });
+  inv.units = inv.units - unitsOut;
+
+  inv.movements.push({
+    id: Date.now().toString(),
+    type: 'transfer_out',
+    units: unitsOut, navOrigin: navOrigin, fiscalCost: fifo.cost,
+    destId: destInv.id, destName: destInv.name, date: date, notes: notes
+  });
+  inv.priceHistory.push({ date: date, price: navOrigin });
+  inv.currentPrice = navOrigin;
+
+  // Plant lots in destination with inherited fiscal cost
+  if (!destInv.lots) destInv.lots = [];
+  transferredLots.forEach(function(lot) {
+    const lotValue   = lot.units * navOrigin;
+    const lotUnitsIn = lotValue / navDest;
+    destInv.lots.push({
+      id: lot.id,
+      units: lotUnitsIn,
+      price: lot.price,   // fiscal cost inherited
+      commission: 0,
+      date: lot.date      // original date preserved
+    });
+  });
+
+  const totalDestUnits = destInv.units + unitsIn;
+  destInv.avgBuyPrice  = totalDestUnits > 0
+    ? (destInv.units * destInv.avgBuyPrice + fifo.cost) / totalDestUnits
+    : fifo.cost / unitsIn;
+  destInv.units        = totalDestUnits;
+  destInv.currentPrice = navDest;
+  destInv.priceHistory.push({ date: date, price: navDest });
+
+  destInv.movements.push({
+    id: (Date.now() + 1).toString(),
+    type: 'transfer_in',
+    units: unitsIn, navDest: navDest, fiscalCost: fifo.cost,
+    originId: inv.id, originName: inv.name, date: date, notes: notes
+  });
+
+  saveState();
+  closeModal('modalTransfer');
+  renderAll();
+  renderInvestCharts();
+  showToast('Traspaso completado \u2713 \u00b7 ' + unitsIn.toLocaleString('es-ES', {maximumFractionDigits:4}) + ' nuevas participaciones en ' + destInv.name, 'success');
+}
+
+// ══════════════════════════════════════════════════════════
+// REAL AND NET RETURN helpers
+// ══════════════════════════════════════════════════════════
+function renderRealNetReturn(inv) {
+  const card = document.getElementById('pd-real-return-card');
+  if (!card) return;
+
+  const cost     = inv.units * inv.avgBuyPrice;
+  const cur      = inv.units * (inv.currentPrice || inv.avgBuyPrice);
+  const retEur   = cur - cost;
+  const settings = state.investSettings || { inflation: 2.0, irpf: 19 };
+
+  const firstBuy = (inv.movements || []).filter(function(m) { return m.type === 'buy'; })
+    .sort(function(a,b) { return a.date.localeCompare(b.date); })[0];
+  const years    = firstBuy ? (new Date() - new Date(firstBuy.date)) / (365.25 * 86400000) : 1;
+
+  const inflFactor = Math.pow(1 + settings.inflation / 100, years);
+  const realCost   = cost * inflFactor;
+  const realGain   = cur - realCost;
+  const realPct    = cost > 0 ? (realGain / cost) * 100 : 0;
+
+  const tax    = retEur > 0 ? retEur * (settings.irpf / 100) : 0;
+  const netGain = retEur - tax;
+  const netPct  = cost > 0 ? (netGain / cost) * 100 : 0;
+
+  const divTotal = (inv.movements || [])
+    .filter(function(m) { return m.type === 'dividend'; })
+    .reduce(function(s, m) { return s + (m.net || 0); }, 0);
+
+  card.style.display = 'block';
+
+  function setVal(idPrefix, val, pct) {
+    const sign  = val >= 0 ? '+' : '';
+    const color = val >= 0 ? 'var(--income)' : 'var(--expense)';
+    document.getElementById(idPrefix + '-pct').textContent = sign + pct.toFixed(2) + '%';
+    document.getElementById(idPrefix + '-pct').style.color = color;
+    document.getElementById(idPrefix + '-eur').textContent = sign + '€' + fmt(Math.abs(val));
+    document.getElementById(idPrefix + '-eur').style.color = color;
+  }
+
+  setVal('pd-real', realGain, realPct);
+  setVal('pd-net',  netGain,  netPct);
+
+  const divEl = document.getElementById('pd-dividends-total');
+  if (divTotal > 0) {
+    divEl.style.display = 'block';
+    document.getElementById('pd-dividends-val').textContent = '+€' + fmt(divTotal);
+  } else {
+    divEl.style.display = 'none';
+  }
+
+  document.getElementById('pd-fiscal-params').textContent =
+    'Inflación ' + settings.inflation + '% · IRPF ' + settings.irpf + '% · ' + years.toFixed(1) + ' años de tenencia estimados';
 }
 
 // ---- DELETE POSITION ----
@@ -7851,6 +8902,7 @@ function renderInvestments() {
         </div>
       </div>`;
   }).join('');
+  renderContributions();
 }
 
 // ---- POSITION DETAIL ----
@@ -7868,6 +8920,14 @@ function openPositionDetail(id) {
 
   document.getElementById('pd-name').textContent          = inv.name;
   document.getElementById('pd-type-badge').innerHTML      = `<span class="position-type-badge ${inv.type}">${INV_TYPE_LABELS[inv.type]}</span>`;
+  const isinBadge = document.getElementById('pd-isin-badge');
+  if (inv.isin) {
+    isinBadge.style.display  = 'inline-block';
+    isinBadge.textContent    = inv.isin;
+    isinBadge.dataset.isin   = inv.isin;
+  } else {
+    isinBadge.style.display  = 'none';
+  }
   document.getElementById('pd-units').textContent         = inv.units.toLocaleString('es-ES', { maximumFractionDigits: 6 });
   document.getElementById('pd-avg-price').textContent     = '€' + fmt(inv.avgBuyPrice);
   document.getElementById('pd-current-price').textContent = '€' + fmt(inv.currentPrice);
@@ -7883,8 +8943,45 @@ function openPositionDetail(id) {
   // Price chart
   renderPositionChart(inv);
 
+  // Real & net return
+  renderRealNetReturn(inv);
+
+  // Fund info panel (distribution + TER) — only for funds/ETF
+  const fundInfoEl = document.getElementById('pd-fund-info');
+  if (fundInfoEl) {
+    if (INV_FUND_TYPES.has(inv.type)) {
+      fundInfoEl.style.display = 'block';
+      const distBadge = document.getElementById('pd-dist-badge');
+      if (inv.distribution === 'dist') {
+        distBadge.textContent = '💰 Distribución';
+        distBadge.style.cssText = 'font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;background:rgba(249,217,120,0.15);color:var(--global);';
+      } else {
+        distBadge.textContent = '♻️ Acumulación';
+        distBadge.style.cssText = 'font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;background:rgba(168,247,200,0.15);color:var(--invest);';
+      }
+      const terWrap = document.getElementById('pd-ter-wrap');
+      const terVal  = document.getElementById('pd-ter-val');
+      if (inv.ter) {
+        terWrap.style.display = 'block';
+        terVal.textContent    = inv.ter.toFixed(2) + '%';
+      } else {
+        terWrap.style.display = 'none';
+      }
+    } else {
+      fundInfoEl.style.display = 'none';
+    }
+  }
+
   // History
   renderPositionHistory(inv);
+
+  // Show/hide type-specific menu items
+  const TRANSFER_TYPES = new Set(['index', 'active']);
+  const DIVIDEND_TYPES = new Set(['stock', 'etf', 'active', 'index']);
+  const transferBtn = document.getElementById('pd-transfer-btn');
+  const dividendBtn = document.getElementById('pd-dividend-btn');
+  if (transferBtn) transferBtn.style.display = TRANSFER_TYPES.has(inv.type) ? 'block' : 'none';
+  if (dividendBtn) dividendBtn.style.display = DIVIDEND_TYPES.has(inv.type) ? 'block' : 'none';
 
   document.getElementById('modalPositionDetail').classList.add('open');
 }
@@ -7933,23 +9030,34 @@ function renderPositionHistory(inv) {
   }
 
   const fmtD = d => new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-  const typeLabel = { buy: 'Compra', sell: 'Venta', update: 'Actualización' };
+  const typeLabel = { buy: 'Compra', sell: 'Venta', update: 'Actualización', dividend: 'Dividendo', transfer_out: 'Traspaso salida', transfer_in: 'Traspaso entrada' };
 
   el.innerHTML = moves.map(m => {
     let detail = '';
-    if (m.type === 'buy')    detail = `${m.units} u. × €${fmt(m.price)} = €${fmt(m.total)}${m.commission > 0 ? ` · Comisión: €${fmt(m.commission)}` : ''}`;
-    if (m.type === 'sell')   detail = `${m.units} u. × €${fmt(m.price)} = €${fmt(m.total)}${m.pl ? ` · P&L: ${m.pl >= 0 ? '+' : ''}€${fmt(m.pl)}` : ''}`;
-    if (m.type === 'update') detail = `Precio → €${fmt(m.price)}`;
-    const editable = true; // all movement types are now editable
+    const fmtD2 = d => new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (m.type === 'buy')          detail = `${m.units} u. × €${fmt(m.price)} = €${fmt(m.total)}${m.commission > 0 ? ` · Comisión: €${fmt(m.commission)}` : ''}`;
+    if (m.type === 'sell')         detail = `${m.units} u. × €${fmt(m.price)} = €${fmt(m.total)} · P&L fiscal: ${m.pl >= 0 ? '+' : ''}€${fmt(m.pl)}`;
+    if (m.type === 'update')       detail = `Precio → €${fmt(m.price)}`;
+    if (m.type === 'dividend')     detail = `Bruto: €${fmt(m.gross)} · Retención ${m.withholding}% · Neto: €${fmt(m.net)}`;
+    if (m.type === 'transfer_out') detail = `${m.units.toLocaleString('es-ES', {maximumFractionDigits:6})} u. × €${fmt(m.navOrigin)} → ${m.destName} · Coste fiscal heredado: €${fmt(m.fiscalCost)}`;
+    if (m.type === 'transfer_in')  detail = `${m.units.toLocaleString('es-ES', {maximumFractionDigits:6})} u. × €${fmt(m.navDest)} ← ${m.originName} · Coste fiscal: €${fmt(m.fiscalCost)}`;
+
+    const onclick = m.type === 'update'
+      ? `openEditUpdatePrice('${inv.id}','${m.id}')`
+      : m.type === 'dividend'
+        ? ''
+        : `openEditInvMovement('${inv.id}','${m.id}')`;
+    const clickable = onclick ? 'inv-history-editable' : '';
+    const chevron   = onclick ? '<div style="font-size:16px;color:var(--muted);flex-shrink:0;">›</div>' : '';
 
     return `
-      <div class="inv-history-item inv-history-editable" onclick="${m.type === 'update' ? `openEditUpdatePrice('${inv.id}','${m.id}')` : `openEditInvMovement('${inv.id}','${m.id}')`}">
-        <span class="inv-history-type ${m.type}">${typeLabel[m.type]}</span>
+      <div class="inv-history-item ${clickable}" ${onclick ? `onclick="${onclick}"` : ''}>
+        <span class="inv-history-type ${m.type}">${typeLabel[m.type] || m.type}</span>
         <div class="inv-history-info">
           <div style="font-weight:500;">${detail}</div>
-          <div style="font-size:11px;color:var(--muted);">${fmtD(m.date)}${m.notes ? ' · ' + m.notes : ''}</div>
+          <div style="font-size:11px;color:var(--muted);">${fmtD2(m.date)}${m.notes ? ' · ' + m.notes : ''}</div>
         </div>
-        <div style="font-size:16px;color:var(--muted);flex-shrink:0;">›</div>
+        ${chevron}
       </div>`;
   }).join('');
 }
@@ -7995,42 +9103,319 @@ function getPortfolioValueAt(dateStr) {
   }, 0);
 }
 
+// ══════════════════════════════════════════════════════════
+// TWR — Time-Weighted Return
+// ══════════════════════════════════════════════════════════
+function calcTWR(startDate) {
+  // Collect all cash-flow events across the whole portfolio within the period
+  // Each event = { date, type:'buy'|'sell', amount }
+  const events = [];
+  state.investments.forEach(inv => {
+    (inv.movements || []).forEach(m => {
+      if (m.type !== 'buy' && m.type !== 'sell') return;
+      const d = m.date;
+      if (startDate && d <= startDate) return;
+      events.push({ date: d, type: m.type, invId: inv.id, units: m.units, price: m.price });
+    });
+  });
+  events.sort((a, b) => a.date.localeCompare(b.date));
+
+  // Build sub-period boundaries: startDate + each unique cash-flow date + today
+  const today = new Date().toISOString().split('T')[0];
+  const boundaries = [...new Set([startDate || null, ...events.map(e => e.date), today])].filter(Boolean).sort();
+
+  if (boundaries.length < 2) return null;
+
+  // For each sub-period [t_i, t_{i+1}):
+  // R_i = (V_end_i) / (V_start_i + CF_i) - 1
+  // where CF_i = net cash flows that arrived AT t_{i+1} (just before end valuation)
+  // TWR = product of (1 + R_i)
+  let twr = 1;
+  const subPeriods = [];
+
+  for (let i = 0; i < boundaries.length - 1; i++) {
+    const t0 = boundaries[i];
+    const t1 = boundaries[i + 1];
+    const v0 = getPortfolioValueAt(t0);
+    // Cash flows that hit exactly on t1 (buys add capital, sells return it)
+    const cf1 = events
+      .filter(e => e.date === t1)
+      .reduce((s, e) => s + (e.type === 'buy' ? e.units * e.price : -(e.units * e.price)), 0);
+    const v1 = getPortfolioValueAt(t1);
+
+    // Denominator = portfolio value just before flows at t1 = v1 - cf1
+    const denominator = v1 - cf1;
+    if (denominator <= 0) continue;
+
+    const r = v1 / denominator - 1;
+    twr *= (1 + r);
+    subPeriods.push({ t0, t1, r, v0, v1, cf1 });
+  }
+
+  return { twr: twr - 1, subPeriods };
+}
+
 function renderInvPeriodSummary() {
   const summaryEl = document.getElementById('inv-period-summary');
-  const labelEl   = document.getElementById('inv-period-label');
-  const startEl   = document.getElementById('inv-period-start-val');
-  const endEl     = document.getElementById('inv-period-end-val');
-  const returnEl  = document.getElementById('inv-period-return');
-  const diffEl    = document.getElementById('inv-period-diff');
   if (!summaryEl) return;
 
-  const startDate = periodStartDate(currentInvPeriod);
+  const startDate  = periodStartDate(currentInvPeriod);
   const currentVal = getInvestCurrentTotal();
+  let startVal = startDate ? getPortfolioValueAt(startDate) : getInvestTotalCost();
 
-  let startVal;
-  if (!startDate) {
-    // All time: use total cost basis as starting value
-    startVal = getInvestTotalCost();
-  } else {
-    startVal = getPortfolioValueAt(startDate);
+  // MWR: simple money-weighted (our previous calculation, kept for context)
+  let netFlows = 0;
+  if (startDate) {
+    state.investments.forEach(inv => {
+      (inv.movements || []).forEach(m => {
+        if (m.date <= startDate) return;
+        if (m.type === 'buy')  netFlows += (m.total || m.units * m.price);
+        if (m.type === 'sell') netFlows -= (m.total || m.units * m.price);
+      });
+    });
   }
+  const trueGain = currentVal - startVal - netFlows;
+  const base     = startVal > 0 ? startVal : netFlows;
+  const mwrPct   = base > 0 ? (trueGain / base) * 100 : 0;
 
   if (startVal <= 0 && currentVal <= 0) { summaryEl.style.display = 'none'; return; }
   summaryEl.style.display = 'block';
 
-  const diff    = currentVal - startVal;
-  const retPct  = startVal > 0 ? (diff / startVal) * 100 : 0;
-  const color   = diff >= 0 ? 'var(--income)' : 'var(--expense)';
-  const sign    = diff >= 0 ? '+' : '';
-
+  const color = trueGain >= 0 ? 'var(--income)' : 'var(--expense)';
+  const sign  = trueGain >= 0 ? '+' : '';
   const periodLabels = { '1M':'Último mes','3M':'Últimos 3 meses','6M':'Últimos 6 meses','1A':'Último año','3A':'Últimos 3 años','TODO':'Desde el inicio' };
-  labelEl.textContent = periodLabels[currentInvPeriod] || currentInvPeriod;
-  startEl.textContent  = '€' + fmt(startVal);
-  endEl.textContent    = '€' + fmt(currentVal);
-  returnEl.textContent = sign + retPct.toFixed(2) + '%';
-  returnEl.style.color = color;
-  diffEl.textContent   = sign + '€' + fmt(Math.abs(diff));
-  diffEl.style.color   = color;
+
+  document.getElementById('inv-period-label').textContent    = periodLabels[currentInvPeriod] || currentInvPeriod;
+  document.getElementById('inv-period-start-val').textContent = '€' + fmt(startVal);
+  document.getElementById('inv-period-end-val').textContent   = '€' + fmt(currentVal);
+  document.getElementById('inv-period-return').textContent    = sign + mwrPct.toFixed(2) + '%';
+  document.getElementById('inv-period-return').style.color    = color;
+  document.getElementById('inv-period-diff').textContent      = sign + '€' + fmt(Math.abs(trueGain));
+  document.getElementById('inv-period-diff').style.color      = color;
+
+  // TWR calculation
+  const twrRow = document.getElementById('inv-twr-row');
+  const twrEl  = document.getElementById('inv-twr-val');
+  const twrSub = document.getElementById('inv-twr-subperiods');
+
+  const result = calcTWR(startDate);
+  if (result && result.subPeriods.length >= 1) {
+    twrRow.style.display = 'block';
+    const twrPct   = result.twr * 100;
+    const twrColor = twrPct >= 0 ? 'var(--income)' : 'var(--expense)';
+    const twrSign  = twrPct >= 0 ? '+' : '';
+    twrEl.textContent  = twrSign + twrPct.toFixed(2) + '%';
+    twrEl.style.color  = twrColor;
+
+    // Show sub-period count as context
+    const n = result.subPeriods.length;
+    const hasFlows = state.investments.some(inv =>
+      (inv.movements || []).some(m => (m.type === 'buy' || m.type === 'sell') && (!startDate || m.date > startDate))
+    );
+    twrSub.textContent = hasFlows
+      ? `${n} sub-período${n !== 1 ? 's' : ''} · elimina el efecto del timing de aportaciones`
+      : 'Sin flujos intermedios · TWR = MWR';
+  } else {
+    twrRow.style.display = 'none';
+  }
+}
+
+function showTwrInfo() {
+  showToast('TWR: mide la rentabilidad del gestor, eliminando el efecto del timing de tus aportaciones. Más justo para comparar con índices.', '');
+}
+
+// ══════════════════════════════════════════════════════════
+// GOAL SIMULATOR — ¿Cuándo llego a X?
+// ══════════════════════════════════════════════════════════
+let simChartInstance = null;
+
+function openGoalSimulator() {
+  const currentPortfolio = getInvestCurrentTotal();
+  document.getElementById('sim-current').value = currentPortfolio > 0 ? currentPortfolio.toFixed(2) : '';
+  document.getElementById('sim-target').value  = '';
+  document.getElementById('sim-monthly').value = '';
+  document.getElementById('sim-rate').value    = '';
+  document.getElementById('sim-result').style.display      = 'none';
+  document.getElementById('sim-placeholder').style.display = 'block';
+  document.getElementById('modalGoalSimulator').classList.add('open');
+}
+
+function simPreset(rate) {
+  document.getElementById('sim-rate').value = rate;
+  runSimulator();
+}
+
+function runSimulator() {
+  const current  = parseFloat(document.getElementById('sim-current').value)  || 0;
+  const target   = parseFloat(document.getElementById('sim-target').value)   || 0;
+  const monthly  = parseFloat(document.getElementById('sim-monthly').value)  || 0;
+  const annRate  = parseFloat(document.getElementById('sim-rate').value)     || 0;
+
+  if (target <= 0 || annRate <= 0 || current >= target) {
+    if (current >= target && target > 0) {
+      document.getElementById('sim-placeholder').style.display = 'none';
+      document.getElementById('sim-result').style.display = 'block';
+      document.getElementById('sim-time-result').textContent   = '¡Ya lo has alcanzado!';
+      document.getElementById('sim-date-result').textContent   = '';
+      document.getElementById('sim-total-contributed').textContent = '€' + fmt(current);
+      document.getElementById('sim-total-gains').textContent   = '€0,00';
+      document.getElementById('sim-multiplier').textContent    = '1,00×';
+      document.getElementById('sim-milestones').innerHTML      = '';
+    } else {
+      document.getElementById('sim-result').style.display      = 'none';
+      document.getElementById('sim-placeholder').style.display = 'block';
+    }
+    return;
+  }
+
+  const monthRate = annRate / 100 / 12;
+  let value = current;
+  let month = 0;
+  const MAX_MONTHS = 1200; // 100 years cap
+
+  // Simulate month by month
+  const dataPoints = [{ month: 0, value, contributed: current, gains: 0 }];
+  let totalContributed = current;
+
+  while (value < target && month < MAX_MONTHS) {
+    month++;
+    value = value * (1 + monthRate) + monthly;
+    totalContributed += monthly;
+    dataPoints.push({
+      month,
+      value,
+      contributed: totalContributed,
+      gains: value - totalContributed
+    });
+  }
+
+  if (month >= MAX_MONTHS) {
+    document.getElementById('sim-placeholder').textContent = 'Con estos parámetros el objetivo no es alcanzable en 100 años. Aumenta la aportación o la rentabilidad.';
+    document.getElementById('sim-result').style.display      = 'none';
+    document.getElementById('sim-placeholder').style.display = 'block';
+    return;
+  }
+
+  // Result display
+  document.getElementById('sim-placeholder').style.display = 'none';
+  document.getElementById('sim-result').style.display      = 'block';
+
+  const years  = Math.floor(month / 12);
+  const months = month % 12;
+  const timeStr = years > 0
+    ? (years + ' año' + (years !== 1 ? 's' : '') + (months > 0 ? ' y ' + months + ' mes' + (months !== 1 ? 'es' : '') : ''))
+    : (months + ' mes' + (months !== 1 ? 'es' : ''));
+
+  const arrivalDate = new Date();
+  arrivalDate.setMonth(arrivalDate.getMonth() + month);
+  const dateStr = arrivalDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+  const finalGains      = value - totalContributed;
+  const multiplier      = current > 0 ? (value / current) : (value / (monthly || 1));
+
+  document.getElementById('sim-time-result').textContent        = timeStr;
+  document.getElementById('sim-date-result').textContent        = 'Aproximadamente en ' + dateStr;
+  document.getElementById('sim-total-contributed').textContent  = '€' + fmt(totalContributed);
+  document.getElementById('sim-total-gains').textContent        = '+€' + fmt(finalGains);
+  document.getElementById('sim-multiplier').textContent         = multiplier.toFixed(2) + '×';
+
+  // Milestones: 25%, 50%, 75% of target
+  const milestones = [0.25, 0.5, 0.75].map(pct => {
+    const mTarget = target * pct;
+    const mPoint  = dataPoints.find(p => p.value >= mTarget);
+    if (!mPoint) return null;
+    const my = Math.floor(mPoint.month / 12);
+    const mm = mPoint.month % 12;
+    return { pct, month: mPoint.month, label: my > 0 ? my + 'a ' + (mm > 0 ? mm + 'm' : '') : mm + 'm' };
+  }).filter(Boolean);
+
+  document.getElementById('sim-milestones').innerHTML = milestones.length
+    ? `<div style="display:flex;gap:6px;margin-bottom:8px;">` +
+      milestones.map(m =>
+        `<div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 8px;text-align:center;">
+          <div style="font-size:10px;color:var(--muted);">${(m.pct * 100).toFixed(0)}% objetivo</div>
+          <div style="font-size:12px;font-weight:600;color:var(--global);">${m.label}</div>
+         </div>`
+      ).join('') + `</div>`
+    : '';
+
+  // Chart — sample to max ~36 points for mobile readability
+  const step    = Math.max(1, Math.floor(dataPoints.length / 36));
+  const sampled = dataPoints.filter((_, i) => i % step === 0 || i === dataPoints.length - 1);
+  const labels  = sampled.map(p => {
+    const y = Math.floor(p.month / 12);
+    const m2 = p.month % 12;
+    return y > 0 ? (m2 === 0 ? 'Año ' + y : '') : (p.month === 0 ? 'Hoy' : '');
+  });
+
+  if (simChartInstance) { simChartInstance.destroy(); simChartInstance = null; }
+  const ctx = document.getElementById('sim-chart');
+  if (!ctx) return;
+
+  simChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Aportado',
+          data: sampled.map(p => p.contributed),
+          backgroundColor: 'rgba(99,102,241,0.6)',
+          stack: 'a'
+        },
+        {
+          label: 'Rendimiento',
+          data: sampled.map(p => Math.max(0, p.gains)),
+          backgroundColor: 'rgba(52,211,153,0.7)',
+          stack: 'a'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => {
+              const p = sampled[items[0].dataIndex];
+              const y2 = Math.floor(p.month / 12), m2 = p.month % 12;
+              return y2 > 0 ? 'Año ' + y2 + (m2 > 0 ? ', mes ' + m2 : '') : (p.month === 0 ? 'Hoy' : 'Mes ' + p.month);
+            },
+            footer: (items) => {
+              const p = sampled[items[0].dataIndex];
+              return 'Total: €' + fmt(p.value);
+            }
+          }
+        },
+        annotation: {
+          annotations: {
+            targetLine: {
+              type: 'line',
+              yMin: target, yMax: target,
+              borderColor: 'rgba(249,217,120,0.8)',
+              borderWidth: 2,
+              borderDash: [4, 4],
+              label: {
+                content: 'Objetivo €' + fmt(target),
+                enabled: true,
+                position: 'end',
+                color: 'rgba(249,217,120,0.9)',
+                font: { size: 10 }
+              }
+            }
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 9 } } },
+        y: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: {
+          callback: v => v >= 1000 ? (v/1000).toFixed(0) + 'k' : v,
+          font: { size: 9 }
+        }}
+      }
+    }
+  });
 }
 
 function renderInvestCharts() {
@@ -9522,17 +10907,19 @@ function exportExcel() {
   // ══════════════════════════════════════════════════════════
   // 9. INVERSIONES
   // ══════════════════════════════════════════════════════════
-  const invByType = { index: [], active: [], crypto: [] };
+  const invByType = { index: [], active: [], etf: [], stock: [], crypto: [] };
   (state.investments || []).forEach(inv => {
     const t = inv.type in invByType ? inv.type : 'active';
     invByType[t].push(inv);
   });
 
   const invRows = [];
-  const typeLabels = { index: 'Fondo indexado', active: 'Gestión activa', crypto: 'Cripto' };
+  const typeLabels = { index: 'Fondo indexado', active: 'Gestión activa', etf: 'ETF', stock: 'Acciones', crypto: 'Cripto' };
   const typeFills  = {
     index:  { patternType:'solid', fgColor:{rgb:'1A2A1A'} },
     active: { patternType:'solid', fgColor:{rgb:'1A1A2A'} },
+    etf:    { patternType:'solid', fgColor:{rgb:'1A1A2A'} },
+    stock:  { patternType:'solid', fgColor:{rgb:'2A1A1A'} },
     crypto: { patternType:'solid', fgColor:{rgb:'2A1A0A'} },
   };
 
@@ -9789,9 +11176,11 @@ function autoSnapshot() {
 const chartInstances = {};
 const catFilterMonth = { mario: null, miri: null };
 
-Chart.defaults.color = '#c8d0e8';
-Chart.defaults.font.family = 'Outfit';
-Chart.defaults.font.size   = 11;
+if (typeof Chart !== 'undefined' && Chart.defaults) {
+  Chart.defaults.color = '#c8d0e8';
+  Chart.defaults.font.family = 'Outfit';
+  Chart.defaults.font.size   = 11;
+}
 
 function getChartColors() {
   return {
