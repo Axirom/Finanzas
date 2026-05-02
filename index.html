@@ -836,6 +836,7 @@ body::before {
   flex-shrink: 0;
 }
 .fab:active { transform: scale(0.92); }
+.nav-fab-spacer { display: none; }
 
 /* ===================== MODAL ===================== */
 .modal-overlay {
@@ -1294,15 +1295,9 @@ body::before {
   height: 100%;
   border-radius: 4px;
   background: linear-gradient(90deg, var(--saving), var(--global));
-  transition: width 0.5s;
-  animation: barGrow 0.7s cubic-bezier(0.34, 1.1, 0.64, 1) forwards;
+  transition: width 0.3s;
 }
 .goal-fill.done { background: var(--income); }
-
-@keyframes barGrow {
-  from { width: 0 !important; }
-  to   { /* width set inline */ }
-}
 .goal-amounts {
   display: flex;
   justify-content: space-between;
@@ -1856,8 +1851,7 @@ body::before {
 .debt-bar-label { font-size:10px; color:var(--muted); width:62px; flex-shrink:0; }
 .debt-bar-track { flex:1; height:6px; background:rgba(255,255,255,0.04); border-radius:3px; overflow:hidden; }
 .debt-bar-fill {
-  height: 100%; border-radius: 3px; transition: width 0.4s;
-  animation: barGrow 0.65s cubic-bezier(0.34, 1.1, 0.64, 1) forwards;
+  height: 100%; border-radius: 3px; transition: width 0.3s;
 }
 .debt-bar-fill.capital  { background: linear-gradient(90deg, #60c8f5, #a78bfa); }
 .debt-bar-fill.interest { background: linear-gradient(90deg, #f97316, #ef4444); }
@@ -2549,16 +2543,16 @@ body:not(.values-hidden) .account-rate-inline {
   </div><!-- end main-content -->
 
   <!-- BOTTOM NAV -->
-  <nav class="bottom-nav">
+  <nav class="bottom-nav" id="bottom-nav">
     <div class="nav-item active-mario" id="nav-mario" onclick="switchSection('mario', null, 'nav-mario')">
       <span class="nav-icon">👤</span>
-      <span class="nav-label">Mario</span>
+      <span class="nav-label" data-person="mario">Mario</span>
     </div>
     <div class="nav-item" id="nav-miri" onclick="switchSection('miri', null, 'nav-miri')">
       <span class="nav-icon">👤</span>
-      <span class="nav-label">Miri</span>
+      <span class="nav-label" data-person="miri">Miri</span>
     </div>
-    <button class="fab" onclick="openQuickEntry()">+</button>
+    <button class="fab" id="nav-fab" onclick="openQuickEntry()">+</button>
     <div class="nav-item" id="nav-invest" onclick="switchSection('invest', null, 'nav-invest')">
       <span class="nav-icon">📈</span>
       <span class="nav-label">Inversión</span>
@@ -2566,6 +2560,10 @@ body:not(.values-hidden) .account-rate-inline {
     <div class="nav-item" id="nav-global" onclick="switchSection('global', null, 'nav-global')">
       <span class="nav-icon">🌍</span>
       <span class="nav-label">Global</span>
+    </div>
+    <div class="nav-item" id="nav-settings" onclick="openSettings()" style="display:none;">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">Ajustes</span>
     </div>
   </nav>
 
@@ -3014,23 +3012,28 @@ body:not(.values-hidden) .account-rate-inline {
 
     <div class="settings-section-title">Nombres</div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Persona 1</label>
-        <input class="form-input" id="settings-name-mario" type="text" maxlength="16" placeholder="Mario" oninput="previewNames()">
+    <div id="settings-names-section">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;" id="settings-names-grid">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" id="settings-label-mario">Persona 1</label>
+          <input class="form-input" id="settings-name-mario" type="text" maxlength="16" placeholder="Mario" oninput="previewNames()">
+        </div>
+        <div class="form-group" style="margin-bottom:0" id="settings-name-miri-group">
+          <label class="form-label" id="settings-label-miri">Persona 2</label>
+          <input class="form-input" id="settings-name-miri" type="text" maxlength="16" placeholder="Miri" oninput="previewNames()">
+        </div>
       </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Persona 2</label>
-        <input class="form-input" id="settings-name-miri" type="text" maxlength="16" placeholder="Miri" oninput="previewNames()">
-      </div>
+      <button class="btn-submit" style="margin-bottom:20px;" onclick="saveNames()">Guardar nombres</button>
     </div>
-    <button class="btn-submit" style="margin-bottom:20px;" onclick="saveNames()">Guardar nombres</button>
+
+    <div class="settings-section-title" style="margin-top:4px;">Perfiles</div>
+    <div id="settings-profiles-section" style="margin-bottom:20px;"></div>
 
     <button class="settings-btn" onclick="exportBackup()">
       <span class="settings-btn-icon">📤</span>
       <div class="settings-btn-info">
-        <div class="settings-btn-label">Exportar datos (JSON)</div>
-        <div class="settings-btn-desc">Copia de seguridad completa en formato .json</div>
+        <div class="settings-btn-label">Exportar datos completos (JSON)</div>
+        <div class="settings-btn-desc">Copia de seguridad de todos los datos en .json</div>
       </div>
     </button>
 
@@ -3038,18 +3041,29 @@ body:not(.values-hidden) .account-rate-inline {
       <span class="settings-btn-icon">📊</span>
       <div class="settings-btn-info">
         <div class="settings-btn-label">Exportar a Excel</div>
-        <div class="settings-btn-desc">Descarga un .xlsx con movimientos, cuentas, deudas y depósitos</div>
+        <div class="settings-btn-desc">Informe completo con 9 hojas: resumen, movimientos, deudas, inversiones…</div>
       </div>
     </button>
+
+    <div id="settings-export-profiles"></div>
 
     <button class="settings-btn" onclick="document.getElementById('importInput').click()">
       <span class="settings-btn-icon">📥</span>
       <div class="settings-btn-info">
-        <div class="settings-btn-label">Importar datos</div>
-        <div class="settings-btn-desc">Restaura una copia de seguridad anterior</div>
+        <div class="settings-btn-label">Importar copia completa</div>
+        <div class="settings-btn-desc">Restaura una copia de seguridad completa</div>
       </div>
     </button>
     <input type="file" id="importInput" accept=".json" style="display:none" onchange="importBackup(event)">
+
+    <button class="settings-btn" id="settings-import-profile-btn" onclick="document.getElementById('importProfileInput').click()" style="display:none;">
+      <span class="settings-btn-icon">👤</span>
+      <div class="settings-btn-info">
+        <div class="settings-btn-label">Importar perfil</div>
+        <div class="settings-btn-desc">Carga un perfil exportado en el slot vacío</div>
+      </div>
+    </button>
+    <input type="file" id="importProfileInput" accept=".json" style="display:none" onchange="importProfileBackup(event)">
 
     <div class="settings-section-title" style="margin-top:20px;">Categorías</div>
 
@@ -3083,6 +3097,8 @@ body:not(.values-hidden) .account-rate-inline {
 
     <div class="settings-section-title" style="margin-top:20px;">Zona de peligro</div>
 
+    <div id="settings-danger-profiles"></div>
+
     <button class="settings-btn danger" onclick="resetApp()">
       <span class="settings-btn-icon">🗑</span>
       <div class="settings-btn-info">
@@ -3090,6 +3106,20 @@ body:not(.values-hidden) .account-rate-inline {
         <div class="settings-btn-desc">Elimina todos los datos y restablece la app</div>
       </div>
     </button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: ADD SECOND PROFILE ==================== -->
+<div class="modal-overlay" id="modalAddProfile" onclick="closeModalOutside(event,'modalAddProfile')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Añadir segundo perfil</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">El nuevo perfil arrancará vacío, sin datos.</div>
+    <div class="form-group">
+      <label class="form-label">Nombre</label>
+      <input class="form-input" id="newProfileName" type="text" maxlength="16" placeholder="Nombre del segundo perfil">
+    </div>
+    <button class="btn-submit" onclick="saveNewProfile()">Crear perfil</button>
   </div>
 </div>
 
@@ -3172,6 +3202,7 @@ body:not(.values-hidden) .account-rate-inline {
         <label class="form-label">Ciclo</label>
         <select class="form-select" id="subCycle">
           <option value="monthly">Mensual</option>
+          <option value="bimonthly">Bimensual</option>
           <option value="quarterly">Trimestral</option>
           <option value="biannual">Semestral</option>
           <option value="annual">Anual</option>
@@ -3911,7 +3942,8 @@ function getDefaults() {
     snapshots: { mario: [], miri: [] },
     investments: [],
     goals: { mario: null, miri: null, global: null },
-    categories: { income: [...DEFAULT_CATEGORIES.income], expense: [...DEFAULT_CATEGORIES.expense] }
+    categories: { income: [...DEFAULT_CATEGORIES.income], expense: [...DEFAULT_CATEGORIES.expense] },
+    activeProfiles: { mario: true, miri: true }
   };
 }
 
@@ -3940,6 +3972,7 @@ function migrateState(parsed) {
   if (!parsed.subscriptions) parsed.subscriptions = { mario: [], miri: [] };
   if (!parsed.subscriptions.mario) parsed.subscriptions.mario = [];
   if (!parsed.subscriptions.miri)  parsed.subscriptions.miri  = [];
+  if (!parsed.activeProfiles) parsed.activeProfiles = { mario: true, miri: true };
   return parsed;
 }
 
@@ -4040,6 +4073,7 @@ function unlockApp() {
     autoSnapshot();
     renderAll();
     applyNames();
+    applyProfileVisibility();
     initVisibility();
     renderGlobalPatrimonyChart();
     setTimeout(() => checkPendingSubscriptions(), 600);
@@ -4061,6 +4095,7 @@ function switchSection(section, tabEl, navId) {
   renderAll();
   if (section === 'invest') renderInvestCharts();
   if (section === 'global') renderGlobalPatrimonyChart();
+  requestAnimationFrame(() => animateBarsIn(document.getElementById('page-' + section)));
 }
 
 function switchSubTab(person, tab, el) {
@@ -4072,6 +4107,7 @@ function switchSubTab(person, tab, el) {
   el.closest('.subsection-tabs').querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   if (tab === 'graficas') renderCharts(person);
+  requestAnimationFrame(() => animateBarsIn(document.getElementById(person + '-sub-' + tab)));
 }
 
 function switchPeriod(period, el) {
@@ -5362,9 +5398,9 @@ function subLogoHTML(name, emoji, size = 28) {
   <span id="${id}_fb" style="font-size:${Math.round(size * 0.85)}px;line-height:1;display:none;">${fallback}</span>`;
 }
 
-const CYCLE_LABELS  = { monthly: 'Mensual', quarterly: 'Trimestral', biannual: 'Semestral', annual: 'Anual' };
-const CYCLE_MONTHS  = { monthly: 1, quarterly: 3, biannual: 6, annual: 12 };
-const CYCLE_MONTHLY = { monthly: 1, quarterly: 1/3, biannual: 1/6, annual: 1/12 };
+const CYCLE_LABELS  = { monthly: 'Mensual', bimonthly: 'Bimensual', quarterly: 'Trimestral', biannual: 'Semestral', annual: 'Anual' };
+const CYCLE_MONTHS  = { monthly: 1, bimonthly: 2, quarterly: 3, biannual: 6, annual: 12 };
+const CYCLE_MONTHLY = { monthly: 1, bimonthly: 1/2, quarterly: 1/3, biannual: 1/6, annual: 1/12 };
 
 function subNextDateAfter(dateStr, cycle) {
   const d = new Date(dateStr + 'T12:00:00');
@@ -6158,6 +6194,7 @@ function openDebtDetail(person, debtId) {
     <div class="debt-progress-bar" style="margin-bottom:8px;">
       <div class="debt-progress-fill" style="width:${capitalPct}%;${isFinished?'background:var(--income)':''}"></div>
     </div>`;
+  requestAnimationFrame(() => animateBarsIn(wrap));
 
   document.getElementById('ddetail-total').textContent         = '€' + fmt(d.total);
   document.getElementById('ddetail-paid-span').textContent     = hasFrench
@@ -8513,15 +8550,139 @@ function removeCategory(type, name) {
   renderCategoryChips();
 }
 
+function isProfileActive(person) {
+  if (!state.activeProfiles) return true;
+  return state.activeProfiles[person] !== false;
+}
+
+function applyProfileVisibility() {
+  const marioActive = isProfileActive('mario');
+  const miriActive  = isProfileActive('miri');
+  const both        = marioActive && miriActive;
+
+  // Nav profile tabs
+  document.getElementById('nav-mario').style.display = marioActive ? '' : 'none';
+  document.getElementById('nav-miri').style.display  = miriActive  ? '' : 'none';
+
+  // Reposition FAB and show/hide settings nav item
+  const nav         = document.getElementById('bottom-nav');
+  const fab         = document.getElementById('nav-fab');
+  const navInvest   = document.getElementById('nav-invest');
+  const navGlobal   = document.getElementById('nav-global');
+  const navSettings = document.getElementById('nav-settings');
+
+  if (both) {
+    // Two profiles: [Mario] [Miri] [+] [Inversión] [Global]
+    // FAB goes after Miri (before invest)
+    nav.insertBefore(fab, navInvest);
+    navSettings.style.display = 'none';
+  } else {
+    // One profile: [Mario/Miri] [Inversión] [+] [Global] [⚙️]
+    // FAB goes after invest (before global)
+    nav.insertBefore(fab, navGlobal);
+    navSettings.style.display = '';
+  }
+
+  // If current section belongs to deleted profile, redirect
+  const currentSection = document.querySelector('.app-section.active')?.id;
+  if (currentSection === 'section-mario' && !marioActive) {
+    switchSection(miriActive ? 'miri' : 'invest', null, miriActive ? 'nav-miri' : 'nav-invest');
+  } else if (currentSection === 'section-miri' && !miriActive) {
+    switchSection(marioActive ? 'mario' : 'invest', null, marioActive ? 'nav-mario' : 'nav-invest');
+  }
+
+  // Quick entry person buttons
+  const qeMiri  = document.getElementById('qe-miri');
+  const qeMario = document.getElementById('qe-mario');
+  if (qeMiri)  qeMiri.style.display  = miriActive  ? '' : 'none';
+  if (qeMario) qeMario.style.display = marioActive ? '' : 'none';
+}
+
+function renderSettingsProfiles() {
+  const marioActive = isProfileActive('mario');
+  const miriActive  = isProfileActive('miri');
+  const both        = marioActive && miriActive;
+  const neither     = !marioActive && !miriActive; // shouldn't happen
+
+  // Profile management section (add second profile)
+  const profilesEl = document.getElementById('settings-profiles-section');
+  if (profilesEl) {
+    if (!both) {
+      const activeOne = marioActive ? 'mario' : 'miri';
+      profilesEl.innerHTML = `
+        <button class="settings-btn" onclick="openAddProfile()">
+          <span class="settings-btn-icon">➕</span>
+          <div class="settings-btn-info">
+            <div class="settings-btn-label">Añadir segundo perfil</div>
+            <div class="settings-btn-desc">Actualmente solo hay un perfil activo (${getName(activeOne)})</div>
+          </div>
+        </button>`;
+    } else {
+      profilesEl.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:8px 0;">Ambos perfiles activos — ${getName('mario')} y ${getName('miri')}.</div>`;
+    }
+  }
+
+  // Export profile buttons (one per active profile)
+  const exportEl = document.getElementById('settings-export-profiles');
+  if (exportEl) {
+    let exportHtml = '';
+    ['mario','miri'].forEach(p => {
+      if (isProfileActive(p)) {
+        exportHtml += `
+          <button class="settings-btn" onclick="exportProfileBackup('${p}')">
+            <span class="settings-btn-icon">👤</span>
+            <div class="settings-btn-info">
+              <div class="settings-btn-label">Exportar perfil de ${getName(p)}</div>
+              <div class="settings-btn-desc">Solo sus cuentas, movimientos, deudas y depósitos</div>
+            </div>
+          </button>`;
+      }
+    });
+    exportEl.innerHTML = exportHtml;
+  }
+
+  // Import profile button — only show if there's a free slot
+  const hasFreeSlot = !isProfileActive('mario') || !isProfileActive('miri');
+  const importProfileBtn = document.getElementById('settings-import-profile-btn');
+  if (importProfileBtn) importProfileBtn.style.display = hasFreeSlot ? '' : 'none';
+
+  // Danger zone profile delete buttons
+  const dangerEl = document.getElementById('settings-danger-profiles');
+  if (!dangerEl) return;
+  let html = '';
+  if (both) {
+    html += `
+      <button class="settings-btn danger" onclick="confirmDeleteProfile('miri')" style="margin-bottom:8px;">
+        <span class="settings-btn-icon">👤</span>
+        <div class="settings-btn-info">
+          <div class="settings-btn-label">Eliminar perfil de ${getName('miri')}</div>
+          <div class="settings-btn-desc">Borra todas sus cuentas, deudas, depósitos y suscripciones</div>
+        </div>
+      </button>
+      <button class="settings-btn danger" onclick="confirmDeleteProfile('mario')" style="margin-bottom:8px;">
+        <span class="settings-btn-icon">👤</span>
+        <div class="settings-btn-info">
+          <div class="settings-btn-label">Eliminar perfil de ${getName('mario')}</div>
+          <div class="settings-btn-desc">Borra todas sus cuentas, deudas, depósitos y suscripciones</div>
+        </div>
+      </button>`;
+  }
+  dangerEl.innerHTML = html;
+
+  // Hide miri name field if miri is inactive (only mario active)
+  const miriGroup = document.getElementById('settings-name-miri-group');
+  if (miriGroup) miriGroup.style.display = miriActive ? '' : 'none';
+}
+
 function openSettings() {
   document.getElementById('settings-name-mario').value = getName('mario');
   document.getElementById('settings-name-miri').value  = getName('miri');
   renderCategoryChips();
+  renderSettingsProfiles();
   document.getElementById('modalSettings').classList.add('open');
 }
 
 function previewNames() {
-  // Live preview while typing - just update the title row
   const m  = document.getElementById('settings-name-mario').value.trim() || 'Mario';
   const mi = document.getElementById('settings-name-miri').value.trim()  || 'Miri';
   const marioTitle = document.querySelector('.section-name.mario');
@@ -8533,14 +8694,106 @@ function previewNames() {
 function saveNames() {
   const m  = document.getElementById('settings-name-mario').value.trim();
   const mi = document.getElementById('settings-name-miri').value.trim();
-  if (!m || !mi) { showToast('Los nombres no pueden estar vacíos', 'error'); return; }
+  if (!m) { showToast('El nombre no puede estar vacío', 'error'); return; }
   if (!state.names) state.names = {};
   state.names.mario = m;
-  state.names.miri  = mi;
+  if (isProfileActive('miri')) {
+    if (!mi) { showToast('El nombre no puede estar vacío', 'error'); return; }
+    state.names.miri = mi;
+  }
   saveState();
   applyNames();
   closeModal('modalSettings');
   showToast('Nombres actualizados ✓', 'success');
+}
+
+// ---- Delete profile ----
+
+function confirmDeleteProfile(person) {
+  const name = getName(person);
+  showConfirm(
+    `¿Eliminar perfil de ${name}?`,
+    `Se eliminarán todas sus cuentas, transacciones, deudas, depósitos y suscripciones. Las cuentas y suscripciones comunes pasarán al otro perfil. Esta acción no se puede deshacer.`,
+    () => confirmDeleteProfile2(person)
+  );
+}
+
+function confirmDeleteProfile2(person) {
+  const name = getName(person);
+  showConfirm(
+    `Confirmación final`,
+    `Escribe el nombre "${name}" para confirmar la eliminación definitiva del perfil.`,
+    () => executeDeleteProfile(person),
+    name
+  );
+}
+
+function executeDeleteProfile(person) {
+  const other = person === 'mario' ? 'miri' : 'mario';
+
+  // Move common accounts to the surviving profile (they're already in state.accounts.common, keep them)
+  // Move common subscriptions to the surviving profile
+  const commonSubs = (state.subscriptions[person] || []).filter(s => s.isCommon);
+  commonSubs.forEach(s => { s.isCommon = false; });
+  state.subscriptions[other] = [...(state.subscriptions[other] || []), ...commonSubs];
+
+  // Wipe deleted profile data
+  state.accounts[person]      = [];
+  state.transactions          = state.transactions.filter(t => t.person !== person);
+  state.debts[person]         = [];
+  state.deposits[person]      = [];
+  state.subscriptions[person] = [];
+  state.snapshots[person]     = [];
+  state.goals[person]         = null;
+
+  // Mark inactive
+  if (!state.activeProfiles) state.activeProfiles = { mario: true, miri: true };
+  state.activeProfiles[person] = false;
+
+  saveState();
+  applyProfileVisibility();
+  applyNames();
+  renderAll();
+  closeModal('modalSettings');
+  showToast(`Perfil de ${getName(person)} eliminado`, '');
+}
+
+// ---- Add profile ----
+
+function openAddProfile() {
+  document.getElementById('newProfileName').value = '';
+  closeModal('modalSettings');
+  document.getElementById('modalAddProfile').classList.add('open');
+}
+
+function saveNewProfile() {
+  const name = document.getElementById('newProfileName').value.trim();
+  if (!name) { showToast('Escribe un nombre', 'error'); return; }
+
+  // Find the inactive slot
+  const slot = !isProfileActive('miri') ? 'miri' : (!isProfileActive('mario') ? 'mario' : null);
+  if (!slot) { showToast('Ya hay dos perfiles activos', 'error'); return; }
+
+  if (!state.names) state.names = {};
+  state.names[slot] = name;
+  state.activeProfiles[slot] = true;
+
+  // Reset that slot's data cleanly
+  state.accounts[slot]      = [];
+  state.debts[slot]         = [];
+  state.deposits[slot]      = [];
+  state.subscriptions[slot] = [];
+  state.snapshots[slot]     = [];
+  state.goals[slot]         = null;
+  // Filter out any stray transactions from that slot
+  state.transactions = state.transactions.filter(t => t.person !== slot);
+
+  saveState();
+  applyProfileVisibility();
+  applyNames();
+  renderAll();
+  closeModal('modalAddProfile');
+  showToast(`Perfil de ${name} creado ✓`, 'success');
 }
 
 function exportBackup() {
@@ -8588,9 +8841,140 @@ function exportBackup() {
   }
 }
 
-function fallbackExport(json, fileName) {
-  // Not used anymore but kept for safety
+function exportProfileBackup(person) {
+  const name = getName(person);
+
+  // Extract only this person's data
+  const profileData = {
+    accounts:      state.accounts[person] || [],
+    transactions:  (state.transactions || []).filter(t => t.person === person),
+    debts:         { [person]: state.debts[person] || [] },
+    deposits:      { [person]: state.deposits[person] || [] },
+    subscriptions: { [person]: state.subscriptions[person] || [] },
+    snapshots:     { [person]: state.snapshots[person] || [] },
+    goals:         { [person]: state.goals?.[person] || null },
+    names:         { [person]: state.names?.[person] || name },
+    activeProfiles:{ [person]: true },
+    _profileSlot:  person   // hint for importer
+  };
+
+  const wrapped = {
+    version: 3,
+    type: 'profile-backup',
+    profile: person,
+    profileName: name,
+    exportedAt: new Date().toISOString(),
+    data: profileData
+  };
+
+  const json     = JSON.stringify(wrapped, null, 2);
+  const date     = new Date().toISOString().split('T')[0];
+  const fileName = `finanzas-perfil-${name.toLowerCase()}-${date}.json`;
+
+  try {
+    if (typeof navigator.share === 'function') {
+      const file = new File([json], fileName, { type: 'application/json' });
+      let canShare = false;
+      try { canShare = navigator.canShare({ files: [file] }); } catch(e) {}
+      if (canShare) {
+        navigator.share({ files: [file], title: `Perfil ${name}` })
+          .then(() => showToast('Perfil exportado ✓', 'success'))
+          .catch(() => showToast('Compartir cancelado', ''));
+        return;
+      }
+      navigator.share({ title: `Perfil ${name}`, text: json })
+        .then(() => showToast('Perfil compartido ✓', 'success'))
+        .catch(() => showToast('Compartir cancelado', ''));
+      return;
+    }
+  } catch(e) {}
+
+  try {
+    const w = window.open('', '_blank');
+    if (w) {
+      w.document.write('<pre style="word-break:break-all;white-space:pre-wrap;font-size:11px;">' + json.replace(/</g,'&lt;') + '</pre>');
+      w.document.close();
+      showToast('Copia el texto del backup desde la nueva pestaña', '');
+    }
+  } catch(e) {
+    showToast('No se pudo exportar en este navegador', 'error');
+  }
 }
+
+function importProfileBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+
+      // Must be a profile backup
+      if (parsed.type !== 'profile-backup' || !parsed.data) {
+        showToast('Este archivo no es un backup de perfil', 'error');
+        event.target.value = '';
+        return;
+      }
+
+      // Find a free slot
+      const freeSlot = !isProfileActive('mario') ? 'mario'
+                     : !isProfileActive('miri')  ? 'miri'
+                     : null;
+
+      if (!freeSlot) {
+        showToast('No hay ningún slot libre. Elimina un perfil primero.', 'error');
+        event.target.value = '';
+        return;
+      }
+
+      const profileName = parsed.profileName || parsed.profile || freeSlot;
+      const d           = parsed.data;
+
+      showConfirm(
+        `¿Importar perfil "${profileName}"?`,
+        `Se cargará en el slot vacío. No se modificarán el otro perfil, las inversiones ni los datos comunes.`,
+        () => {
+          // Import into the free slot
+          state.accounts[freeSlot]      = d.accounts || [];
+          state.debts[freeSlot]         = d.debts?.[parsed.profile] || d.debts?.[freeSlot] || [];
+          state.deposits[freeSlot]      = d.deposits?.[parsed.profile] || d.deposits?.[freeSlot] || [];
+          state.subscriptions[freeSlot] = d.subscriptions?.[parsed.profile] || d.subscriptions?.[freeSlot] || [];
+          state.snapshots[freeSlot]     = d.snapshots?.[parsed.profile] || d.snapshots?.[freeSlot] || [];
+          if (state.goals) state.goals[freeSlot] = d.goals?.[parsed.profile] || d.goals?.[freeSlot] || null;
+
+          // Name
+          if (!state.names) state.names = {};
+          state.names[freeSlot] = d.names?.[parsed.profile] || d.names?.[freeSlot] || profileName;
+
+          // Remap transactions: replace original person slot with freeSlot
+          const importedTx = (d.transactions || []).map(t => ({ ...t, person: freeSlot }));
+          // Remove any existing transactions for freeSlot and add imported ones
+          state.transactions = [
+            ...(state.transactions || []).filter(t => t.person !== freeSlot),
+            ...importedTx
+          ];
+
+          // Activate profile
+          if (!state.activeProfiles) state.activeProfiles = { mario: true, miri: true };
+          state.activeProfiles[freeSlot] = true;
+
+          saveState();
+          applyProfileVisibility();
+          applyNames();
+          renderAll();
+          closeModal('modalSettings');
+          showToast(`Perfil "${state.names[freeSlot]}" importado ✓`, 'success');
+        }
+      );
+    } catch {
+      showToast('Archivo inválido o corrupto', 'error');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+
 
 function exportExcel() {
   if (typeof XLSX === 'undefined') {
@@ -8598,78 +8982,625 @@ function exportExcel() {
     return;
   }
 
-  const wb = XLSX.utils.book_new();
-  const m  = getName('mario');
-  const mi = getName('miri');
+  const wb      = XLSX.utils.book_new();
+  const m       = getName('mario');
+  const mi      = getName('miri');
+  const today   = new Date().toISOString().split('T')[0];
   const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-ES') : '';
+  const n2      = v => (typeof v === 'number' && isFinite(v)) ? Math.round(v * 100) / 100 : (v ?? 0);
 
-  // ---- MOVIMIENTOS ----
-  const txHeaders = ['Fecha', 'Persona', 'Tipo', 'Descripción', 'Categoría', 'Cuenta', 'Importe (€)'];
-  const txRows = [...state.transactions]
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(t => {
-      const acc = findAccountById(t.accountId);
-      const personLabel = t.person === 'mario' ? m : mi;
-      const typeLabel   = t.type === 'income' ? 'Ingreso' : t.type === 'expense' ? 'Gasto' : 'Ahorro';
-      const amount      = t.type === 'income' ? t.amount : -t.amount;
-      return [fmtDate(t.date), personLabel, typeLabel, t.desc || '', t.category || '', acc ? acc.name : '—', amount];
+  // ─── helpers for openpyxl-style styling via XLSX ──────────────────────────
+  function setCellStyle(ws, addr, style) {
+    if (!ws[addr]) ws[addr] = { t: 'z', v: '' };
+    ws[addr].s = style;
+  }
+  function styleRange(ws, r1, c1, r2, c2, style) {
+    for (let r = r1; r <= r2; r++)
+      for (let c = c1; c <= c2; c++)
+        setCellStyle(ws, XLSX.utils.encode_cell({ r: r - 1, c: c - 1 }), style);
+  }
+
+  const DARK_FILL  = { patternType: 'solid', fgColor: { rgb: '1A1F2E' } };
+  const HDR_FILL   = { patternType: 'solid', fgColor: { rgb: '2D3451' } };
+  const ALT_FILL   = { patternType: 'solid', fgColor: { rgb: '222840' } };
+  const WHITE_FILL = { patternType: 'solid', fgColor: { rgb: 'FFFFFF' } };
+  const ACCENT1    = { patternType: 'solid', fgColor: { rgb: '7EB8F7' } }; // mario blue
+  const ACCENT2    = { patternType: 'solid', fgColor: { rgb: 'F7A8C4' } }; // miri pink
+  const ACCENT3    = { patternType: 'solid', fgColor: { rgb: '6FCFAB' } }; // invest green
+  const ACCENT4    = { patternType: 'solid', fgColor: { rgb: 'F9D978' } }; // global gold
+  const RED_FILL   = { patternType: 'solid', fgColor: { rgb: '4A1A1A' } };
+  const GREEN_FILL = { patternType: 'solid', fgColor: { rgb: '1A3A2A' } };
+  const THIN_BORDER = {
+    top:    { style: 'thin', color: { rgb: '3A4060' } },
+    bottom: { style: 'thin', color: { rgb: '3A4060' } },
+    left:   { style: 'thin', color: { rgb: '3A4060' } },
+    right:  { style: 'thin', color: { rgb: '3A4060' } }
+  };
+  const hdrFont   = (sz = 10) => ({ name: 'Arial', sz, bold: true, color: { rgb: 'C8D4F0' } });
+  const valFont   = (sz = 10) => ({ name: 'Arial', sz, color: { rgb: 'E0E6F4' } });
+  const titleFont = (sz = 14) => ({ name: 'Arial', sz, bold: true, color: { rgb: 'F0F4FF' } });
+  const muteFont  = ()        => ({ name: 'Arial', sz: 9, color: { rgb: '7A8BA8' } });
+  const accentFont = (rgb, sz = 11) => ({ name: 'Arial', sz, bold: true, color: { rgb } });
+  const EUR  = '"€"#,##0.00;[Red]\\-"€"#,##0.00';
+  const EUR0 = '"€"#,##0;[Red]\\-"€"#,##0';
+  const PCT  = '0.00%';
+  const PCT1 = '0.0%';
+  const NUM2 = '#,##0.00';
+  const NUM0 = '#,##0';
+
+  function makeCell(v, font, fill, fmt2, align, border) {
+    const t = typeof v === 'number' ? 'n' : 's';
+    const c = { v, t };
+    if (t === 'n') c.z = fmt2 || NUM2;
+    c.s = {};
+    if (font)   c.s.font      = font;
+    if (fill)   c.s.fill      = fill;
+    if (align)  c.s.alignment = align;
+    if (border) c.s.border    = border;
+    return c;
+  }
+  const CENTER = { horizontal: 'center', vertical: 'center' };
+  const LEFT   = { horizontal: 'left',   vertical: 'center' };
+  const RIGHT  = { horizontal: 'right',  vertical: 'center' };
+  const WRAP   = { horizontal: 'left',   vertical: 'center', wrapText: true };
+
+  function buildSheet(data, cols, mergeCells) {
+    const ws = XLSX.utils.aoa_to_sheet(data, { cellStyles: true });
+    ws['!cols'] = cols.map(w => ({ wch: w }));
+    if (mergeCells) ws['!merges'] = mergeCells;
+    return ws;
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 1. RESUMEN EJECUTIVO
+  // ══════════════════════════════════════════════════════════
+  const mTotal   = getPersonTotal('mario');
+  const miTotal  = getPersonTotal('miri');
+  const comTotal = state.accounts.common.reduce((s, a) => s + a.balance, 0);
+  const mDep     = (state.deposits['mario'] || []).filter(d => !d.liquidated).reduce((s, d) => s + d.amount, 0);
+  const miDep    = (state.deposits['miri']  || []).filter(d => !d.liquidated).reduce((s, d) => s + d.amount, 0);
+  const mDebt    = (state.debts['mario']    || []).reduce((s, d) => s + (d.total - (d.paid || 0)), 0);
+  const miDebt   = (state.debts['miri']     || []).reduce((s, d) => s + (d.total - (d.paid || 0)), 0);
+  const invTotal = (state.investments || []).reduce((s, i) => s + i.units * (i.currentPrice || i.avgBuyPrice), 0);
+  const invCost  = (state.investments || []).reduce((s, i) => s + i.units * i.avgBuyPrice, 0);
+  const grandPat = mTotal + miTotal + comTotal + mDep + miDep;
+
+  // Monthly flows from transactions in current month
+  const curYM = today.substring(0, 7);
+  const curTx = state.transactions.filter(t => t.date.startsWith(curYM));
+  const mInc  = curTx.filter(t => t.person === 'mario' && t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const mExp  = curTx.filter(t => t.person === 'mario' && t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const miInc = curTx.filter(t => t.person === 'miri'  && t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const miExp = curTx.filter(t => t.person === 'miri'  && t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+
+  const CYCLE_MONTHLY_EXP = { monthly: 1, bimonthly: 0.5, quarterly: 1/3, biannual: 1/6, annual: 1/12 };
+  const mSubMonth  = (state.subscriptions['mario'] || []).reduce((s, sub) => s + sub.amount * (CYCLE_MONTHLY_EXP[sub.cycle] || 1), 0);
+  const miSubMonth = (state.subscriptions['miri']  || []).reduce((s, sub) => s + sub.amount * (CYCLE_MONTHLY_EXP[sub.cycle] || 1), 0);
+
+  const T  = (v, font, fill, z, al, b) => makeCell(v, font, fill, z, al, b);
+  const RES = (label, mario, miri, total, note) => [
+    T(label,  valFont(),   HDR_FILL, null,   LEFT,   THIN_BORDER),
+    T(n2(mario), valFont(), HDR_FILL, EUR,   RIGHT,  THIN_BORDER),
+    T(n2(miri),  valFont(), HDR_FILL, EUR,   RIGHT,  THIN_BORDER),
+    T(n2(total), { name:'Arial', sz:10, bold:true, color:{rgb:'F0F4FF'} }, HDR_FILL, EUR, RIGHT, THIN_BORDER),
+    T(note || '', muteFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+  ];
+
+  const resData = [
+    [T('INFORME FINANCIERO PERSONAL', titleFont(16), DARK_FILL, null, CENTER), '', '', '', ''],
+    [T('Exportado el ' + fmtDate(today), muteFont(), DARK_FILL, null, CENTER), '', '', '', ''],
+    ['', '', '', '', ''],
+    [T('PATRIMONIO NETO', hdrFont(11), ACCENT4, null, CENTER), T(m, hdrFont(11), ACCENT1, null, CENTER), T(mi, hdrFont(11), ACCENT2, null, CENTER), T('Total', hdrFont(11), ACCENT3, null, CENTER), T('Notas', hdrFont(10), HDR_FILL, null, LEFT)],
+    RES('💰 Saldo en cuentas', mTotal,  miTotal,  mTotal + miTotal + comTotal, 'Incluye cuentas comunes en Total'),
+    RES('🏦 Depósitos activos', mDep,   miDep,    mDep + miDep, ''),
+    RES('📉 Deudas pendientes', -mDebt, -miDebt,  -(mDebt + miDebt), 'Importe negativo = pasivo'),
+    RES('📈 Inversiones (valor)', invTotal/2, invTotal/2, invTotal, 'Cartera de inversión conjunta'),
+    [T('PATRIMONIO BRUTO (sin deudas)', { name:'Arial', sz:11, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     T(n2(mTotal+mDep), { name:'Arial', sz:11, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, EUR, RIGHT, THIN_BORDER),
+     T(n2(miTotal+miDep), { name:'Arial', sz:11, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, EUR, RIGHT, THIN_BORDER),
+     T(n2(grandPat), { name:'Arial', sz:12, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, EUR, RIGHT, THIN_BORDER),
+     T('Cuentas + Depósitos', muteFont(), { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER)],
+    ['', '', '', '', ''],
+    [T('FLUJOS DEL MES ACTUAL', hdrFont(11), ACCENT4, null, CENTER), T(m, hdrFont(11), ACCENT1, null, CENTER), T(mi, hdrFont(11), ACCENT2, null, CENTER), T('Total', hdrFont(11), ACCENT3, null, CENTER), T('', muteFont(), HDR_FILL, null, LEFT)],
+    RES('✅ Ingresos',     mInc,  miInc,  mInc + miInc, ''),
+    RES('❌ Gastos',       -mExp, -miExp, -(mExp + miExp), ''),
+    RES('💳 Suscripciones (equiv. mensual)', -mSubMonth, -miSubMonth, -(mSubMonth + miSubMonth), 'Normalizado a mes'),
+    RES('📊 Ahorro neto',  mInc - mExp, miInc - miExp, (mInc + miInc) - (mExp + miExp), ''),
+    ['', '', '', '', ''],
+    [T('INVERSIONES', hdrFont(11), ACCENT4, null, CENTER), T('Coste', hdrFont(), ACCENT1, null, CENTER), T('Valor actual', hdrFont(), ACCENT2, null, CENTER), T('Rentabilidad €', hdrFont(), ACCENT3, null, CENTER), T('Rentabilidad %', hdrFont(), HDR_FILL, null, CENTER)],
+    [T('Cartera total', valFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+     T(n2(invCost), valFont(), HDR_FILL, EUR, RIGHT, THIN_BORDER),
+     T(n2(invTotal), valFont(), HDR_FILL, EUR, RIGHT, THIN_BORDER),
+     T(n2(invTotal - invCost), { name:'Arial', sz:10, bold:true, color:{rgb: invTotal >= invCost ? '6FCFAB' : 'F87171'} }, HDR_FILL, EUR, RIGHT, THIN_BORDER),
+     T(invCost > 0 ? n2((invTotal - invCost) / invCost) : 0, { name:'Arial', sz:10, bold:true, color:{rgb: invTotal >= invCost ? '6FCFAB' : 'F87171'} }, HDR_FILL, PCT, RIGHT, THIN_BORDER)],
+  ];
+
+  const resWs = buildSheet(resData, [38, 16, 16, 16, 28], [
+    { s:{r:0,c:0}, e:{r:0,c:4} },
+    { s:{r:1,c:0}, e:{r:1,c:4} },
+  ]);
+  resWs['!rows'] = [{ hpt: 28 }, { hpt: 16 }];
+  XLSX.utils.book_append_sheet(wb, resWs, '📊 Resumen');
+
+  // ══════════════════════════════════════════════════════════
+  // 2. ANÁLISIS MENSUAL (últimos 12 meses)
+  // ══════════════════════════════════════════════════════════
+  const months12 = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - i);
+    months12.push(d.toISOString().substring(0, 7));
+  }
+
+  const monthlyRows = months12.map(ym => {
+    const txM = state.transactions.filter(t => t.date.startsWith(ym));
+    const incM = p => txM.filter(t => t.person === p && t.type === 'income').reduce((s,t) => s+t.amount, 0);
+    const expM = p => txM.filter(t => t.person === p && t.type === 'expense').reduce((s,t) => s+t.amount, 0);
+    const label = new Date(ym + '-15').toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+    const mI = incM('mario'), mE = expM('mario'), miI = incM('miri'), miE = expM('miri');
+    return [
+      T(label,    valFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+      T(n2(mI),   valFont(), HDR_FILL, EUR,  RIGHT,  THIN_BORDER),
+      T(n2(mE),   valFont(), HDR_FILL, EUR,  RIGHT,  THIN_BORDER),
+      T(n2(mI-mE),{ name:'Arial', sz:10, bold:true, color:{rgb: mI>=mE?'6FCFAB':'F87171'}}, HDR_FILL, EUR, RIGHT, THIN_BORDER),
+      T(n2(miI),  valFont(), HDR_FILL, EUR,  RIGHT,  THIN_BORDER),
+      T(n2(miE),  valFont(), HDR_FILL, EUR,  RIGHT,  THIN_BORDER),
+      T(n2(miI-miE),{ name:'Arial', sz:10, bold:true, color:{rgb: miI>=miE?'6FCFAB':'F87171'}}, HDR_FILL, EUR, RIGHT, THIN_BORDER),
+      T(n2(mI+miI),   valFont(), HDR_FILL, EUR, RIGHT, THIN_BORDER),
+      T(n2(mE+miE),   valFont(), HDR_FILL, EUR, RIGHT, THIN_BORDER),
+      T(n2((mI+miI)-(mE+miE)), { name:'Arial', sz:10, bold:true, color:{rgb: (mI+miI)>=(mE+miE)?'6FCFAB':'F87171'}}, HDR_FILL, EUR, RIGHT, THIN_BORDER),
+    ];
+  });
+
+  const hdrAlt = (txt, fill) => T(txt, hdrFont(10), fill, null, CENTER, THIN_BORDER);
+  const mensualData = [
+    [T('ANÁLISIS MENSUAL — ÚLTIMOS 12 MESES', titleFont(13), DARK_FILL, null, CENTER), '','','','','','','','',''],
+    ['', '', '', '', '', '', '', '', '', ''],
+    [T('',CENTER), T(m, hdrFont(11), ACCENT1, null, CENTER), '','', T(mi, hdrFont(11), ACCENT2, null, CENTER), '','', T('TOTAL', hdrFont(11), ACCENT3, null, CENTER), '',''],
+    [hdrAlt('Mes', HDR_FILL), hdrAlt('Ingresos', ACCENT1), hdrAlt('Gastos', ACCENT1), hdrAlt('Ahorro', ACCENT1),
+     hdrAlt('Ingresos', ACCENT2), hdrAlt('Gastos', ACCENT2), hdrAlt('Ahorro', ACCENT2),
+     hdrAlt('Ingresos', ACCENT3), hdrAlt('Gastos', ACCENT3), hdrAlt('Ahorro', ACCENT3)],
+    ...monthlyRows,
+    // Totals row
+    [T('TOTALES', { name:'Arial', sz:10, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, CENTER, THIN_BORDER),
+     ...Array.from({length: 9}, (_, ci) => {
+       const vals = monthlyRows.map(row => row[ci + 1].v || 0);
+       const sum = vals.reduce((a, b) => a + b, 0);
+       return T(n2(sum), { name:'Arial', sz:10, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, EUR, RIGHT, THIN_BORDER);
+     })
+    ]
+  ];
+
+  const mensualWs = buildSheet(mensualData, [14, 13, 13, 13, 13, 13, 13, 13, 13, 13], [
+    { s:{r:0,c:0}, e:{r:0,c:9} },
+    { s:{r:2,c:1}, e:{r:2,c:3} },
+    { s:{r:2,c:4}, e:{r:2,c:6} },
+    { s:{r:2,c:7}, e:{r:2,c:9} },
+  ]);
+  XLSX.utils.book_append_sheet(wb, mensualWs, '📅 Análisis mensual');
+
+  // ══════════════════════════════════════════════════════════
+  // 3. PATRIMONIO HISTÓRICO (snapshots)
+  // ══════════════════════════════════════════════════════════
+  const allSnaps = {};
+  ['mario', 'miri'].forEach(p => {
+    (state.snapshots[p] || []).forEach(s => {
+      if (!allSnaps[s.month]) allSnaps[s.month] = {};
+      allSnaps[s.month][p] = s;
     });
-  const txSheet = XLSX.utils.aoa_to_sheet([txHeaders, ...txRows]);
-  txSheet['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 28 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
-  XLSX.utils.book_append_sheet(wb, txSheet, 'Movimientos');
+  });
+  const snapMonths = Object.keys(allSnaps).sort();
+  const snapRows = snapMonths.map(ym => {
+    const sm = allSnaps[ym];
+    const mBal  = sm.mario  ? n2(sm.mario.balance)  : '';
+    const mDp   = sm.mario  ? n2(sm.mario.deposits)  : '';
+    const miBal = sm.miri   ? n2(sm.miri.balance)   : '';
+    const miDp  = sm.miri   ? n2(sm.miri.deposits)   : '';
+    const total = (sm.mario ? sm.mario.balance + sm.mario.deposits : 0) +
+                  (sm.miri  ? sm.miri.balance  + sm.miri.deposits  : 0);
+    const label = new Date(ym + '-15').toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+    return [
+      T(label,  valFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+      T(mBal,   valFont(), HDR_FILL, EUR,  RIGHT,  THIN_BORDER),
+      T(mDp,    valFont(), HDR_FILL, EUR,  RIGHT,  THIN_BORDER),
+      T(miBal,  valFont(), HDR_FILL, EUR,  RIGHT,  THIN_BORDER),
+      T(miDp,   valFont(), HDR_FILL, EUR,  RIGHT,  THIN_BORDER),
+      T(n2(total), { name:'Arial', sz:10, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'252015'} }, EUR, RIGHT, THIN_BORDER),
+    ];
+  });
 
-  // ---- CUENTAS ----
-  const accHeaders = ['Persona', 'Nombre', 'Saldo (€)', 'Tipo', 'Remuneración (%)', 'Común'];
-  const accRows = [];
-  state.accounts.mario.forEach(a => accRows.push([m, a.name, a.balance, a.accType === 'saving' ? 'Ahorro' : 'Corriente', a.rate ?? '', 'No']));
-  state.accounts.miri.forEach(a  => accRows.push([mi, a.name, a.balance, a.accType === 'saving' ? 'Ahorro' : 'Corriente', a.rate ?? '', 'No']));
-  state.accounts.common.forEach(a => accRows.push(['Común', a.name, a.balance, 'Corriente', a.rate ?? '', 'Sí']));
-  const accSheet = XLSX.utils.aoa_to_sheet([accHeaders, ...accRows]);
-  accSheet['!cols'] = [{ wch: 10 }, { wch: 20 }, { wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 8 }];
-  XLSX.utils.book_append_sheet(wb, accSheet, 'Cuentas');
+  const snapData = [
+    [T('EVOLUCIÓN PATRIMONIAL HISTÓRICA', titleFont(13), DARK_FILL, null, CENTER), '','','','',''],
+    ['','','','','',''],
+    [T('Mes', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T(m + ' — Saldo', hdrFont(), ACCENT1, null, CENTER, THIN_BORDER),
+     T(m + ' — Depósitos', hdrFont(), ACCENT1, null, CENTER, THIN_BORDER),
+     T(mi + ' — Saldo', hdrFont(), ACCENT2, null, CENTER, THIN_BORDER),
+     T(mi + ' — Depósitos', hdrFont(), ACCENT2, null, CENTER, THIN_BORDER),
+     T('Patrimonio total', hdrFont(), ACCENT4, null, CENTER, THIN_BORDER)],
+    ...snapRows,
+  ];
+  const snapWs = buildSheet(snapData, [14, 18, 18, 18, 18, 16], [
+    { s:{r:0,c:0}, e:{r:0,c:5} },
+  ]);
+  XLSX.utils.book_append_sheet(wb, snapWs, '📈 Patrimonio histórico');
 
-  // ---- DEUDAS ----
-  const debtHeaders = ['Persona', 'Nombre', 'Tipo', 'Total (€)', 'Pagado (€)', 'Pendiente (€)', 'Cuota mensual (€)', 'TIN (%)', 'TAE (%)'];
-  const debtRows = [];
+  // ══════════════════════════════════════════════════════════
+  // 4. MOVIMIENTOS
+  // ══════════════════════════════════════════════════════════
+  const txSorted = [...state.transactions].sort((a, b) => b.date.localeCompare(a.date));
+  const txData = [
+    [T('MOVIMIENTOS', titleFont(13), DARK_FILL, null, CENTER), '','','','','','',''],
+    ['','','','','','','',''],
+    [T('Fecha', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Persona', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Tipo', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Descripción', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+     T('Categoría', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Cuenta', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+     T('Importe (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Acumulado (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER)],
+    ...txSorted.map((t, idx) => {
+      const acc     = findAccountById(t.accountId);
+      const pLabel  = t.person === 'mario' ? m : mi;
+      const tLabel  = t.type === 'income' ? 'Ingreso' : t.type === 'expense' ? 'Gasto' : 'Transferencia';
+      const amount  = t.type === 'income' ? t.amount : -t.amount;
+      const isInc   = t.type === 'income';
+      const amtFill = isInc ? { patternType:'solid', fgColor:{rgb:'182A20'} } : { patternType:'solid', fgColor:{rgb:'2A1818'} };
+      const fill    = idx % 2 === 0 ? HDR_FILL : ALT_FILL;
+      return [
+        T(fmtDate(t.date), valFont(), fill, null, CENTER, THIN_BORDER),
+        T(pLabel, valFont(), t.person === 'mario' ? { patternType:'solid', fgColor:{rgb:'1A2535'} } : { patternType:'solid', fgColor:{rgb:'2A1A25'} }, null, CENTER, THIN_BORDER),
+        T(tLabel, valFont(), fill, null, CENTER, THIN_BORDER),
+        T(t.desc || '', valFont(), fill, null, LEFT, THIN_BORDER),
+        T(t.category || '—', muteFont(), fill, null, CENTER, THIN_BORDER),
+        T(acc ? acc.name : '—', valFont(), fill, null, LEFT, THIN_BORDER),
+        T(n2(amount), { name:'Arial', sz:10, bold:true, color:{rgb: isInc ? '6FCFAB' : 'F87171'} }, amtFill, EUR, RIGHT, THIN_BORDER),
+        T('', valFont(), fill, EUR, RIGHT, THIN_BORDER),
+      ];
+    })
+  ];
+  const txWs = buildSheet(txData, [12, 10, 14, 30, 18, 20, 14, 14], [
+    { s:{r:0,c:0}, e:{r:0,c:7} },
+  ]);
+  XLSX.utils.book_append_sheet(wb, txWs, '💸 Movimientos');
+
+  // ══════════════════════════════════════════════════════════
+  // 5. CUENTAS
+  // ══════════════════════════════════════════════════════════
+  const accAll = [
+    ...state.accounts.mario.map(a  => ({ ...a, owner: m,       fill: { patternType:'solid', fgColor:{rgb:'1A2535'} } })),
+    ...state.accounts.miri.map(a   => ({ ...a, owner: mi,      fill: { patternType:'solid', fgColor:{rgb:'2A1A25'} } })),
+    ...state.accounts.common.map(a => ({ ...a, owner: 'Común', fill: HDR_FILL })),
+  ];
+  const accData = [
+    [T('CUENTAS BANCARIAS', titleFont(13), DARK_FILL, null, CENTER), '','','','','',''],
+    ['','','','','','',''],
+    [T('Titular', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Entidad', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+     T('Tipo', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Saldo (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Remuneración (%)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Cuenta común', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Interés anual estimado (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER)],
+    ...accAll.map(a => {
+      const rate    = a.rate || 0;
+      const intEst  = a.balance * rate / 100;
+      return [
+        T(a.owner,  valFont(), a.fill, null, CENTER, THIN_BORDER),
+        T(a.name,   valFont(), a.fill, null, LEFT,   THIN_BORDER),
+        T(a.accType === 'saving' ? 'Ahorro' : 'Corriente', valFont(), a.fill, null, CENTER, THIN_BORDER),
+        T(n2(a.balance), { name:'Arial', sz:10, bold:true, color:{rgb:'7EB8F7'} }, a.fill, EUR, RIGHT, THIN_BORDER),
+        T(rate > 0 ? n2(rate / 100) : '', valFont(), a.fill, rate > 0 ? PCT : null, RIGHT, THIN_BORDER),
+        T(a.isCommon ? 'Sí' : 'No', valFont(), a.fill, null, CENTER, THIN_BORDER),
+        T(intEst > 0 ? n2(intEst) : '', muteFont(), a.fill, EUR, RIGHT, THIN_BORDER),
+      ];
+    }),
+    // Totals
+    [T('TOTAL', { name:'Arial', sz:10, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     T('', valFont(), { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     T('', valFont(), { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     T(n2(accAll.reduce((s, a) => s + a.balance, 0)), { name:'Arial', sz:11, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, EUR, RIGHT, THIN_BORDER),
+     T('', valFont(), { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     T('', valFont(), { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     T(n2(accAll.reduce((s, a) => s + a.balance * (a.rate || 0) / 100, 0)), { name:'Arial', sz:10, bold:true, color:{rgb:'6FCFAB'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, EUR, RIGHT, THIN_BORDER)],
+  ];
+  const accWs = buildSheet(accData, [12, 22, 12, 15, 18, 14, 24], [
+    { s:{r:0,c:0}, e:{r:0,c:6} },
+  ]);
+  XLSX.utils.book_append_sheet(wb, accWs, '🏦 Cuentas');
+
+  // ══════════════════════════════════════════════════════════
+  // 6. DEUDAS + TABLA AMORTIZACIÓN
+  // ══════════════════════════════════════════════════════════
+  const debtData = [
+    [T('DEUDAS Y PRÉSTAMOS', titleFont(13), DARK_FILL, null, CENTER), '','','','','','','','','',''],
+    ['','','','','','','','','','',''],
+    [T('Titular', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Nombre', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+     T('Tipo', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Capital inicial (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Pagado (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Pendiente (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Cuota mensual (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('TIN (%)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('TAE (%)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Plazo total (meses)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Intereses totales (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER)],
+  ];
+
+  let debtRowIdx = 4;
+  ['mario', 'miri'].forEach(p => {
+    const label = p === 'mario' ? m : mi;
+    const dFill = p === 'mario' ? { patternType:'solid', fgColor:{rgb:'1A2535'} } : { patternType:'solid', fgColor:{rgb:'2A1A25'} };
+    (state.debts[p] || []).forEach(d => {
+      const tLabel  = { loan: 'Préstamo', mortgage: 'Hipoteca', other: 'Otro' }[d.type] || d.type;
+      const pending = n2(d.total - (d.paid || 0));
+      let intTotal = 0;
+      if (d.tin && d.months) {
+        const tbl = d.type === 'mortgage' ? buildMortgageAmortTable(d) : buildAmortTable(d.total, d.tin, d.months);
+        intTotal = tbl.reduce((s, r) => s + r.interest, 0);
+      }
+      debtData.push([
+        T(label, valFont(), dFill, null, CENTER, THIN_BORDER),
+        T(d.name, { name:'Arial', sz:10, bold:true, color:{rgb:'C8D4F0'} }, dFill, null, LEFT, THIN_BORDER),
+        T(tLabel, valFont(), dFill, null, CENTER, THIN_BORDER),
+        T(n2(d.total), valFont(), dFill, EUR, RIGHT, THIN_BORDER),
+        T(n2(d.paid || 0), { name:'Arial', sz:10, color:{rgb:'6FCFAB'} }, dFill, EUR, RIGHT, THIN_BORDER),
+        T(pending, { name:'Arial', sz:10, bold:true, color:{rgb:'F87171'} }, dFill, EUR, RIGHT, THIN_BORDER),
+        T(n2(d.quota || 0), valFont(), dFill, EUR, RIGHT, THIN_BORDER),
+        T(n2((d.tin || 0) / 100), valFont(), dFill, PCT1, RIGHT, THIN_BORDER),
+        T(n2((d.tae || 0) / 100), valFont(), dFill, PCT1, RIGHT, THIN_BORDER),
+        T(d.months || '', valFont(), dFill, NUM0, RIGHT, THIN_BORDER),
+        T(intTotal > 0 ? n2(intTotal) : '', { name:'Arial', sz:10, color:{rgb:'F9D978'} }, dFill, EUR, RIGHT, THIN_BORDER),
+      ]);
+      debtRowIdx++;
+    });
+  });
+
+  // Add amortization tables below debt summary
+  debtData.push(['','','','','','','','','','','']);
+  debtData.push([T('TABLAS DE AMORTIZACIÓN DETALLADAS', hdrFont(11), ACCENT4, null, CENTER), '','','','','','','','','','']);
+  debtData.push(['','','','','','','','','','','']);
+
   ['mario', 'miri'].forEach(p => {
     const label = p === 'mario' ? m : mi;
     (state.debts[p] || []).forEach(d => {
-      const typeLabel = { loan: 'Préstamo', mortgage: 'Hipoteca', other: 'Otro' }[d.type] || d.type;
-      debtRows.push([label, d.name, typeLabel, d.total, d.paid, d.total - d.paid, d.quota || 0, d.tin ?? '', d.tae ?? '']);
+      if (!d.tin || !d.months) return;
+      debtData.push([T(`${label} — ${d.name}`, { name:'Arial', sz:11, bold:true, color:{rgb:'F0F4FF'} }, HDR_FILL, null, LEFT), '','','','','','','','','','']);
+      debtData.push([
+        T('Cuota', hdrFont(9), HDR_FILL, null, CENTER, THIN_BORDER),
+        T('Capital (€)', hdrFont(9), HDR_FILL, null, RIGHT, THIN_BORDER),
+        T('Intereses (€)', hdrFont(9), HDR_FILL, null, RIGHT, THIN_BORDER),
+        T('Cuota total (€)', hdrFont(9), HDR_FILL, null, RIGHT, THIN_BORDER),
+        T('Saldo restante (€)', hdrFont(9), HDR_FILL, null, RIGHT, THIN_BORDER),
+        T('%  pagado', hdrFont(9), HDR_FILL, null, RIGHT, THIN_BORDER),
+        T('TIN aplicado', hdrFont(9), HDR_FILL, null, RIGHT, THIN_BORDER),
+        '','','','',
+      ]);
+      const rows = d.type === 'mortgage' ? buildMortgageAmortTable(d) : buildAmortTable(d.total, d.tin, d.months);
+      rows.forEach((row, idx) => {
+        const paidSoFar = d.paid || 0;
+        const isPaid    = idx < (d.paidQuotas || 0);
+        const rf        = isPaid ? { patternType:'solid', fgColor:{rgb:'182A20'} } : (idx % 2 === 0 ? HDR_FILL : ALT_FILL);
+        const pct       = d.total > 0 ? (d.total - row.balance) / d.total : 0;
+        debtData.push([
+          T(idx + 1, isPaid ? { name:'Arial', sz:9, color:{rgb:'6FCFAB'} } : muteFont(), rf, NUM0, CENTER, THIN_BORDER),
+          T(n2(row.capital), valFont(9), rf, EUR, RIGHT, THIN_BORDER),
+          T(n2(row.interest), { name:'Arial', sz:9, color:{rgb:'F9D978'} }, rf, EUR, RIGHT, THIN_BORDER),
+          T(n2(row.capital + row.interest), valFont(9), rf, EUR, RIGHT, THIN_BORDER),
+          T(n2(row.balance), valFont(9), rf, EUR, RIGHT, THIN_BORDER),
+          T(n2(pct), valFont(9), rf, PCT, RIGHT, THIN_BORDER),
+          T(n2((row.tin || d.tin || 0) / 100), muteFont(), rf, PCT1, RIGHT, THIN_BORDER),
+          '','','','',
+        ]);
+      });
+      debtData.push(['','','','','','','','','','','']);
     });
   });
-  const debtSheet = XLSX.utils.aoa_to_sheet([debtHeaders, ...debtRows]);
-  debtSheet['!cols'] = [{ wch: 10 }, { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 18 }, { wch: 8 }, { wch: 8 }];
-  XLSX.utils.book_append_sheet(wb, debtSheet, 'Deudas');
 
-  // ---- DEPÓSITOS ----
-  const depHeaders = ['Persona', 'Nombre', 'Importe (€)', 'TIN (%)', 'TAE (%)', 'Inicio', 'Vencimiento', 'Estado', 'Intereses (€)'];
-  const depRows = [];
+  const debtWs = buildSheet(debtData, [12, 24, 12, 16, 14, 14, 16, 10, 10, 18, 18], [
+    { s:{r:0,c:0}, e:{r:0,c:10} },
+  ]);
+  XLSX.utils.book_append_sheet(wb, debtWs, '💳 Deudas');
+
+  // ══════════════════════════════════════════════════════════
+  // 7. DEPÓSITOS
+  // ══════════════════════════════════════════════════════════
+  const depAll = [];
   ['mario', 'miri'].forEach(p => {
     const label = p === 'mario' ? m : mi;
+    const dFill = p === 'mario' ? { patternType:'solid', fgColor:{rgb:'1A2535'} } : { patternType:'solid', fgColor:{rgb:'2A1A25'} };
     (state.deposits[p] || []).forEach(d => {
-      const today = new Date().toISOString().split('T')[0];
-      const status = d.liquidated ? 'Liquidado' : d.endDate <= today ? 'Vencido' : 'Activo';
-      depRows.push([label, d.name, d.amount, d.tin ?? '', d.tae ?? '', fmtDate(d.startDate), fmtDate(d.endDate), status, d.interest ?? '']);
+      const status    = d.liquidated ? 'Liquidado' : d.endDate <= today ? 'Vencido' : 'Activo';
+      const sFill     = d.liquidated ? { patternType:'solid', fgColor:{rgb:'1A2A35'} } : d.endDate <= today ? { patternType:'solid', fgColor:{rgb:'2A1818'} } : { patternType:'solid', fgColor:{rgb:'182A20'} };
+      const sFont     = d.liquidated ? { name:'Arial', sz:10, color:{rgb:'7EB8F7'} } : d.endDate <= today ? { name:'Arial', sz:10, color:{rgb:'F87171'} } : { name:'Arial', sz:10, color:{rgb:'6FCFAB'} };
+      const startDate = d.startDate ? new Date(d.startDate) : null;
+      const endDate   = d.endDate   ? new Date(d.endDate)   : null;
+      const days      = (startDate && endDate) ? Math.round((endDate - startDate) / 86400000) : 0;
+      const interest  = d.interest || (d.amount * (d.tin || 0) / 100 * days / 365);
+      depAll.push([
+        T(label, valFont(), dFill, null, CENTER, THIN_BORDER),
+        T(d.name, { name:'Arial', sz:10, bold:true, color:{rgb:'C8D4F0'} }, dFill, null, LEFT, THIN_BORDER),
+        T(n2(d.amount), { name:'Arial', sz:10, bold:true, color:{rgb:'7EB8F7'} }, dFill, EUR, RIGHT, THIN_BORDER),
+        T(n2((d.tin || 0) / 100), valFont(), dFill, PCT1, RIGHT, THIN_BORDER),
+        T(n2((d.tae || 0) / 100), valFont(), dFill, PCT1, RIGHT, THIN_BORDER),
+        T(fmtDate(d.startDate), valFont(), dFill, null, CENTER, THIN_BORDER),
+        T(fmtDate(d.endDate),   valFont(), dFill, null, CENTER, THIN_BORDER),
+        T(days, muteFont(), dFill, NUM0, RIGHT, THIN_BORDER),
+        T(status, sFont, sFill, null, CENTER, THIN_BORDER),
+        T(n2(interest), { name:'Arial', sz:10, bold:true, color:{rgb:'F9D978'} }, dFill, EUR, RIGHT, THIN_BORDER),
+      ]);
     });
   });
-  const depSheet = XLSX.utils.aoa_to_sheet([depHeaders, ...depRows]);
-  depSheet['!cols'] = [{ wch: 10 }, { wch: 22 }, { wch: 13 }, { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }];
-  XLSX.utils.book_append_sheet(wb, depSheet, 'Depósitos');
 
-  // ---- INVERSIONES ----
-  const invHeaders = ['Nombre', 'Tipo', 'Unidades', 'Precio medio compra (€)', 'Precio actual (€)', 'Coste total (€)', 'Valor actual (€)', 'Rentabilidad (€)', 'Rentabilidad (%)'];
-  const invRows = (state.investments || []).map(inv => {
-    const typeLabel = { index: 'Fondo indexado', active: 'Gestión activa', crypto: 'Cripto' }[inv.type] || inv.type;
-    const cost      = inv.units * inv.avgBuyPrice;
-    const current   = inv.units * (inv.currentPrice || inv.avgBuyPrice);
-    const retEur    = current - cost;
-    const retPct    = cost > 0 ? ((retEur / cost) * 100).toFixed(2) : '0';
-    return [inv.name, typeLabel, inv.units, inv.avgBuyPrice, inv.currentPrice || inv.avgBuyPrice, cost, current, retEur, retPct + '%'];
+  const depData = [
+    [T('DEPÓSITOS DE AHORRO', titleFont(13), DARK_FILL, null, CENTER), '','','','','','','','',''],
+    ['','','','','','','','','',''],
+    [T('Titular', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Nombre / Entidad', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+     T('Importe (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('TIN (%)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('TAE (%)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Fecha inicio', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Vencimiento', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Días', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Estado', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Intereses (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER)],
+    ...depAll,
+    [T('TOTAL DEPÓSITOS ACTIVOS', { name:'Arial', sz:10, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     '','',
+     T('', valFont(), { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     T('', valFont(), { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     T('', valFont(), { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     T('', valFont(), { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     T('', valFont(), { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     T('', valFont(), { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     T(n2(depAll.reduce((s, r) => s + (r[9].v || 0), 0)), { name:'Arial', sz:11, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, EUR, RIGHT, THIN_BORDER)],
+  ];
+  const depWs = buildSheet(depData, [12, 24, 14, 10, 10, 13, 13, 8, 12, 14], [
+    { s:{r:0,c:0}, e:{r:0,c:9} },
+  ]);
+  XLSX.utils.book_append_sheet(wb, depWs, '🏧 Depósitos');
+
+  // ══════════════════════════════════════════════════════════
+  // 8. SUSCRIPCIONES
+  // ══════════════════════════════════════════════════════════
+  const CYCLE_LABEL_EXP = { monthly: 'Mensual', bimonthly: 'Bimensual', quarterly: 'Trimestral', biannual: 'Semestral', annual: 'Anual' };
+  const subAll = [];
+  ['mario', 'miri'].forEach(p => {
+    const label = p === 'mario' ? m : mi;
+    const dFill = p === 'mario' ? { patternType:'solid', fgColor:{rgb:'1A2535'} } : { patternType:'solid', fgColor:{rgb:'2A1A25'} };
+    (state.subscriptions[p] || []).forEach(sub => {
+      const monthly   = sub.amount * (CYCLE_MONTHLY_EXP[sub.cycle] || 1);
+      const annual    = monthly * 12;
+      const acc       = findAccountById(sub.accountId);
+      subAll.push([
+        T(label, valFont(), dFill, null, CENTER, THIN_BORDER),
+        T((sub.emoji || '') + ' ' + sub.name, { name:'Arial', sz:10, bold:true, color:{rgb:'C8D4F0'} }, dFill, null, LEFT, THIN_BORDER),
+        T(sub.description || '', muteFont(), dFill, null, LEFT, THIN_BORDER),
+        T(n2(sub.amount), valFont(), dFill, EUR, RIGHT, THIN_BORDER),
+        T(CYCLE_LABEL_EXP[sub.cycle] || sub.cycle, valFont(), dFill, null, CENTER, THIN_BORDER),
+        T(n2(monthly), { name:'Arial', sz:10, bold:true, color:{rgb:'F9D978'} }, dFill, EUR, RIGHT, THIN_BORDER),
+        T(n2(annual), { name:'Arial', sz:10, color:{rgb:'F87171'} }, dFill, EUR, RIGHT, THIN_BORDER),
+        T(fmtDate(sub.nextDate), valFont(), dFill, null, CENTER, THIN_BORDER),
+        T(acc ? acc.name : '—', muteFont(), dFill, null, LEFT, THIN_BORDER),
+        T(sub.shared ? 'Compartida' : 'Individual', muteFont(), dFill, null, CENTER, THIN_BORDER),
+      ]);
+    });
   });
-  const invSheet = XLSX.utils.aoa_to_sheet([invHeaders, ...invRows]);
-  invSheet['!cols'] = [{ wch: 22 }, { wch: 16 }, { wch: 10 }, { wch: 22 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 }];
-  XLSX.utils.book_append_sheet(wb, invSheet, 'Inversiones');
+
+  const totalSubMonth = subAll.reduce((s, r) => s + (r[5].v || 0), 0);
+  const totalSubYear  = subAll.reduce((s, r) => s + (r[6].v || 0), 0);
+
+  const subData = [
+    [T('SUSCRIPCIONES', titleFont(13), DARK_FILL, null, CENTER), '','','','','','','','',''],
+    ['','','','','','','','','',''],
+    [T('Titular', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Servicio', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+     T('Descripción', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+     T('Importe (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Ciclo', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Equiv. mensual (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Coste anual (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Próxima renovación', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Cuenta cargo', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+     T('Tipo', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER)],
+    ...subAll,
+    [T('TOTAL MENSUAL', { name:'Arial', sz:10, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     '','','','',
+     T(n2(totalSubMonth), { name:'Arial', sz:11, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, EUR, RIGHT, THIN_BORDER),
+     T(n2(totalSubYear),  { name:'Arial', sz:11, bold:true, color:{rgb:'F87171'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, EUR, RIGHT, THIN_BORDER),
+     '','',''],
+  ];
+  const subWs = buildSheet(subData, [12, 26, 22, 13, 12, 18, 16, 18, 20, 14], [
+    { s:{r:0,c:0}, e:{r:0,c:9} },
+  ]);
+  XLSX.utils.book_append_sheet(wb, subWs, '🔄 Suscripciones');
+
+  // ══════════════════════════════════════════════════════════
+  // 9. INVERSIONES
+  // ══════════════════════════════════════════════════════════
+  const invByType = { index: [], active: [], crypto: [] };
+  (state.investments || []).forEach(inv => {
+    const t = inv.type in invByType ? inv.type : 'active';
+    invByType[t].push(inv);
+  });
+
+  const invRows = [];
+  const typeLabels = { index: 'Fondo indexado', active: 'Gestión activa', crypto: 'Cripto' };
+  const typeFills  = {
+    index:  { patternType:'solid', fgColor:{rgb:'1A2A1A'} },
+    active: { patternType:'solid', fgColor:{rgb:'1A1A2A'} },
+    crypto: { patternType:'solid', fgColor:{rgb:'2A1A0A'} },
+  };
+
+  Object.entries(invByType).forEach(([type, items]) => {
+    if (!items.length) return;
+    invRows.push([T(typeLabels[type], { name:'Arial', sz:10, bold:true, color:{rgb:'F0F4FF'} }, HDR_FILL, null, LEFT), '','','','','','','','','']);
+    items.forEach(inv => {
+      const cost    = n2(inv.units * inv.avgBuyPrice);
+      const cur     = n2(inv.units * (inv.currentPrice || inv.avgBuyPrice));
+      const retEur  = n2(cur - cost);
+      const retPct  = cost > 0 ? n2((cur - cost) / cost) : 0;
+      const tf      = typeFills[type];
+      invRows.push([
+        T(inv.name, { name:'Arial', sz:10, bold:true, color:{rgb:'C8D4F0'} }, tf, null, LEFT, THIN_BORDER),
+        T(typeLabels[inv.type] || inv.type, muteFont(), tf, null, CENTER, THIN_BORDER),
+        T(n2(inv.units), valFont(), tf, NUM2, RIGHT, THIN_BORDER),
+        T(n2(inv.avgBuyPrice), valFont(), tf, EUR, RIGHT, THIN_BORDER),
+        T(n2(inv.currentPrice || inv.avgBuyPrice), valFont(), tf, EUR, RIGHT, THIN_BORDER),
+        T(cost, valFont(), tf, EUR, RIGHT, THIN_BORDER),
+        T(cur,  { name:'Arial', sz:10, bold:true, color:{rgb:'7EB8F7'} }, tf, EUR, RIGHT, THIN_BORDER),
+        T(retEur, { name:'Arial', sz:10, bold:true, color:{rgb: retEur >= 0 ? '6FCFAB' : 'F87171'} }, tf, EUR, RIGHT, THIN_BORDER),
+        T(retPct, { name:'Arial', sz:10, bold:true, color:{rgb: retPct >= 0 ? '6FCFAB' : 'F87171'} }, tf, PCT1, RIGHT, THIN_BORDER),
+        T(inv.notes || '', muteFont(), tf, null, LEFT, THIN_BORDER),
+      ]);
+    });
+    const tCost = n2(items.reduce((s, i) => s + i.units * i.avgBuyPrice, 0));
+    const tCur  = n2(items.reduce((s, i) => s + i.units * (i.currentPrice || i.avgBuyPrice), 0));
+    const tRet  = n2(tCur - tCost);
+    const tPct  = tCost > 0 ? n2((tCur - tCost) / tCost) : 0;
+    const sTf   = { patternType:'solid', fgColor:{rgb:'252525'} };
+    invRows.push([
+      T('Subtotal ' + typeLabels[type], { name:'Arial', sz:9, bold:true, color:{rgb:'7A8BA8'} }, sTf, null, LEFT, THIN_BORDER),
+      '','','','',
+      T(tCost, { name:'Arial', sz:9, color:{rgb:'7A8BA8'} }, sTf, EUR, RIGHT, THIN_BORDER),
+      T(tCur,  { name:'Arial', sz:9, color:{rgb:'7EB8F7'} }, sTf, EUR, RIGHT, THIN_BORDER),
+      T(tRet,  { name:'Arial', sz:9, color:{rgb: tRet>=0?'6FCFAB':'F87171'} }, sTf, EUR, RIGHT, THIN_BORDER),
+      T(tPct,  { name:'Arial', sz:9, color:{rgb: tPct>=0?'6FCFAB':'F87171'} }, sTf, PCT1, RIGHT, THIN_BORDER),
+      '',
+    ]);
+    invRows.push(['','','','','','','','','','']);
+  });
+
+  const invData = [
+    [T('CARTERA DE INVERSIÓN', titleFont(13), DARK_FILL, null, CENTER), '','','','','','','','',''],
+    ['','','','','','','','','',''],
+    [T('Activo', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+     T('Tipo', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Unidades', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Precio medio compra (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Precio actual (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Coste total (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Valor actual (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Rentabilidad (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Rentabilidad (%)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Notas', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER)],
+    ...invRows,
+    [T('TOTAL CARTERA', { name:'Arial', sz:11, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, null, LEFT, THIN_BORDER),
+     '','','','',
+     T(n2(invCost), { name:'Arial', sz:11, bold:true, color:{rgb:'F9D978'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, EUR, RIGHT, THIN_BORDER),
+     T(n2(invTotal), { name:'Arial', sz:11, bold:true, color:{rgb:'7EB8F7'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, EUR, RIGHT, THIN_BORDER),
+     T(n2(invTotal - invCost), { name:'Arial', sz:11, bold:true, color:{rgb: invTotal>=invCost?'6FCFAB':'F87171'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, EUR, RIGHT, THIN_BORDER),
+     T(invCost > 0 ? n2((invTotal - invCost) / invCost) : 0, { name:'Arial', sz:11, bold:true, color:{rgb: invTotal>=invCost?'6FCFAB':'F87171'} }, { patternType:'solid', fgColor:{rgb:'2A2010'} }, PCT1, RIGHT, THIN_BORDER),
+     ''],
+  ];
+  const invWs = buildSheet(invData, [26, 16, 10, 22, 18, 16, 16, 16, 16, 22], [
+    { s:{r:0,c:0}, e:{r:0,c:9} },
+  ]);
+  XLSX.utils.book_append_sheet(wb, invWs, '📈 Inversiones');
 
   // ---- GENERATE & SHARE ----
   const date     = new Date().toISOString().split('T')[0];
@@ -9548,6 +10479,28 @@ function initVisibility() {
 }
 
 // ===================== COUNT-UP ANIMATION =====================
+function animateBar(el, targetPct, duration = 750) {
+  if (!el) return;
+  el.style.width = '0%';
+  const start = performance.now();
+  function tick(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased    = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+    el.style.width  = (targetPct * eased) + '%';
+    if (progress < 1) requestAnimationFrame(tick);
+    else el.style.width = targetPct + '%';
+  }
+  requestAnimationFrame(tick);
+}
+
+function animateBarsIn(container) {
+  if (!container) return;
+  const sel = '.debt-bar-fill, .debt-progress-fill, .deposit-progress-fill, .goal-fill';
+  container.querySelectorAll(sel).forEach(el => {
+    const pct = parseFloat(el.style.width) || 0;
+    animateBar(el, pct);
+  });
+}
 function countUp(el, targetVal, duration = 600) {
   if (!el) return;
   const start    = performance.now();
