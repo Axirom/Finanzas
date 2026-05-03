@@ -2415,16 +2415,14 @@ body:not(.values-hidden) .account-rate-inline {
         </div>
         <!-- TWR row -->
         <div id="inv-twr-row" style="display:none;padding-top:10px;border-top:1px solid var(--border);">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-            <div>
-              <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">
-                TWR — Rentabilidad ponderada por tiempo
-                <span style="margin-left:4px;cursor:pointer;color:var(--mario);" onclick="showTwrInfo()" title="¿Qué es el TWR?">ⓘ</span>
-              </div>
-              <div id="inv-twr-val" style="font-size:18px;font-weight:700;"></div>
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+            <div style="font-size:10px;color:var(--muted);white-space:nowrap;">
+              TWR — Ponderado por tiempo
+              <span style="margin-left:4px;cursor:pointer;color:var(--mario);" onclick="showTwrInfo()" title="¿Qué es el TWR?">ⓘ</span>
             </div>
-            <div id="inv-twr-subperiods" style="font-size:10px;color:var(--muted);text-align:right;line-height:1.6;"></div>
+            <div id="inv-twr-val" style="font-size:18px;font-weight:700;"></div>
           </div>
+          <div id="inv-twr-subperiods" style="font-size:10px;color:var(--muted);line-height:1.6;"></div>
         </div>
       </div>
 
@@ -2988,6 +2986,7 @@ body:not(.values-hidden) .account-rate-inline {
         <button class="detail-menu-item" id="pd-transfer-btn" onclick="openTransfer()" style="display:none;">🔄 Traspasar fondo</button>
         <button class="detail-menu-item" id="pd-dividend-btn" onclick="openDividend()">💰 Registrar dividendo</button>
         <button class="detail-menu-item" onclick="openUpdatePrice()">🔄 Actualizar precio</button>
+        <button class="detail-menu-item" onclick="openEditPositionInfo()">✏️ Editar información</button>
         <button class="detail-menu-item danger" onclick="deletePosition()">🗑 Eliminar</button>
       </div>
     </div>
@@ -3150,6 +3149,78 @@ body:not(.values-hidden) .account-rate-inline {
     </div>
 
     <button class="btn-submit" onclick="saveContribution()">Guardar</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: EXECUTE CONTRIBUTION ==================== -->
+<div class="modal-overlay" id="modalExecuteContrib" onclick="closeModalOutside(event,'modalExecuteContrib')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">▶ Ejecutar aportación</div>
+    <div id="exec-contrib-name" style="font-size:13px;color:var(--muted);margin-bottom:16px;"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Importe (€)</label>
+        <input class="form-input" id="exec-contrib-amount" type="number" min="0" step="0.01" inputmode="decimal" oninput="updateExecContribCalc()">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Precio actual (€/participación)</label>
+        <input class="form-input" id="exec-contrib-price" type="number" min="0" step="any" placeholder="NAV actual" inputmode="decimal" oninput="updateExecContribCalc()">
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:10px 0 4px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Participaciones que recibirás</div>
+      <div id="exec-contrib-units-calc" style="font-size:22px;font-weight:600;font-family:'Playfair Display',serif;color:var(--invest);">—</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" id="exec-contrib-date" type="date">
+    </div>
+
+    <button class="btn-submit" onclick="confirmExecuteContribution()">Confirmar aportación</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: EDIT POSITION INFO ==================== -->
+<div class="modal-overlay" id="modalEditPositionInfo" onclick="closeModalOutside(event,'modalEditPositionInfo')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ Editar información</div>
+
+    <div class="form-group">
+      <label class="form-label">Nombre</label>
+      <input class="form-input" id="epi-name" type="text" placeholder="Nombre del activo">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ISIN — opcional</label>
+      <input class="form-input" id="epi-isin" type="text" placeholder="Ej. IE00B4L5Y983" maxlength="12" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notas</label>
+      <input class="form-input" id="epi-notes" type="text" placeholder="Observaciones…">
+    </div>
+
+    <!-- Fund-specific fields -->
+    <div id="epi-fund-fields" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Política de dividendos</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="op-type-btn" id="epi-dist-acc" onclick="selectEpiDist('acc')" style="font-size:11px;padding:10px 4px;">♻️ Acumulación</button>
+          <button class="op-type-btn" id="epi-dist-dist" onclick="selectEpiDist('dist')" style="font-size:11px;padding:10px 4px;">💰 Distribución</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">TER / Costes anuales (%)</label>
+        <input class="form-input" id="epi-ter" type="number" min="0" step="0.01" placeholder="Ej. 0,20" inputmode="decimal">
+      </div>
+    </div>
+
+    <button class="btn-submit" onclick="savePositionInfo()">Guardar cambios</button>
   </div>
 </div>
 
@@ -8230,6 +8301,134 @@ function saveSell() {
 }
 
 // ══════════════════════════════════════════════════════════
+// EXECUTE CONTRIBUTION — with NAV prompt
+// ══════════════════════════════════════════════════════════
+let execContribId = null;
+
+function openExecuteContribution(id) {
+  const c   = (state.contributions || []).find(x => x.id === id);
+  const inv = c ? getPositionById(c.fundId) : null;
+  if (!c || !inv) { showToast('Posición no encontrada', 'error'); return; }
+
+  execContribId = id;
+  document.getElementById('exec-contrib-name').textContent    = inv.name + ' · ' + CONTRIB_CYCLE_LABELS[c.cycle];
+  document.getElementById('exec-contrib-amount').value        = c.amount;
+  document.getElementById('exec-contrib-price').value        = inv.currentPrice || '';
+  document.getElementById('exec-contrib-date').value         = c.nextDate;
+  updateExecContribCalc();
+  document.getElementById('modalExecuteContrib').classList.add('open');
+}
+
+function updateExecContribCalc() {
+  const amount = parseFloat(document.getElementById('exec-contrib-amount').value) || 0;
+  const price  = parseFloat(document.getElementById('exec-contrib-price').value)  || 0;
+  const el     = document.getElementById('exec-contrib-units-calc');
+  if (amount > 0 && price > 0) {
+    el.textContent = (amount / price).toLocaleString('es-ES', { minimumFractionDigits: 4, maximumFractionDigits: 6 }) + ' participaciones';
+  } else {
+    el.textContent = '—';
+  }
+}
+
+function confirmExecuteContribution() {
+  const c   = (state.contributions || []).find(x => x.id === execContribId);
+  const inv = c ? getPositionById(c.fundId) : null;
+  const acc = c ? findAccountById(c.accountId) : null;
+  if (!c || !inv) { showToast('Posición no encontrada', 'error'); return; }
+
+  const amount = parseFloat(document.getElementById('exec-contrib-amount').value) || 0;
+  const price  = parseFloat(document.getElementById('exec-contrib-price').value)  || 0;
+  const date   = document.getElementById('exec-contrib-date').value;
+
+  if (price <= 0)  { showToast('Introduce el precio actual', 'error'); return; }
+  if (amount <= 0) { showToast('Introduce el importe', 'error'); return; }
+  if (!date)       { showToast('Selecciona la fecha', 'error'); return; }
+  if (!acc || acc.balance < amount) { showToast('Saldo insuficiente en la cuenta de cargo', 'error'); return; }
+
+  const units = amount / price;
+  acc.balance -= amount;
+
+  const totalUnits = inv.units + units;
+  inv.avgBuyPrice  = (inv.units * inv.avgBuyPrice + units * price) / totalUnits;
+  inv.units        = totalUnits;
+  inv.currentPrice = price;
+  if (!inv.lots) inv.lots = [];
+  inv.lots.push({ id: Date.now().toString(), units, price, commission: 0, date });
+  inv.movements.push({ id: Date.now().toString(), type: 'buy', units, price, total: amount, commission: 0, sourceId: c.accountId, date, notes: 'Aportación periódica' });
+  inv.priceHistory.push({ date, price });
+
+  state.transactions.push({
+    id: (Date.now() + 1).toString(),
+    person: 'mario', type: 'expense', accountId: c.accountId,
+    category: 'Inversión', desc: 'Aportación: ' + inv.name,
+    amount, date
+  });
+
+  c.nextDate = advanceContribDate(c);
+  saveState();
+  closeModal('modalExecuteContrib');
+  renderAll();
+  renderInvestCharts();
+  showToast('Aportación ejecutada ✓ · ' + units.toFixed(4) + ' nuevas participaciones en ' + inv.name, 'success');
+}
+
+// ══════════════════════════════════════════════════════════
+// EDIT POSITION INFO
+// ══════════════════════════════════════════════════════════
+let epiDistType = 'acc';
+
+function openEditPositionInfo() {
+  closeInvMenu();
+  const inv = getPositionById(currentPositionId);
+  if (!inv) return;
+
+  document.getElementById('epi-name').value  = inv.name  || '';
+  document.getElementById('epi-isin').value  = inv.isin  || '';
+  document.getElementById('epi-notes').value = inv.notes || '';
+  document.getElementById('epi-ter').value   = inv.ter   || '';
+
+  const fundFields = document.getElementById('epi-fund-fields');
+  if (INV_FUND_TYPES.has(inv.type)) {
+    fundFields.style.display = 'block';
+    epiDistType = inv.distribution || 'acc';
+    selectEpiDist(epiDistType);
+  } else {
+    fundFields.style.display = 'none';
+  }
+
+  closeModal('modalPositionDetail');
+  document.getElementById('modalEditPositionInfo').classList.add('open');
+}
+
+function selectEpiDist(dist) {
+  epiDistType = dist;
+  document.getElementById('epi-dist-acc').className  = 'op-type-btn' + (dist === 'acc'  ? ' active-income' : '');
+  document.getElementById('epi-dist-dist').className = 'op-type-btn' + (dist === 'dist' ? ' active-income' : '');
+}
+
+function savePositionInfo() {
+  const inv = getPositionById(currentPositionId);
+  if (!inv) return;
+
+  const name = document.getElementById('epi-name').value.trim();
+  if (!name) { showToast('El nombre no puede estar vacío', 'error'); return; }
+
+  inv.name  = name;
+  inv.isin  = document.getElementById('epi-isin').value.trim() || undefined;
+  inv.notes = document.getElementById('epi-notes').value.trim() || undefined;
+
+  if (INV_FUND_TYPES.has(inv.type)) {
+    inv.distribution = epiDistType;
+    inv.ter = parseFloat(document.getElementById('epi-ter').value) || undefined;
+  }
+
+  saveState();
+  closeModal('modalEditPositionInfo');
+  renderAll();
+  showToast('Información actualizada ✓', 'success');
+}
+
+// ══════════════════════════════════════════════════════════
 // FIFO — calculates fiscal cost basis for a given number of units
 // ══════════════════════════════════════════════════════════
 function calcFifoPl(inv, unitsSelling) {
@@ -8527,7 +8726,7 @@ function renderContributions() {
           </div>
         </div>
         <div style="display:flex;gap:8px;">
-          <button onclick="executeContribution('${c.id}')" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(111,207,151,0.3);background:rgba(111,207,151,0.08);color:var(--income);font-size:12px;font-weight:600;cursor:pointer;">▶ Ejecutar</button>
+          <button onclick="openExecuteContribution('${c.id}')" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(111,207,151,0.3);background:rgba(111,207,151,0.08);color:var(--income);font-size:12px;font-weight:600;cursor:pointer;">▶ Ejecutar</button>
           <button onclick="openEditContribution('${c.id}')" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;cursor:pointer;">✏️</button>
           <button onclick="deleteContribution('${c.id}')" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(235,87,87,0.2);background:rgba(235,87,87,0.06);color:var(--expense);font-size:12px;cursor:pointer;">🗑</button>
         </div>
@@ -8554,7 +8753,7 @@ function checkPendingContributions() {
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="font-weight:700;color:var(--global);">€${fmt(c.amount)}</span>
-          <button onclick="executeContribution('${c.id}');renderPendingContributions();" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(111,207,151,0.3);background:rgba(111,207,151,0.08);color:var(--income);font-size:11px;font-weight:600;cursor:pointer;">Ejecutar</button>
+          <button onclick="openExecuteContribution('${c.id}');closeModal('modalPendingContributions');" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(111,207,151,0.3);background:rgba(111,207,151,0.08);color:var(--income);font-size:11px;font-weight:600;cursor:pointer;">Ejecutar</button>
         </div>
       </div>`;
   }).join('');
@@ -9144,10 +9343,11 @@ function calcTWR(startDate) {
     const v1 = getPortfolioValueAt(t1);
 
     // Denominator = portfolio value just before flows at t1 = v1 - cf1
-    const denominator = v1 - cf1;
-    if (denominator <= 0) continue;
+    const vBeforeFlows = v1 - cf1;
+    if (v0 <= 0 || vBeforeFlows < 0) continue;
 
-    const r = v1 / denominator - 1;
+    // R_i = (V_end_before_flows) / (V_start_after_flows) - 1
+    const r = vBeforeFlows / v0 - 1;
     twr *= (1 + r);
     subPeriods.push({ t0, t1, r, v0, v1, cf1 });
   }
@@ -9213,7 +9413,7 @@ function renderInvPeriodSummary() {
       (inv.movements || []).some(m => (m.type === 'buy' || m.type === 'sell') && (!startDate || m.date > startDate))
     );
     twrSub.textContent = hasFlows
-      ? `${n} sub-período${n !== 1 ? 's' : ''} · elimina el efecto del timing de aportaciones`
+      ? n + ' sub-período' + (n !== 1 ? 's' : '') + ' · elimina el efecto del timing'
       : 'Sin flujos intermedios · TWR = MWR';
   } else {
     twrRow.style.display = 'none';
@@ -9361,13 +9561,29 @@ function runSimulator() {
           label: 'Aportado',
           data: sampled.map(p => p.contributed),
           backgroundColor: 'rgba(99,102,241,0.6)',
-          stack: 'a'
+          stack: 'a',
+          order: 2
         },
         {
           label: 'Rendimiento',
           data: sampled.map(p => Math.max(0, p.gains)),
           backgroundColor: 'rgba(52,211,153,0.7)',
-          stack: 'a'
+          stack: 'a',
+          order: 2
+        },
+        {
+          label: 'Objetivo',
+          data: sampled.map(() => target),
+          type: 'line',
+          borderColor: 'rgba(249,217,120,0.85)',
+          borderWidth: 2,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          fill: false,
+          tension: 0,
+          stack: undefined,
+          order: 1
         }
       ]
     },
@@ -9384,25 +9600,7 @@ function runSimulator() {
             },
             footer: (items) => {
               const p = sampled[items[0].dataIndex];
-              return 'Total: €' + fmt(p.value);
-            }
-          }
-        },
-        annotation: {
-          annotations: {
-            targetLine: {
-              type: 'line',
-              yMin: target, yMax: target,
-              borderColor: 'rgba(249,217,120,0.8)',
-              borderWidth: 2,
-              borderDash: [4, 4],
-              label: {
-                content: 'Objetivo €' + fmt(target),
-                enabled: true,
-                position: 'end',
-                color: 'rgba(249,217,120,0.9)',
-                font: { size: 10 }
-              }
+              return 'Total: €' + fmt(p.value) + '\nObjetivo: €' + fmt(target);
             }
           }
         }
