@@ -2488,6 +2488,9 @@ body:not(.values-hidden) .account-rate-inline {
       <div class="section-header">
         <div class="section-title-row">
           <div class="section-name global">Global</div>
+          <button onclick="openGlobalSearch()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;">
+            🔍 <span>Buscar</span>
+          </button>
         </div>
       </div>
 
@@ -2512,6 +2515,8 @@ body:not(.values-hidden) .account-rate-inline {
         </div>
         <div id="global-chart-msg" style="display:none;text-align:center;padding:24px;color:var(--muted);font-size:12px;line-height:1.8;"></div>
         <div class="chart-wrap" id="global-chart-wrap" style="height:220px;"><canvas id="global-chart-patrimony"></canvas></div>
+        <!-- Resumen táctil del mes seleccionado -->
+        <div id="global-chart-tap-summary" style="display:none;margin-top:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;"></div>
         <!-- Legend -->
         <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;justify-content:center;" id="global-chart-legend"></div>
       </div>
@@ -2601,6 +2606,34 @@ body:not(.values-hidden) .account-rate-inline {
 
 <!-- ==================== TOAST ==================== -->
 <div class="toast" id="toast"></div>
+
+<!-- ==================== MODAL: BÚSQUEDA GLOBAL ==================== -->
+<div class="modal-overlay" id="modalGlobalSearch" onclick="closeModalOutside(event,'modalGlobalSearch')">
+  <div class="modal" style="max-height:90vh;display:flex;flex-direction:column;">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <span style="font-size:20px;">🔍</span>
+      <input class="form-input" id="global-search-input" type="text"
+        placeholder="Buscar en todas las transacciones…"
+        oninput="renderGlobalSearchResults()"
+        style="margin:0;flex:1;">
+      <button onclick="closeModal('modalGlobalSearch')" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px;">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+      <select class="form-select" id="gs-type-filter" onchange="renderGlobalSearchResults()" style="flex:1;min-width:100px;font-size:12px;padding:6px 10px;">
+        <option value="">Todos los tipos</option>
+        <option value="income">Ingresos</option>
+        <option value="expense">Gastos</option>
+      </select>
+      <select class="form-select" id="gs-person-filter" onchange="renderGlobalSearchResults()" style="flex:1;min-width:100px;font-size:12px;padding:6px 10px;">
+        <option value="">Todas las personas</option>
+        <option value="mario" data-person="mario">Mario</option>
+        <option value="miri" data-person="miri">Miri</option>
+      </select>
+    </div>
+    <div id="global-search-results" style="overflow-y:auto;flex:1;min-height:0;"></div>
+  </div>
+</div>
 
 <!-- ==================== MODAL: ADD DEPOSIT ==================== -->
 <div class="modal-overlay" id="modalAddDeposit" onclick="closeModalOutside(event, 'modalAddDeposit')">
@@ -3050,6 +3083,7 @@ body:not(.values-hidden) .account-rate-inline {
         </div>
         <div id="pd-ter-wrap" style="font-size:12px;color:var(--muted);display:none;">
           TER: <span id="pd-ter-val" style="color:var(--expense);font-weight:600;"></span>
+          <span id="pd-ter-cost" style="margin-left:6px;color:var(--expense);opacity:0.7;"></span>
         </div>
       </div>
     </div>
@@ -3105,6 +3139,49 @@ body:not(.values-hidden) .account-rate-inline {
     </div>
 
     <button class="btn-submit" onclick="saveDividend()">Registrar dividendo</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: EDITAR DIVIDENDO ==================== -->
+<div class="modal-overlay" id="modalEditDividend" onclick="closeModalOutside(event,'modalEditDividend')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ Editar dividendo</div>
+    <div id="ediv-name" style="font-size:13px;color:var(--muted);margin-bottom:16px;"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Importe bruto (€)</label>
+        <input class="form-input" id="ediv-amount" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal" oninput="updateEditDivNet()">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Retención IRPF (%)</label>
+        <input class="form-input" id="ediv-withholding" type="number" min="0" max="100" step="0.1" placeholder="19" inputmode="decimal" oninput="updateEditDivNet()">
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:10px 0 4px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Importe neto</div>
+      <div id="ediv-net-calc" style="font-size:22px;font-weight:600;font-family:'Playfair Display',serif;color:var(--income);">€0,00</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Cuenta destino</label>
+      <select class="form-select" id="ediv-account"></select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Fecha de cobro</label>
+      <input class="form-input" id="ediv-date" type="date">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notas — opcional</label>
+      <input class="form-input" id="ediv-notes" type="text" placeholder="Ej. Dividendo Q1 2025…">
+    </div>
+
+    <button class="btn-submit" onclick="saveEditDividend()">Guardar cambios</button>
+    <button class="btn-submit" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px;" onclick="closeModal('modalEditDividend')">Cancelar</button>
   </div>
 </div>
 
@@ -3649,6 +3726,17 @@ body:not(.values-hidden) .account-rate-inline {
     <div id="pending-subs-list"></div>
     <button class="btn-charge-all" id="btn-charge-all" onclick="chargeAllPending()">✓ Cobrar todas</button>
     <button class="btn-submit" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px;" onclick="closeModal('modalPendingSubs')">Recordar más tarde</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: DEPÓSITOS PRÓXIMOS A VENCER ==================== -->
+<div class="modal-overlay" id="modalPendingDeposits" onclick="closeModalOutside(event,'modalPendingDeposits')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🏦 Depósitos próximos a vencer</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Los siguientes depósitos vencen pronto o ya han vencido.</div>
+    <div id="pending-deposits-list"></div>
+    <button class="btn-submit" style="background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px;" onclick="closeModal('modalPendingDeposits')">Cerrar</button>
   </div>
 </div>
 
@@ -4584,6 +4672,7 @@ function unlockApp() {
     renderGlobalPatrimonyChart();
     setTimeout(() => checkPendingSubscriptions(), 600);
     setTimeout(() => checkPendingContributions(), 1200);
+    setTimeout(() => checkPendingDeposits(), 1800);
   }, 400);
 }
 
@@ -4679,6 +4768,70 @@ function getAccountDisplayName(accountId, isTransfer = false) {
   if (!meta) return '—';
   if (isTransfer) return `${meta.acc.name} (${meta.ownerLabel})`;
   return meta.acc.name;
+}
+
+// ===================== BÚSQUEDA GLOBAL =====================
+function openGlobalSearch() {
+  const marioOpt = document.querySelector('#gs-person-filter option[data-person="mario"]');
+  const miriOpt  = document.querySelector('#gs-person-filter option[data-person="miri"]');
+  if (marioOpt) marioOpt.textContent = getName('mario');
+  if (miriOpt)  miriOpt.textContent  = getName('miri');
+  document.getElementById('global-search-input').value = '';
+  document.getElementById('gs-type-filter').value      = '';
+  document.getElementById('gs-person-filter').value    = '';
+  document.getElementById('global-search-results').innerHTML =
+    '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">Escribe para buscar en todas las transacciones</div>';
+  document.getElementById('modalGlobalSearch').classList.add('open');
+  setTimeout(() => document.getElementById('global-search-input').focus(), 150);
+}
+
+function renderGlobalSearchResults() {
+  const query      = (document.getElementById('global-search-input').value || '').trim().toLowerCase();
+  const typeFilter = document.getElementById('gs-type-filter').value;
+  const personFilt = document.getElementById('gs-person-filter').value;
+  const el         = document.getElementById('global-search-results');
+
+  if (query.length < 2) {
+    el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">Escribe al menos 2 caracteres</div>';
+    return;
+  }
+
+  const accOwner = {};
+  ['mario','miri','common'].forEach(k => {
+    (state.accounts[k] || []).forEach(a => { accOwner[a.id] = k; });
+  });
+
+  const results = (state.transactions || []).filter(t => {
+    if (!t.date) return false;
+    if (typeFilter && t.type !== typeFilter) return false;
+    if (personFilt && t.person !== personFilt) return false;
+    const inDesc = (t.desc     || '').toLowerCase().includes(query);
+    const inCat  = (t.category || '').toLowerCase().includes(query);
+    const inAmt  = String(t.amount || '').includes(query);
+    return inDesc || inCat || inAmt;
+  }).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 100);
+
+  if (!results.length) {
+    el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">Sin resultados</div>';
+    return;
+  }
+
+  const personColor = { mario: 'var(--mario)', miri: 'var(--miri)', common: 'var(--common)' };
+  el.innerHTML = results.map(t => {
+    const sign    = t.type === 'income' ? '+' : t.type === 'expense' ? '-' : '';
+    const color   = t.type === 'income' ? 'var(--income)' : t.type === 'expense' ? 'var(--expense)' : 'var(--text)';
+    const owner   = accOwner[t.accountId] || t.person || 'mario';
+    const pName   = owner === 'common' ? 'Común' : getName(owner);
+    const pCol    = personColor[owner] || 'var(--muted)';
+    const accName = getAccountName(t.accountId);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--border);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.desc || t.category || '—'}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${fmtD2(t.date)} · ${t.category || '—'} · <span style="color:${pCol};font-weight:600;">${pName}</span> · ${accName}</div>
+      </div>
+      <div style="font-size:14px;font-weight:700;color:${color};white-space:nowrap;">${sign}€${fmt(t.amount)}</div>
+    </div>`;
+  }).join('') + (results.length === 100 ? '<div style="text-align:center;padding:12px;font-size:11px;color:var(--muted);">Mostrando los 100 más recientes</div>' : '');
 }
 
 function toggleDateFilter(person) {
@@ -5403,6 +5556,11 @@ function renderGlobalPatrimonyChart() {
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
+      onClick: (_, elements) => {
+        if (!elements.length) return;
+        const idx = elements[0].index;
+        renderGlobalChartTapSummary(idx, months, series);
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -5415,7 +5573,6 @@ function renderGlobalPatrimonyChart() {
             label: ctx => {
               const val = ctx.raw || 0;
               if (val === 0) return null;
-              // Cumulative up to this dataset
               const idx  = ctx.dataIndex;
               const cumul = series
                 .slice(0, ctx.datasetIndex + 1)
@@ -5448,6 +5605,38 @@ function renderGlobalPatrimonyChart() {
         <span>${s.label}</span>
       </div>`).join('');
   }
+
+  // Show last available month summary on load (useful on mobile before any tap)
+  const lastIdx = [...months.map((m, i) => ({ i, hasData: series.some(s => s.data[i] !== null) }))].reverse().find(x => x.hasData);
+  if (lastIdx) renderGlobalChartTapSummary(lastIdx.i, months, series);
+}
+
+function renderGlobalChartTapSummary(idx, months, series) {
+  const sumEl = document.getElementById('global-chart-tap-summary');
+  if (!sumEl) return;
+  const month = months[idx];
+  const total = series.reduce((s, serie) => s + (serie.data[idx] || 0), 0);
+  if (total === 0) { sumEl.style.display = 'none'; return; }
+
+  const colors = { 0:'#60c8f5', 1:'#f472b6', 2:'#a78bfa', 3:'#fb923c', 4:'#34d399' };
+  const rows = series
+    .map((s, i) => ({ label: s.label, val: s.data[idx] || 0, color: colors[i] }))
+    .filter(r => r.val > 0)
+    .map(r => `<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;">
+        <span style="display:flex;align-items:center;gap:5px;">
+          <span style="width:8px;height:8px;border-radius:2px;background:${r.color};display:inline-block;flex-shrink:0;"></span>
+          <span style="color:var(--muted);">${r.label}</span>
+        </span>
+        <span style="font-weight:600;">€${fmt(r.val)}</span>
+      </div>`).join('');
+
+  sumEl.style.display = 'block';
+  sumEl.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span style="font-weight:700;font-size:13px;">${month.label} ${globalYear}</span>
+      <span style="font-weight:700;font-size:14px;color:var(--global);">€${fmt(total)}</span>
+    </div>
+    ${rows}`;
 }
 
 let isCommonAccount = false;
@@ -6300,6 +6489,54 @@ function chargeAllPending() {
   [...pendingSubsQueue].forEach(({ person, sub }) => chargeSub(person, sub.id));
   pendingSubsQueue = [];
   closeModal('modalPendingSubs');
+}
+
+// ===================== DEPÓSITOS PRÓXIMOS A VENCER =====================
+// Alert for deposits expiring within 7 days or already matured (not yet liquidated)
+function checkPendingDeposits() {
+  ensureDeposits();
+  const today   = new Date().toISOString().split('T')[0];
+  const soon    = new Date(); soon.setDate(soon.getDate() + 7);
+  const soonStr = soon.toISOString().split('T')[0];
+
+  const pending = [];
+  ['mario','miri'].forEach(person => {
+    (state.deposits[person] || []).forEach(dep => {
+      if (dep.liquidated) return;
+      if (dep.endDate <= soonStr) pending.push({ person, dep });
+    });
+  });
+
+  if (!pending.length) return;
+
+  const listEl = document.getElementById('pending-deposits-list');
+  listEl.innerHTML = pending.map(({ person, dep }) => {
+    const isExpired = dep.endDate <= today;
+    const daysLeft  = depositDaysLeft(dep);
+    const statusTxt = isExpired
+      ? `Venció hace ${Math.abs(daysLeft)} día${Math.abs(daysLeft) !== 1 ? 's' : ''}`
+      : daysLeft === 0 ? 'Vence hoy'
+      : `Vence en ${daysLeft} día${daysLeft !== 1 ? 's' : ''}`;
+    const statusColor = isExpired ? 'var(--expense)' : daysLeft <= 2 ? 'var(--global)' : 'var(--income)';
+    const pName = getName(person);
+    const pCol  = person === 'mario' ? 'var(--mario)' : 'var(--miri)';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(86,207,225,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">🏦</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;">${dep.name}</div>
+        <div style="font-size:11px;color:var(--muted);">
+          <span style="color:${pCol};font-weight:600;">${pName}</span> ·
+          Vencimiento: ${fmtD2(dep.endDate)}
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:13px;font-weight:700;">€${fmt(dep.amount)}</div>
+        <div style="font-size:11px;font-weight:600;color:${statusColor};">${statusTxt}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('modalPendingDeposits').classList.add('open');
 }
 
 
@@ -8554,6 +8791,98 @@ function saveDividend() {
   showToast('Dividendo registrado · EUR' + fmt(net) + ' netos ingresados', 'success');
 }
 
+// ---- EDIT DIVIDEND ----
+let editDivPositionId = null;
+let editDivMovementId = null;
+
+function openEditDividend(positionId, movementId) {
+  const inv = getPositionById(positionId);
+  if (!inv) return;
+  const mov = (inv.movements || []).find(m => m.id === movementId);
+  if (!mov || mov.type !== 'dividend') return;
+
+  editDivPositionId = positionId;
+  editDivMovementId = movementId;
+
+  document.getElementById('ediv-name').textContent      = inv.name;
+  document.getElementById('ediv-amount').value          = mov.gross;
+  document.getElementById('ediv-withholding').value     = mov.withholding;
+  document.getElementById('ediv-date').value            = mov.date;
+  document.getElementById('ediv-notes').value           = mov.notes || '';
+  updateEditDivNet();
+
+  populateInvAccounts('ediv-account');
+  // Select current account
+  const sel = document.getElementById('ediv-account');
+  if (sel && mov.accId) sel.value = mov.accId;
+
+  document.getElementById('modalEditDividend').classList.add('open');
+}
+
+function updateEditDivNet() {
+  const gross = parseFloat(document.getElementById('ediv-amount').value) || 0;
+  const wh    = parseFloat(document.getElementById('ediv-withholding').value) || 0;
+  document.getElementById('ediv-net-calc').textContent = '€' + fmt(gross * (1 - wh / 100));
+}
+
+function saveEditDividend() {
+  const inv = getPositionById(editDivPositionId);
+  if (!inv) return;
+  const mov = (inv.movements || []).find(m => m.id === editDivMovementId);
+  if (!mov) return;
+
+  const newGross = parseFloat(document.getElementById('ediv-amount').value) || 0;
+  const newWh    = parseFloat(document.getElementById('ediv-withholding').value) || 0;
+  const newAccId = document.getElementById('ediv-account').value;
+  const newDate  = document.getElementById('ediv-date').value;
+  const newNotes = document.getElementById('ediv-notes').value.trim();
+
+  if (newGross <= 0) { showToast('Introduce el importe del dividendo', 'error'); return; }
+  if (!newAccId)     { showToast('Selecciona una cuenta destino', 'error'); return; }
+  if (!newDate)      { showToast('Selecciona una fecha', 'error'); return; }
+
+  const newNet = newGross * (1 - newWh / 100);
+  const oldNet = mov.net;
+  const oldAccId = mov.accId;
+
+  // Revert old account effect
+  const oldAcc = findAccountById(oldAccId);
+  if (oldAcc) oldAcc.balance -= oldNet;
+
+  // Apply new account effect
+  const newAcc = findAccountById(newAccId);
+  if (newAcc) newAcc.balance += newNet;
+
+  // Update linked transaction in state.transactions
+  const txIdx = state.transactions.findIndex(t =>
+    t.date === mov.date &&
+    t.category === 'Inversión' &&
+    t.type === 'income' &&
+    t.accountId === oldAccId &&
+    Math.abs(t.amount - oldNet) < 0.001
+  );
+  if (txIdx !== -1) {
+    state.transactions[txIdx].amount    = newNet;
+    state.transactions[txIdx].date      = newDate;
+    state.transactions[txIdx].accountId = newAccId;
+    state.transactions[txIdx].person    = getPersonFromAccountId(newAccId);
+  }
+
+  // Update movement
+  mov.gross       = newGross;
+  mov.withholding = newWh;
+  mov.net         = newNet;
+  mov.accId       = newAccId;
+  mov.date        = newDate;
+  mov.notes       = newNotes;
+
+  saveState();
+  closeModal('modalEditDividend');
+  openPositionDetail(editDivPositionId);
+  renderAll();
+  showToast('Dividendo actualizado ✓', 'success');
+}
+
 // ══════════════════════════════════════════════════════════
 // FISCAL SETTINGS
 // ══════════════════════════════════════════════════════════
@@ -9177,9 +9506,12 @@ function openPositionDetail(id) {
       }
       const terWrap = document.getElementById('pd-ter-wrap');
       const terVal  = document.getElementById('pd-ter-val');
+      const terCost = document.getElementById('pd-ter-cost');
       if (inv.ter) {
         terWrap.style.display = 'block';
         terVal.textContent    = inv.ter.toFixed(2) + '%';
+        const annualCost = inv.units * inv.currentPrice * (inv.ter / 100);
+        if (terCost) terCost.textContent = `≈ €${fmt(annualCost)}/año`;
       } else {
         terWrap.style.display = 'none';
       }
@@ -9261,7 +9593,7 @@ function renderPositionHistory(inv) {
     const onclick = m.type === 'update'
       ? `openEditUpdatePrice('${inv.id}','${m.id}')`
       : m.type === 'dividend'
-        ? ''
+        ? `openEditDividend('${inv.id}','${m.id}')`
         : `openEditInvMovement('${inv.id}','${m.id}')`;
     const clickable = onclick ? 'inv-history-editable' : '';
     const chevron   = onclick ? '<div style="font-size:16px;color:var(--muted);flex-shrink:0;">›</div>' : '';
@@ -10000,9 +10332,24 @@ function getCurrentBalance(scope) {
 }
 
 function getMonthlyRate(scope) {
-  // Estimate from last 3 months of snapshots
-  const snaps = ((state.snapshots || {})[scope === 'global' ? 'mario' : scope] || [])
-    .slice(-4).sort((a,b) => a.month.localeCompare(b.month));
+  // Estimate from last 4 snapshots. For 'global', combine mario+miri balance per month.
+  if (scope === 'global') {
+    const mSnaps = (state.snapshots || {}).mario || [];
+    const rSnaps = (state.snapshots || {}).miri  || [];
+    const byMonth = {};
+    mSnaps.forEach(s => { byMonth[s.month] = (byMonth[s.month] || 0) + s.balance; });
+    rSnaps.forEach(s => { byMonth[s.month] = (byMonth[s.month] || 0) + s.balance; });
+    const combined = Object.entries(byMonth)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .slice(-4);
+    if (combined.length < 2) return null;
+    const oldest = combined[0][1];
+    const newest = combined[combined.length - 1][1];
+    const months = combined.length - 1;
+    return months > 0 ? (newest - oldest) / months : null;
+  }
+  const snaps = ((state.snapshots || {})[scope] || [])
+    .slice(-4).sort((a, b) => a.month.localeCompare(b.month));
   if (snaps.length < 2) return null;
   const oldest = snaps[0].balance;
   const newest = snaps[snaps.length - 1].balance;
@@ -11207,6 +11554,84 @@ function exportExcel() {
     { s:{r:0,c:0}, e:{r:0,c:9} },
   ]);
   XLSX.utils.book_append_sheet(wb, invWs, '📈 Inversiones');
+
+  // ══════════════════════════════════════════════════════════
+  // 10. APORTACIONES PERIÓDICAS
+  // ══════════════════════════════════════════════════════════
+  const contribs = state.contributions || [];
+  const contribRows = contribs.map(c => {
+    const inv = (state.investments || []).find(i => i.id === c.fundId);
+    return [
+      T(inv ? inv.name : c.fundId, { name:'Arial', sz:10, color:{rgb:'C8D4F0'} }, null, null, LEFT, THIN_BORDER),
+      T(fmt(c.amount) + ' €', valFont(), null, EUR, RIGHT, THIN_BORDER),
+      T(CYCLE_LABELS[c.cycle] || c.cycle, muteFont(), null, null, CENTER, THIN_BORDER),
+      T(c.nextDate || '', muteFont(), null, null, CENTER, THIN_BORDER),
+      T(getAccountName(c.accountId), muteFont(), null, null, LEFT, THIN_BORDER),
+      T(c.active ? 'Activa' : 'Pausada', { name:'Arial', sz:10, bold:true, color:{rgb: c.active ? '6FCFAB' : 'F87171'} }, null, null, CENTER, THIN_BORDER),
+      T(c.notes || '', muteFont(), null, null, LEFT, THIN_BORDER),
+    ];
+  });
+  const contribData = [
+    [T('APORTACIONES PERIÓDICAS', titleFont(13), DARK_FILL, null, CENTER), '','','','','',''],
+    ['','','','','','',''],
+    [T('Fondo / Activo', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+     T('Importe (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+     T('Ciclo', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Próxima fecha', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Cuenta', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+     T('Estado', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+     T('Notas', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER)],
+    ...contribRows,
+  ];
+  const contribWs = buildSheet(contribData, [28, 14, 12, 14, 20, 10, 22], [
+    { s:{r:0,c:0}, e:{r:0,c:6} },
+  ]);
+  XLSX.utils.book_append_sheet(wb, contribWs, '🔁 Aportaciones');
+
+  // ══════════════════════════════════════════════════════════
+  // 11. HISTORIAL DE TIPOS HIPOTECARIOS
+  // ══════════════════════════════════════════════════════════
+  const mortgageRateRows = [];
+  ['mario','miri'].forEach(person => {
+    (state.debts[person] || []).filter(d => d.debtType === 'mortgage' && d.rateHistory && d.rateHistory.length > 1).forEach(d => {
+      mortgageRateRows.push([
+        T(d.name, { name:'Arial', sz:10, bold:true, color:{rgb:'C8D4F0'} }, null, null, LEFT, THIN_BORDER),
+        T(getName(person), muteFont(), null, null, LEFT, THIN_BORDER),
+        '','','',''
+      ]);
+      d.rateHistory.forEach((entry, i) => {
+        const nextEntry = d.rateHistory[i + 1];
+        const toQuota   = nextEntry ? nextEntry.fromQuota - 1 : d.months;
+        mortgageRateRows.push([
+          '',
+          T(`Tramo ${i + 1}`, muteFont(), null, null, LEFT, THIN_BORDER),
+          T(`Cuota ${entry.fromQuota}`, muteFont(), null, null, CENTER, THIN_BORDER),
+          T(`Cuota ${toQuota}`, muteFont(), null, null, CENTER, THIN_BORDER),
+          T(entry.tin + '%', valFont(), null, null, RIGHT, THIN_BORDER),
+          T(fmt(entry.quota) + ' €', valFont(), null, EUR, RIGHT, THIN_BORDER),
+        ]);
+      });
+      mortgageRateRows.push(['','','','','','']);
+    });
+  });
+
+  if (mortgageRateRows.length > 0) {
+    const rateData = [
+      [T('HISTORIAL DE TIPOS HIPOTECARIOS', titleFont(13), DARK_FILL, null, CENTER), '','','','',''],
+      ['','','','','',''],
+      [T('Hipoteca', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+       T('Titular', hdrFont(), HDR_FILL, null, LEFT, THIN_BORDER),
+       T('Cuota desde', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+       T('Cuota hasta', hdrFont(), HDR_FILL, null, CENTER, THIN_BORDER),
+       T('TIN (%)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER),
+       T('Cuota (€)', hdrFont(), HDR_FILL, null, RIGHT, THIN_BORDER)],
+      ...mortgageRateRows,
+    ];
+    const rateWs = buildSheet(rateData, [28, 14, 12, 12, 10, 14], [
+      { s:{r:0,c:0}, e:{r:0,c:5} },
+    ]);
+    XLSX.utils.book_append_sheet(wb, rateWs, '🏠 Tipos hipotecarios');
+  }
 
   // ---- GENERATE & SHARE ----
   const date     = new Date().toISOString().split('T')[0];
