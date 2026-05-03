@@ -2418,7 +2418,10 @@ body:not(.values-hidden) .account-rate-inline {
           <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
             <div style="font-size:10px;color:var(--muted);white-space:nowrap;">
               TWR — Ponderado por tiempo
-              <span style="margin-left:4px;cursor:pointer;color:var(--mario);" onclick="showTwrInfo()" title="¿Qué es el TWR?">ⓘ</span>
+              <span style="margin-left:4px;cursor:pointer;color:var(--mario);" onclick="toggleTwrInfo()" title="¿Qué es el TWR?">ⓘ</span>
+            </div>
+            <div id="inv-twr-info" style="display:none;font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-top:6px;line-height:1.5;">
+              El TWR mide la rentabilidad eliminando el efecto del <em>timing</em> de tus aportaciones. Así puedes comparar tu cartera con un índice de referencia de forma justa, independientemente de cuándo aportaste más o menos.
             </div>
             <div id="inv-twr-val" style="font-size:18px;font-weight:700;"></div>
           </div>
@@ -4170,7 +4173,7 @@ body:not(.values-hidden) .account-rate-inline {
       </div>
     </div>
 
-    <button class="btn-transfer" onclick="openTransfer()">⇄ Transferir a otra cuenta</button>
+    <button class="btn-transfer" onclick="openAccountTransfer()">⇄ Transferir a otra cuenta</button>
 
     <div style="margin-top:24px;">
       <div class="block-title" style="margin-bottom:12px;">Movimientos de esta cuenta</div>
@@ -4248,7 +4251,7 @@ body:not(.values-hidden) .account-rate-inline {
 </div>
 
 <!-- ==================== MODAL: TRANSFER ==================== -->
-<div class="modal-overlay" id="modalTransfer" onclick="closeModalOutside(event, 'modalTransfer')">
+<div class="modal-overlay" id="modalAccountTransfer" onclick="closeModalOutside(event, 'modalAccountTransfer')">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Transferencia</div>
@@ -4283,7 +4286,7 @@ body:not(.values-hidden) .account-rate-inline {
       <input class="form-input" id="transfer-desc" type="text" placeholder="Ej. Pago alquiler, préstamo…">
     </div>
 
-    <button class="btn-submit" onclick="saveTransfer()">Realizar transferencia</button>
+    <button class="btn-submit" onclick="saveAccountTransfer()">Realizar transferencia</button>
   </div>
 </div>
 
@@ -4949,6 +4952,8 @@ function renderTotals(person) {
     .forEach(t => {
       const inMyPool   = myPool.has(t.accountId);
       const isTransfer = t.category === 'Transferencia' && t.transferFromId && t.transferToId;
+      // Investment transactions belong only to the Inversión section — exclude from personal totals
+      if (t.category === 'Inversión') return;
 
       if (isTransfer) {
         const fromInPersonal = personAccIds.has(t.transferFromId);
@@ -4998,6 +5003,7 @@ function renderTotals(person) {
       .forEach(t => {
         const inMyPool   = myPool.has(t.accountId);
         const isTransfer = t.category === 'Transferencia' && t.transferFromId && t.transferToId;
+        if (t.category === 'Inversión') return;
         if (isTransfer) {
           const fromInPersonal = personAccIds.has(t.transferFromId);
           const toInPersonal   = personAccIds.has(t.transferToId);
@@ -5320,8 +5326,10 @@ function renderGlobalPatrimonyChart() {
       if (!prices.length) return sum;
       const price = prices[prices.length - 1].price;
       let units = inv.units;
-      (inv.movements || []).filter(m => m.type === 'sell' && m.date > endDate).forEach(m => units += m.units);
-      (inv.movements || []).filter(m => m.type === 'buy'  && m.date > endDate).forEach(m => units -= m.units);
+      (inv.movements || []).filter(m => m.date > endDate).forEach(m => {
+        if (m.type === 'sell' || m.type === 'transfer_out') units += m.units;
+        if (m.type === 'buy'  || m.type === 'transfer_in')  units -= m.units;
+      });
       return sum + Math.max(0, units) * price;
     }, 0);
     const hasActivity = state.investments.some(inv =>
@@ -5713,7 +5721,7 @@ function getAllAccounts() {
   ];
 }
 
-function openTransfer() {
+function openAccountTransfer() {
   const fromAcc = findAccount(detailPerson, detailAccountId);
   if (!fromAcc) return;
 
@@ -5737,10 +5745,10 @@ function openTransfer() {
     ? all.map(a => `<option value="${a.id}">${a.name} (${a.ownerLabel}) — €${fmt(a.balance)}</option>`).join('')
     : '<option value="">No hay otras cuentas disponibles</option>';
 
-  document.getElementById('modalTransfer').classList.add('open');
+  document.getElementById('modalAccountTransfer').classList.add('open');
 }
 
-function saveTransfer() {
+function saveAccountTransfer() {
   const amount   = parseFloat(document.getElementById('transfer-amount').value);
   const toId     = document.getElementById('transfer-to').value;
   const date     = document.getElementById('transfer-date').value;
@@ -5792,7 +5800,7 @@ function saveTransfer() {
   });
 
   saveState();
-  closeModal('modalTransfer');
+  closeModal('modalAccountTransfer');
 
   // Refresh detail with updated balance
   openAccountDetail(detailPerson, detailAccountId);
@@ -7907,6 +7915,15 @@ function findAccountById(id) {
   ].find(a => a.id === id) || null;
 }
 
+// Returns the person key ('mario'|'miri') who owns the account.
+// Common accounts fall back to 'mario' for transaction attribution.
+function getPersonFromAccountId(accountId) {
+  if (!accountId) return 'mario';
+  const meta = getAccountMeta(accountId);
+  if (!meta) return 'mario';
+  return meta.owner === 'common' ? 'mario' : meta.owner;
+}
+
 // ===================== INVESTMENTS =====================
 let currentPositionId = null;
 let addPositionMode   = 'new'; // 'new' | 'expand'
@@ -8119,7 +8136,7 @@ function savePosition() {
     const invName = addPositionMode === 'new' ? document.getElementById('inv-name').value.trim() : getPositionById(currentPositionId)?.name;
     state.transactions.push({
       id: (Date.now() + 1).toString(),
-      person: 'mario', type: 'expense', accountId: sourceId,
+      person: getPersonFromAccountId(sourceId), type: 'expense', accountId: sourceId,
       category: 'Inversión',
       desc: `Compra: ${invName}`,
       amount: total + commission, date
@@ -8287,7 +8304,7 @@ function saveSell() {
   const taxEst = pl > 0 ? pl * irpf / 100 : 0;
   state.transactions.push({
     id: Date.now().toString(),
-    person: 'mario', type: 'income', accountId: destId,
+    person: getPersonFromAccountId(destId), type: 'income', accountId: destId,
     category: 'Inversión', desc: `Venta: ${inv.name}`,
     amount: saleVal, date
   });
@@ -8359,7 +8376,7 @@ function confirmExecuteContribution() {
 
   state.transactions.push({
     id: (Date.now() + 1).toString(),
-    person: 'mario', type: 'expense', accountId: c.accountId,
+    person: getPersonFromAccountId(c.accountId), type: 'expense', accountId: c.accountId,
     category: 'Inversión', desc: 'Aportación: ' + inv.name,
     amount, date
   });
@@ -8525,7 +8542,7 @@ function saveDividend() {
 
   state.transactions.push({
     id: (Date.now() + 1).toString(),
-    person: 'mario', type: 'income', accountId: accId,
+    person: getPersonFromAccountId(accId), type: 'income', accountId: accId,
     category: 'Inversión',
     desc: 'Dividendo: ' + inv.name,
     amount: net, date: date
@@ -8684,7 +8701,7 @@ function executeContribution(id) {
 
   state.transactions.push({
     id: (Date.now() + 1).toString(),
-    person: 'mario', type: 'expense', accountId: c.accountId,
+    person: getPersonFromAccountId(c.accountId), type: 'expense', accountId: c.accountId,
     category: 'Inversión', desc: 'Aportación: ' + inv.name,
     amount: total, date
   });
@@ -9294,10 +9311,12 @@ function getPortfolioValueAt(dateStr) {
     if (!prices.length) return total;
     const price = prices[0].price;
 
-    // Reconstruct units at that date
+    // Reconstruct units at that date by undoing movements that happened after dateStr
     let units = inv.units;
-    (inv.movements || []).filter(m => m.type === 'sell' && m.date > dateStr).forEach(m => units += m.units);
-    (inv.movements || []).filter(m => m.type === 'buy'  && m.date > dateStr).forEach(m => units -= m.units);
+    (inv.movements || []).filter(m => m.date > dateStr).forEach(m => {
+      if (m.type === 'sell' || m.type === 'transfer_out') units += m.units;
+      if (m.type === 'buy'  || m.type === 'transfer_in')  units -= m.units;
+    });
     return total + Math.max(0, units) * price;
   }, 0);
 }
@@ -9420,8 +9439,10 @@ function renderInvPeriodSummary() {
   }
 }
 
-function showTwrInfo() {
-  showToast('TWR: mide la rentabilidad del gestor, eliminando el efecto del timing de tus aportaciones. Más justo para comparar con índices.', '');
+function toggleTwrInfo() {
+  const el = document.getElementById('inv-twr-info');
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -11440,6 +11461,7 @@ function renderInOutChart(person) {
   months.forEach(({ key }) => {
     let inc = 0, exp = 0;
     state.transactions.filter(t => t.date && t.date.startsWith(key)).forEach(t => {
+      if (t.category === 'Inversión') return;
       const isTransfer = t.category === 'Transferencia' && t.transferFromId && t.transferToId;
       if (isTransfer) {
         if (personAccIds.has(t.transferFromId) && otherAccIds.has(t.transferToId) && t.type === 'expense') exp += t.amount;
@@ -11591,7 +11613,7 @@ function renderCatChart(person) {
   const cats = {};
 
   state.transactions
-    .filter(t => t.date && t.date.startsWith(monthKey) && t.type === 'expense' && t.category !== 'Transferencia' && personAccIds.has(t.accountId))
+    .filter(t => t.date && t.date.startsWith(monthKey) && t.type === 'expense' && t.category !== 'Transferencia' && t.category !== 'Inversión' && personAccIds.has(t.accountId))
     .forEach(t => { cats[t.category] = (cats[t.category] || 0) + t.amount; });
 
   const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
@@ -11613,6 +11635,27 @@ function renderCatChart(person) {
     'rgba(247,168,196,0.75)','rgba(86,207,225,0.75)','rgba(111,207,151,0.75)','rgba(240,180,100,0.75)'
   ];
 
+  const total = sorted.reduce((s, e) => s + e[1], 0);
+
+  const centerTextPlugin = {
+    id: 'centerText_' + id,
+    afterDraw(chart) {
+      const { ctx, chartArea: { width, height, left, top } } = chart;
+      const cx = left + width  / 2;
+      const cy = top  + height / 2;
+      ctx.save();
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle    = '#e0e6f4';
+      ctx.font         = 'bold 15px Outfit, Arial, sans-serif';
+      ctx.fillText('€' + fmt(total), cx, cy - 8);
+      ctx.font         = '10px Outfit, Arial, sans-serif';
+      ctx.fillStyle    = '#7a8ba8';
+      ctx.fillText('total', cx, cy + 10);
+      ctx.restore();
+    }
+  };
+
   chartInstances[id] = new Chart(ctx, {
     type: 'doughnut',
     data: {
@@ -11621,7 +11664,7 @@ function renderCatChart(person) {
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      cutout: '60%',
+      cutout: '62%',
       plugins: {
         legend: {
           position: 'right',
@@ -11636,7 +11679,8 @@ function renderCatChart(person) {
         },
         tooltip: { callbacks: { label: ctx => ` €${fmt(ctx.raw)}` } }
       }
-    }
+    },
+    plugins: [centerTextPlugin]
   });
 }
 
@@ -11933,15 +11977,15 @@ function saveEditInvMovement() {
   if (!newDate)                   { showToast('Introduce la fecha', 'error'); return; }
 
   const newTotal = newUnits * newPrice;
-  const isBuy   = mov.type === 'buy';
+  const isBuy    = mov.type === 'buy';
+  const oldTotal = mov.total;
+  const oldDate  = mov.date;
+  const oldAccId = mov.sourceId || mov.destId;
 
-  // Revert old account effect
+  // Revert old account effect (include commission for buys, as it was deducted originally)
   if (!mov.noDeduct) {
-    const oldAccId = mov.sourceId || mov.destId;
-    const oldAcc   = findAccountById(oldAccId);
-    if (oldAcc) {
-      oldAcc.balance += isBuy ? mov.total : -mov.total;
-    }
+    const oldAcc = findAccountById(oldAccId);
+    if (oldAcc) oldAcc.balance += isBuy ? (oldTotal + (mov.commission || 0)) : -oldTotal;
   }
 
   // Apply new account effect
@@ -11965,12 +12009,12 @@ function saveEditInvMovement() {
   // Recalculate position averages from scratch
   recalcPositionFromMovements(inv);
 
-  // Update linked transaction if exists
-  const txDesc = isBuy ? `Compra: ${inv.name}` : `Venta: ${inv.name}`;
+  // Sync linked transaction — match by date + amount + inv name (before update)
   const tx = state.transactions.find(t =>
-    (t.accountId === (mov.sourceId || mov.destId) || t.desc?.includes(inv.name)) &&
     t.category === 'Inversión' &&
-    Math.abs(t.amount - mov.total) < 0.01
+    t.date === oldDate &&
+    Math.abs(t.amount - oldTotal) < 0.01 &&
+    (t.desc || '').includes(inv.name)
   );
   if (tx) {
     tx.amount    = newTotal;
@@ -12017,6 +12061,15 @@ function deleteInvMovement() {
       // Remove movement
       inv.movements = inv.movements.filter(m => m.id !== editInvMovementId);
 
+      // Remove linked transaction (buy/sell/contribution/dividend all create one)
+      state.transactions = state.transactions.filter(t => {
+        if (t.category !== 'Inversión') return true;
+        const sameDate   = t.date === mov.date;
+        const sameName   = (t.desc || '').includes(inv.name);
+        const sameAmount = Math.abs(t.amount - (mov.total || mov.net || (mov.units * mov.price))) < 0.01;
+        return !(sameDate && sameName && sameAmount);
+      });
+
       // Recalc units/avgBuyPrice
       recalcPositionFromMovements(inv);
 
@@ -12039,14 +12092,45 @@ function deleteInvMovement() {
 }
 
 function recalcPositionFromMovements(inv) {
-  // Recalculate units and avgBuyPrice from all buy/sell movements
-  const buys  = (inv.movements || []).filter(m => m.type === 'buy');
-  const sells = (inv.movements || []).filter(m => m.type === 'sell');
-  const totalBuyUnits = buys.reduce((s, m) => s + m.units, 0);
-  const totalBuyCost  = buys.reduce((s, m) => s + m.total, 0);
-  const totalSellUnits = sells.reduce((s, m) => s + m.units, 0);
-  inv.units        = Math.max(0, totalBuyUnits - totalSellUnits);
-  inv.avgBuyPrice  = totalBuyUnits > 0 ? totalBuyCost / totalBuyUnits : 0;
+  // Sort all movements chronologically to process in order
+  const sorted = [...(inv.movements || [])].sort((a, b) => a.date.localeCompare(b.date));
+
+  // Rebuild lots[] from scratch using FIFO
+  const lots = [];
+  let units = 0;
+  let totalCost = 0;
+  let totalBuyUnits = 0;
+
+  for (const m of sorted) {
+    if (m.type === 'buy') {
+      lots.push({ id: m.id, units: m.units, price: m.price, commission: m.commission || 0, date: m.date });
+      units        += m.units;
+      totalCost    += m.units * m.price;
+      totalBuyUnits += m.units;
+    } else if (m.type === 'transfer_in') {
+      // Inherited lots are stored individually; reconstruct a single lot with fiscal cost
+      const fiscalUnitPrice = m.units > 0 ? m.fiscalCost / m.units : 0;
+      lots.push({ id: m.id, units: m.units, price: fiscalUnitPrice, commission: 0, date: m.date });
+      units        += m.units;
+      totalCost    += m.fiscalCost;
+      totalBuyUnits += m.units;
+    } else if (m.type === 'sell' || m.type === 'transfer_out') {
+      // Consume lots FIFO
+      let remaining = m.units;
+      for (const lot of lots) {
+        if (remaining <= 0) break;
+        const consumed = Math.min(lot.units, remaining);
+        lot.units  -= consumed;
+        remaining  -= consumed;
+      }
+      units -= m.units;
+    }
+  }
+
+  // Clean up fully-consumed lots
+  inv.lots        = lots.filter(l => l.units > 0);
+  inv.units       = Math.max(0, units);
+  inv.avgBuyPrice = totalBuyUnits > 0 ? totalCost / totalBuyUnits : 0;
 }
 
 // ===================== VISIBILITY TOGGLE =====================
