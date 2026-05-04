@@ -68,6 +68,106 @@ body::before {
   z-index: 0;
 }
 
+/* ═══════════════════════════════════════
+   TEMAS — sobreescriben :root
+═══════════════════════════════════════ */
+
+/* ◆ OBSIDIAN — Negro y plata */
+body.theme-obsidian {
+  --bg: #0a0a0a;
+  --bg2: #111111;
+  --surface: rgba(255,255,255,0.04);
+  --surface2: rgba(255,255,255,0.028);
+  --surface3: rgba(255,255,255,0.06);
+  --surface-solid: #161616;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.05);
+  --text: #f5f5f5;
+  --muted: rgba(200,200,200,0.5);
+  --muted2: rgba(170,170,170,0.35);
+  --mario: #e2e8f0;
+  --miri: #94a3b8;
+  --invest: #cbd5e1;
+  --global: #f8fafc;
+  --common: #cbd5e1;
+  --income: #a3e635;
+  --expense: #f87171;
+  --saving: #e2e8f0;
+  --glow-blue: rgba(226,232,240,0.08);
+  --glow-purple: rgba(148,163,184,0.08);
+  --glow-green: rgba(163,230,53,0.1);
+}
+body.theme-obsidian::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(255,255,255,0.03) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 10%, rgba(255,255,255,0.02) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 50% 100%, rgba(255,255,255,0.015) 0%, transparent 60%);
+}
+
+/* ◈ EMBER — Carbón y fuego */
+body.theme-ember {
+  --bg: #0c0a08;
+  --bg2: #131008;
+  --surface: rgba(255,200,100,0.045);
+  --surface2: rgba(255,200,100,0.03);
+  --surface3: rgba(255,200,100,0.07);
+  --surface-solid: #171208;
+  --border: rgba(255,180,60,0.11);
+  --border2: rgba(255,180,60,0.07);
+  --text: #faf5eb;
+  --muted: rgba(220,190,140,0.6);
+  --muted2: rgba(200,165,110,0.4);
+  --mario: #fb923c;
+  --miri: #fbbf24;
+  --invest: #a3e635;
+  --global: #f59e0b;
+  --common: #d97706;
+  --income: #86efac;
+  --expense: #f87171;
+  --saving: #fb923c;
+  --glow-blue: rgba(251,146,60,0.15);
+  --glow-purple: rgba(245,158,11,0.1);
+  --glow-green: rgba(163,230,53,0.1);
+}
+body.theme-ember::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(251,146,60,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 10%, rgba(245,158,11,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 50% 100%, rgba(220,38,38,0.06) 0%, transparent 60%);
+}
+
+/* ◉ JADE — Bosque digital */
+body.theme-jade {
+  --bg: #060d0a;
+  --bg2: #0a1410;
+  --surface: rgba(74,222,128,0.045);
+  --surface2: rgba(74,222,128,0.03);
+  --surface3: rgba(74,222,128,0.07);
+  --surface-solid: #0c1610;
+  --border: rgba(74,222,128,0.11);
+  --border2: rgba(74,222,128,0.07);
+  --text: #ecfdf5;
+  --muted: rgba(160,210,180,0.6);
+  --muted2: rgba(130,185,155,0.4);
+  --mario: #4ade80;
+  --miri: #a78bfa;
+  --invest: #22d3ee;
+  --global: #fbbf24;
+  --common: #34d399;
+  --income: #4ade80;
+  --expense: #f87171;
+  --saving: #4ade80;
+  --glow-blue: rgba(74,222,128,0.15);
+  --glow-purple: rgba(167,139,250,0.1);
+  --glow-green: rgba(34,211,238,0.1);
+}
+body.theme-jade::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(74,222,128,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 10%, rgba(34,211,238,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 50% 100%, rgba(167,139,250,0.06) 0%, transparent 60%);
+}
+
 /* ===================== PIN SCREEN ===================== */
 #pinScreen {
   position: fixed;
@@ -1621,6 +1721,48 @@ body::before {
 .inv-history-type.transfer_in  { background: rgba(167,139,250,0.15); color: #a78bfa; }
 .inv-history-info { flex: 1; }
 .inv-history-amount { font-weight: 600; white-space: nowrap; }
+
+/* ===================== THEME SELECTOR ===================== */
+.theme-option-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+  width: 100%;
+}
+.theme-option-btn:active { transform: scale(0.97); }
+.theme-option-btn.active {
+  border-color: var(--mario);
+  background: rgba(255,255,255,0.06);
+  box-shadow: 0 0 0 1px var(--mario);
+}
+.theme-preview-dots {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.theme-preview-dots span {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: block;
+  flex-shrink: 0;
+}
+.theme-option-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.theme-option-desc {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
 
 /* ===================== SETTINGS ===================== */
 .settings-section-title {
@@ -3568,6 +3710,53 @@ body:not(.values-hidden) .account-rate-inline {
     <div class="modal-handle"></div>
     <div class="modal-title">Ajustes</div>
 
+    <div class="settings-section-title">Apariencia</div>
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Elige el tema visual de la app</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="theme-selector-grid">
+        <button class="theme-option-btn" data-theme="aurora" onclick="applyTheme('aurora')">
+          <div class="theme-preview-dots">
+            <span style="background:#60c8f5;"></span>
+            <span style="background:#f472b6;"></span>
+            <span style="background:#34d399;"></span>
+            <span style="background:#fbbf24;"></span>
+          </div>
+          <div class="theme-option-name">✦ Aurora</div>
+          <div class="theme-option-desc">Azul noche — por defecto</div>
+        </button>
+        <button class="theme-option-btn" data-theme="obsidian" onclick="applyTheme('obsidian')">
+          <div class="theme-preview-dots">
+            <span style="background:#e2e8f0;"></span>
+            <span style="background:#94a3b8;"></span>
+            <span style="background:#a3e635;"></span>
+            <span style="background:#f87171;"></span>
+          </div>
+          <div class="theme-option-name">◆ Obsidian</div>
+          <div class="theme-option-desc">Negro y plata</div>
+        </button>
+        <button class="theme-option-btn" data-theme="ember" onclick="applyTheme('ember')">
+          <div class="theme-preview-dots">
+            <span style="background:#fb923c;"></span>
+            <span style="background:#fbbf24;"></span>
+            <span style="background:#86efac;"></span>
+            <span style="background:#f87171;"></span>
+          </div>
+          <div class="theme-option-name">◈ Ember</div>
+          <div class="theme-option-desc">Carbón y fuego</div>
+        </button>
+        <button class="theme-option-btn" data-theme="jade" onclick="applyTheme('jade')">
+          <div class="theme-preview-dots">
+            <span style="background:#4ade80;"></span>
+            <span style="background:#a78bfa;"></span>
+            <span style="background:#22d3ee;"></span>
+            <span style="background:#fbbf24;"></span>
+          </div>
+          <div class="theme-option-name">◉ Jade</div>
+          <div class="theme-option-desc">Bosque digital</div>
+        </button>
+      </div>
+    </div>
+
     <div class="settings-section-title">Nombres</div>
 
     <div id="settings-names-section">
@@ -4664,6 +4853,7 @@ function unlockApp() {
   setTimeout(() => {
     document.getElementById('pinScreen').style.display = 'none';
     document.getElementById('appShell').classList.add('visible');
+    applyTheme(localStorage.getItem('finanzas_theme') || 'aurora', true);
     autoSnapshot();
     renderAll();
     applyNames();
@@ -5208,6 +5398,7 @@ const BANKS = [
   { id: 'sabadell',      name: 'Sabadell',       domain: 'bancsabadell.com',   color: '#0066CC' },
   { id: 'unicaja',       name: 'Unicaja',        domain: 'unicajabanco.es',    color: '#00703C' },
   { id: 'openbank',      name: 'Openbank',       domain: 'openbank.es',        color: '#DF1131' },
+  { id: 'pibank',        name: 'Pibank',         domain: 'pibank.es',          color: '#00C8A0' },
   { id: 'revolut',       name: 'Revolut',        domain: 'revolut.com',        color: '#191C1F' },
   { id: 'n26',           name: 'N26',            domain: 'n26.com',            color: '#26282B' },
   { id: 'wise',          name: 'Wise',           domain: 'wise.com',           color: '#00B9FF' },
@@ -5539,6 +5730,23 @@ function renderGlobalPatrimonyChart() {
     { label: 'Inversión',      data: investData,  color: '#34d399' }, // verde
   ];
 
+  // Helper: build per-bar backgroundColor arrays, dimming non-selected bars
+  function buildBarColors(selectedIdx) {
+    return series.map(s => ({
+      backgroundColor: s.data.map((_, i) =>
+        selectedIdx === null || i === selectedIdx ? s.color + 'ee' : s.color + '33'
+      ),
+      borderColor: s.data.map((_, i) =>
+        selectedIdx === null || i === selectedIdx ? s.color : s.color + '44'
+      ),
+      hoverBackgroundColor: s.data.map((_, i) =>
+        selectedIdx === null || i === selectedIdx ? s.color : s.color + '55'
+      ),
+    }));
+  }
+
+  let selectedPatrimonyIdx = null;
+
   globalPatrimonyChart = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -5546,42 +5754,41 @@ function renderGlobalPatrimonyChart() {
       datasets: series.map(s => ({
         label: s.label,
         data: s.data,
-        backgroundColor: s.color + 'cc',
-        borderColor: s.color,
+        backgroundColor: s.data.map(() => s.color + 'cc'),
+        borderColor: s.data.map(() => s.color),
         borderWidth: 0,
         borderRadius: 0,
-        hoverBackgroundColor: s.color,
+        hoverBackgroundColor: s.data.map(() => s.color),
       }))
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       onClick: (_, elements) => {
-        if (!elements.length) return;
-        const idx = elements[0].index;
-        renderGlobalChartTapSummary(idx, months, series);
+        const idx = elements.length ? elements[0].index : null;
+        if (idx === null) return;
+
+        // Toggle off if same bar tapped again
+        selectedPatrimonyIdx = selectedPatrimonyIdx === idx ? null : idx;
+
+        const cols = buildBarColors(selectedPatrimonyIdx);
+        globalPatrimonyChart.data.datasets.forEach((ds, i) => {
+          ds.backgroundColor      = cols[i].backgroundColor;
+          ds.borderColor          = cols[i].borderColor;
+          ds.hoverBackgroundColor = cols[i].hoverBackgroundColor;
+        });
+        globalPatrimonyChart.update('none'); // 'none' = no animation, instant
+
+        if (selectedPatrimonyIdx !== null) {
+          renderGlobalChartTapSummary(selectedPatrimonyIdx, months, series);
+        } else {
+          const sumEl = document.getElementById('global-chart-tap-summary');
+          if (sumEl) sumEl.style.display = 'none';
+        }
       },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: items => {
-              const idx = items[0].dataIndex;
-              const total = series.reduce((s, serie) => s + (serie.data[idx] || 0), 0);
-              return `${months[idx].label}  ·  Total €${fmt(total)}`;
-            },
-            label: ctx => {
-              const val = ctx.raw || 0;
-              if (val === 0) return null;
-              const idx  = ctx.dataIndex;
-              const cumul = series
-                .slice(0, ctx.datasetIndex + 1)
-                .reduce((s, serie) => s + (serie.data[idx] || 0), 0);
-              return ` ${ctx.dataset.label}: €${fmt(val)}  (acum. €${fmt(cumul)})`;
-            },
-            filter: item => (item.raw || 0) > 0
-          }
-        }
+        tooltip: { enabled: false }
       },
       scales: {
         x: {
@@ -5606,9 +5813,19 @@ function renderGlobalPatrimonyChart() {
       </div>`).join('');
   }
 
-  // Show last available month summary on load (useful on mobile before any tap)
+  // On load: pre-select last bar with data, highlight it and show summary
   const lastIdx = [...months.map((m, i) => ({ i, hasData: series.some(s => s.data[i] !== null) }))].reverse().find(x => x.hasData);
-  if (lastIdx) renderGlobalChartTapSummary(lastIdx.i, months, series);
+  if (lastIdx) {
+    selectedPatrimonyIdx = lastIdx.i;
+    const cols = buildBarColors(selectedPatrimonyIdx);
+    globalPatrimonyChart.data.datasets.forEach((ds, i) => {
+      ds.backgroundColor      = cols[i].backgroundColor;
+      ds.borderColor          = cols[i].borderColor;
+      ds.hoverBackgroundColor = cols[i].hoverBackgroundColor;
+    });
+    globalPatrimonyChart.update('none');
+    renderGlobalChartTapSummary(selectedPatrimonyIdx, months, series);
+  }
 }
 
 function renderGlobalChartTapSummary(idx, months, series) {
@@ -10277,6 +10494,31 @@ function renderInvestBarChart() {
   });
 }
 
+// ===================== THEME =====================
+const THEMES = ['aurora', 'obsidian', 'ember', 'jade'];
+
+function applyTheme(theme, silent) {
+  if (!THEMES.includes(theme)) theme = 'aurora';
+  // Remove all theme classes, add the new one (aurora = no class needed, it's :root)
+  document.body.classList.remove(...THEMES.map(t => 'theme-' + t));
+  if (theme !== 'aurora') document.body.classList.add('theme-' + theme);
+  localStorage.setItem('finanzas_theme', theme);
+  updateThemeButtons(theme);
+  if (!silent) showToast('Información guardada ✓', 'success');
+}
+
+function updateThemeButtons(active) {
+  document.querySelectorAll('.theme-option-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === active);
+  });
+}
+
+// Apply theme immediately on page load (before PIN, avoids flash)
+(function() {
+  const saved = localStorage.getItem('finanzas_theme') || 'aurora';
+  if (saved !== 'aurora') document.body.classList.add('theme-' + saved);
+})();
+
 // ===================== SETTINGS =====================
 // ===================== NAMES =====================
 function getName(person) {
@@ -10630,6 +10872,7 @@ function openSettings() {
   document.getElementById('settings-name-miri').value  = getName('miri');
   renderCategoryChips();
   renderSettingsProfiles();
+  updateThemeButtons(localStorage.getItem('finanzas_theme') || 'aurora');
   document.getElementById('modalSettings').classList.add('open');
 }
 
@@ -10655,7 +10898,7 @@ function saveNames() {
   saveState();
   applyNames();
   closeModal('modalSettings');
-  showToast('Nombres actualizados ✓', 'success');
+  showToast('Información guardada ✓', 'success');
 }
 
 // ---- Delete profile ----
@@ -12422,6 +12665,8 @@ function saveEditInvMovement() {
   }
 
   // Update movement
+  const oldMovDate  = mov.date;
+  const oldMovPrice = mov.price;
   mov.units    = newUnits;
   mov.price    = newPrice;
   mov.total    = newTotal;
@@ -12431,8 +12676,27 @@ function saveEditInvMovement() {
   if (isBuy) mov.sourceId = eimNoDeduct ? null : newAccId;
   else        mov.destId   = eimNoDeduct ? null : newAccId;
 
+  // Sync priceHistory: remove old entry (matched by old date+price), add updated one
+  if (inv.priceHistory) {
+    let removed = false;
+    inv.priceHistory = inv.priceHistory.filter(h => {
+      if (!removed && h.date === oldMovDate && h.price === oldMovPrice) {
+        removed = true;
+        return false;
+      }
+      return true;
+    });
+  } else {
+    inv.priceHistory = [];
+  }
+  inv.priceHistory.push({ date: newDate, price: newPrice });
+
   // Recalculate position averages from scratch
   recalcPositionFromMovements(inv);
+
+  // Recalculate currentPrice from most recent priceHistory entry
+  const phSorted = [...inv.priceHistory].sort((a, b) => b.date.localeCompare(a.date));
+  if (phSorted.length > 0) inv.currentPrice = phSorted[0].price;
 
   // Sync linked transaction — match by date + amount + inv name (before update)
   const tx = state.transactions.find(t =>
