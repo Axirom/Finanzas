@@ -9781,7 +9781,6 @@ function renderPositionChart(inv) {
   if (history.length < 2) return;
 
   const fmtD = d => new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-  const c = getChartColors();
 
   pdChartInstance = new Chart(ctx, {
     type: 'line',
@@ -9789,10 +9788,10 @@ function renderPositionChart(inv) {
       labels: history.map(h => fmtD(h.date)),
       datasets: [{
         data: history.map(h => h.price),
-        borderColor: c.accent,
-        backgroundColor: c.accent.replace('0.9)', '0.07)'),
+        borderColor: 'rgba(247,217,120,0.9)',
+        backgroundColor: 'rgba(247,217,120,0.07)',
         borderWidth: 2, pointRadius: 4,
-        pointBackgroundColor: c.accent,
+        pointBackgroundColor: 'rgba(247,217,120,0.9)',
         fill: true, tension: 0.3
       }]
     },
@@ -10144,7 +10143,6 @@ function runSimulator() {
   const ctx = document.getElementById('sim-chart');
   if (!ctx) return;
 
-  const c = getChartColors();
   simChartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -10153,14 +10151,14 @@ function runSimulator() {
         {
           label: 'Aportado',
           data: sampled.map(p => p.contributed),
-          backgroundColor: c.accent2.replace('0.8)', '0.6)'),
+          backgroundColor: 'rgba(99,102,241,0.6)',
           stack: 'a',
           order: 2
         },
         {
           label: 'Rendimiento',
           data: sampled.map(p => Math.max(0, p.gains)),
-          backgroundColor: c.accent.replace('0.9)', '0.75)'),
+          backgroundColor: 'rgba(52,211,153,0.7)',
           stack: 'a',
           order: 2
         },
@@ -10168,7 +10166,7 @@ function runSimulator() {
           label: 'Objetivo',
           data: sampled.map(() => target),
           type: 'line',
-          borderColor: c.accent,
+          borderColor: 'rgba(249,217,120,0.85)',
           borderWidth: 2,
           borderDash: [5, 4],
           pointRadius: 0,
@@ -10291,7 +10289,6 @@ function renderPortfolioChart() {
   });
 
   const fmtD = d => new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-  const c = getChartColors();
 
   invPortfolioChart = new Chart(ctx, {
     type: 'line',
@@ -10301,12 +10298,12 @@ function renderPortfolioChart() {
         {
           label: 'Capital invertido',
           data: investedValues,
-          borderColor: c.accent2,
-          backgroundColor: c.accent2.replace('0.8)', '0.06)'),
+          borderColor: 'rgba(96,200,245,0.9)',
+          backgroundColor: 'rgba(96,200,245,0.06)',
           borderWidth: 2,
           borderDash: [5, 4],
           pointRadius: 3,
-          pointBackgroundColor: c.accent2,
+          pointBackgroundColor: 'rgba(96,200,245,0.9)',
           fill: false,
           tension: 0.3,
           order: 2
@@ -10314,11 +10311,11 @@ function renderPortfolioChart() {
         {
           label: 'Valor actual',
           data: currentValues,
-          borderColor: c.accent,
-          backgroundColor: c.accent.replace('0.9)', '0.08)'),
+          borderColor: 'rgba(52,211,153,0.9)',
+          backgroundColor: 'rgba(52,211,153,0.08)',
           borderWidth: 2.5,
           pointRadius: 4,
-          pointBackgroundColor: c.accent,
+          pointBackgroundColor: 'rgba(52,211,153,0.9)',
           fill: true,
           tension: 0.3,
           order: 1
@@ -10354,19 +10351,17 @@ function renderPortfolioChart() {
   // Render custom legend below chart
   const legEl = document.getElementById('inv-portfolio-legend');
   if (legEl) {
-    const c2 = getChartColors();
     legEl.innerHTML = `
       <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;flex-wrap:wrap;">
         <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);">
-          <svg width="20" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="${c2.accent2}" stroke-width="2" stroke-dasharray="4,3"/></svg>
+          <svg width="20" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="rgba(96,200,245,0.9)" stroke-width="2" stroke-dasharray="4,3"/></svg>
           Capital invertido
         </div>
         <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);">
-          <div style="width:20px;height:3px;background:${c2.accent};border-radius:2px;"></div>
+          <div style="width:20px;height:3px;background:rgba(52,211,153,0.9);border-radius:2px;"></div>
           Valor actual
         </div>
       </div>`;
-  }
   }
 }
 
@@ -10437,7 +10432,6 @@ function renderInvestDonut() {
 
   const total = invs.reduce((s, i) => s + i.units * i.currentPrice, 0);
   const sorted = [...invs].sort((a, b) => (b.units * b.currentPrice) - (a.units * a.currentPrice));
-  const c = getChartColors();
 
   invDonutChart = new Chart(ctx, {
     type: 'doughnut',
@@ -10445,7 +10439,7 @@ function renderInvestDonut() {
       labels: sorted.map(i => i.name),
       datasets: [{
         data: sorted.map(i => i.units * i.currentPrice),
-        backgroundColor: c.donut,
+        backgroundColor: palette,
         borderWidth: 0,
         hoverOffset: 8
       }]
@@ -10500,15 +10494,14 @@ function renderInvestBarChart() {
   if (wrapEl) wrapEl.style.display = 'block';
 
   const sorted = [...state.investments].sort((a, b) => (b.units * b.currentPrice) - (a.units * a.currentPrice));
-  const c = getChartColors();
 
   invBarChart = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: sorted.map(i => i.name.length > 12 ? i.name.slice(0, 12) + '…' : i.name),
       datasets: [
-        { label: 'Invertido',    data: sorted.map(i => i.units * i.avgBuyPrice),  backgroundColor: c.accent2.replace('0.8)', '0.55)'), borderRadius: 6 },
-        { label: 'Valor actual', data: sorted.map(i => i.units * i.currentPrice), backgroundColor: c.accent.replace('0.9)', '0.7)'),  borderRadius: 6 }
+        { label: 'Invertido',     data: sorted.map(i => i.units * i.avgBuyPrice),    backgroundColor: 'rgba(126,184,247,0.6)', borderRadius: 6 },
+        { label: 'Valor actual',  data: sorted.map(i => i.units * i.currentPrice),   backgroundColor: 'rgba(168,247,200,0.7)', borderRadius: 6 }
       ]
     },
     options: {
@@ -10532,13 +10525,8 @@ function applyTheme(theme, silent) {
   if (theme !== 'aurora') document.body.classList.add('theme-' + theme);
   localStorage.setItem('finanzas_theme', theme);
   updateThemeButtons(theme);
-  // Regenerate all charts with new palette
+  // Regenerate patrimony chart so it picks up the new palette
   if (typeof renderGlobalPatrimonyChart === 'function') renderGlobalPatrimonyChart();
-  if (typeof renderInvestCharts === 'function') renderInvestCharts();
-  if (typeof renderCharts === 'function') {
-    if (state.activeProfiles?.mario) renderCharts('mario');
-    if (state.activeProfiles?.miri)  renderCharts('miri');
-  }
   if (!silent) showToast('Información guardada ✓', 'success');
 }
 
@@ -12105,66 +12093,10 @@ if (typeof Chart !== 'undefined' && Chart.defaults) {
 }
 
 function getChartColors() {
-  const theme = localStorage.getItem('finanzas_theme') || 'aurora';
-
-  // accent: color principal de líneas/puntos de la persona activa
-  // accent2: color secundario (capital invertido, saldo, etc.)
-  // donut[]: paleta para donuts y barras de categorías (de más vivo a más apagado)
-  const themes = {
-    aurora: {
-      accent:  'rgba(77,217,245,0.9)',
-      accent2: 'rgba(13,126,160,0.8)',
-      saving:  'rgba(77,217,245,0.75)',
-      donut: [
-        'rgba(77,217,245,0.82)','rgba(31,168,201,0.82)','rgba(13,126,160,0.82)',
-        'rgba(10,90,117,0.85)','rgba(6,61,82,0.88)','rgba(102,226,242,0.75)',
-        'rgba(152,238,248,0.75)','rgba(8,110,145,0.82)','rgba(50,196,224,0.82)',
-        'rgba(5,80,110,0.85)'
-      ]
-    },
-    obsidian: {
-      accent:  'rgba(209,213,219,0.9)',
-      accent2: 'rgba(107,114,128,0.8)',
-      saving:  'rgba(209,213,219,0.75)',
-      donut: [
-        'rgba(241,245,249,0.82)','rgba(209,213,219,0.82)','rgba(156,163,175,0.82)',
-        'rgba(107,114,128,0.85)','rgba(75,85,99,0.88)','rgba(229,231,235,0.75)',
-        'rgba(249,250,251,0.75)','rgba(127,133,143,0.82)','rgba(174,179,189,0.82)',
-        'rgba(55,65,81,0.88)'
-      ]
-    },
-    ember: {
-      accent:  'rgba(251,191,36,0.9)',
-      accent2: 'rgba(249,115,22,0.8)',
-      saving:  'rgba(251,191,36,0.75)',
-      donut: [
-        'rgba(251,191,36,0.82)','rgba(251,146,60,0.82)','rgba(249,115,22,0.82)',
-        'rgba(234,88,12,0.85)','rgba(194,65,12,0.88)','rgba(252,211,77,0.75)',
-        'rgba(253,230,138,0.75)','rgba(239,100,16,0.82)','rgba(245,158,11,0.82)',
-        'rgba(154,52,18,0.88)'
-      ]
-    },
-    jade: {
-      accent:  'rgba(74,222,128,0.9)',
-      accent2: 'rgba(34,197,94,0.8)',
-      saving:  'rgba(74,222,128,0.75)',
-      donut: [
-        'rgba(134,239,172,0.82)','rgba(74,222,128,0.82)','rgba(34,197,94,0.82)',
-        'rgba(22,163,74,0.85)','rgba(21,128,61,0.88)','rgba(187,247,208,0.75)',
-        'rgba(220,252,231,0.75)','rgba(52,211,153,0.82)','rgba(16,185,129,0.82)',
-        'rgba(6,95,70,0.88)'
-      ]
-    }
-  };
-
-  const t = themes[theme] || themes.aurora;
   return {
-    income:  'rgba(111,207,151,0.8)',  // siempre verde
-    expense: 'rgba(235,87,87,0.8)',    // siempre rojo
-    saving:  t.saving,
-    accent:  t.accent,
-    accent2: t.accent2,
-    donut:   t.donut,
+    income:  'rgba(111,207,151,0.8)',
+    expense: 'rgba(235,87,87,0.8)',
+    saving:  'rgba(86,207,225,0.7)',
     grid:    'rgba(255,255,255,0.05)'
   };
 }
@@ -12310,18 +12242,18 @@ function renderSavingChart(person) {
         {
           label: 'Saldo + Depósitos',
           data: totals,
-          borderColor: c.accent,
-          backgroundColor: c.accent.replace('0.9)', '0.08)'),
+          borderColor: c.saving,
+          backgroundColor: 'rgba(86,207,225,0.08)',
           borderWidth: 2,
           pointRadius: 4,
-          pointBackgroundColor: c.accent,
+          pointBackgroundColor: c.saving,
           fill: true,
           tension: 0.3
         },
         {
           label: 'Saldo cuentas',
           data: balances,
-          borderColor: c.accent.replace('0.9)', '0.4)'),
+          borderColor: 'rgba(86,207,225,0.4)',
           borderWidth: 1.5,
           pointRadius: 3,
           borderDash: [4, 3],
@@ -12388,8 +12320,11 @@ function renderCatChart(person) {
   if (msgEl)  msgEl.style.display  = 'none';
   if (wrapEl) wrapEl.style.display = 'block';
 
-  const c = getChartColors();
-  const palette = c.donut;
+  const palette = [
+    'rgba(235,87,87,0.75)','rgba(247,184,126,0.75)','rgba(247,217,120,0.75)',
+    'rgba(168,247,200,0.75)','rgba(126,184,247,0.75)','rgba(196,168,247,0.75)',
+    'rgba(247,168,196,0.75)','rgba(86,207,225,0.75)','rgba(111,207,151,0.75)','rgba(240,180,100,0.75)'
+  ];
 
   const total = sorted.reduce((s, e) => s + e[1], 0);
 
