@@ -12395,21 +12395,31 @@ function renderCatChart(person) {
   const centerTextPlugin = {
     id: 'centerText_' + id,
     afterDraw(chart) {
-      const { ctx, chartArea: { width, height, left, top } } = chart;
+      if (!chart.chartArea) return;
+      const { width, height, left, top } = chart.chartArea;
       const cx = left + width  / 2;
       const cy = top  + height / 2;
-      ctx.save();
-      ctx.textAlign    = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle    = '#e0e6f4';
-      ctx.font         = 'bold 15px Outfit, Arial, sans-serif';
-      ctx.fillText('€' + fmt(total), cx, cy - 8);
-      ctx.font         = '10px Outfit, Arial, sans-serif';
-      ctx.fillStyle    = '#7a8ba8';
-      ctx.fillText('total', cx, cy + 10);
-      ctx.restore();
+      const c  = chart.ctx;
+      c.save();
+      c.textAlign    = 'center';
+      c.textBaseline = 'middle';
+      c.fillStyle    = '#e0e6f4';
+      c.font         = 'bold 15px Outfit, Arial, sans-serif';
+      c.fillText('€' + fmt(total), cx, cy - 8);
+      c.font         = '10px Outfit, Arial, sans-serif';
+      c.fillStyle    = '#7a8ba8';
+      c.fillText('total', cx, cy + 10);
+      c.restore();
     }
   };
+
+  // Register inline plugin globally (Chart.js 4 requirement), keyed by unique id
+  const existingPluginIdx = Chart.registry?.plugins?.items?.findIndex?.(p => p.id === centerTextPlugin.id);
+  if (existingPluginIdx !== undefined && existingPluginIdx >= 0) {
+    Chart.registry.plugins.items[existingPluginIdx] = centerTextPlugin;
+  } else {
+    Chart.register(centerTextPlugin);
+  }
 
   chartInstances[id] = new Chart(ctx, {
     type: 'doughnut',
@@ -12434,8 +12444,7 @@ function renderCatChart(person) {
         },
         tooltip: { callbacks: { label: ctx => ` €${fmt(ctx.raw)}` } }
       }
-    },
-    plugins: [centerTextPlugin]
+    }
   });
 }
 
