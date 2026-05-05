@@ -12413,14 +12413,6 @@ function renderCatChart(person) {
     }
   };
 
-  // Register inline plugin globally (Chart.js 4 requirement), keyed by unique id
-  const existingPluginIdx = Chart.registry?.plugins?.items?.findIndex?.(p => p.id === centerTextPlugin.id);
-  if (existingPluginIdx !== undefined && existingPluginIdx >= 0) {
-    Chart.registry.plugins.items[existingPluginIdx] = centerTextPlugin;
-  } else {
-    Chart.register(centerTextPlugin);
-  }
-
   chartInstances[id] = new Chart(ctx, {
     type: 'doughnut',
     data: {
@@ -12444,7 +12436,8 @@ function renderCatChart(person) {
         },
         tooltip: { callbacks: { label: ctx => ` €${fmt(ctx.raw)}` } }
       }
-    }
+    },
+    plugins: [centerTextPlugin]
   });
 }
 
