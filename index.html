@@ -5722,12 +5722,22 @@ function renderGlobalPatrimonyChart() {
   if (msgEl)  msgEl.style.display  = 'none';
   if (wrapEl) wrapEl.style.display = 'block';
 
+  // Theme-aware palette: cohesive scale per theme
+  const theme = localStorage.getItem('finanzas_theme') || 'aurora';
+  const palette = {
+    aurora:   ['#4dd9f5', '#1fa8c9', '#0d7ea0', '#0a5a75', '#063d52'], // azul-verdoso claro → oscuro
+    obsidian: ['#d1d5db', '#9ca3af', '#6b7280', '#4b5563', '#374151'], // plata clara → gris oscuro
+    ember:    ['#fbbf24', '#fb923c', '#f97316', '#ea580c', '#c2410c'], // ámbar → rojo fuego
+    jade:     ['#86efac', '#4ade80', '#22c55e', '#16a34a', '#15803d'], // verde claro → verde bosque
+  };
+  const pal = palette[theme] || palette.aurora;
+
   const series = [
-    { label: getName('mario'), data: marioData,   color: '#60c8f5' }, // azul
-    { label: getName('miri'),  data: miriData,    color: '#f472b6' }, // rosa
-    { label: 'Común',          data: commonData,  color: '#a78bfa' }, // violeta
-    { label: 'Depósitos',      data: depositData, color: '#fb923c' }, // naranja
-    { label: 'Inversión',      data: investData,  color: '#34d399' }, // verde
+    { label: getName('mario'), data: marioData,   color: pal[0] },
+    { label: getName('miri'),  data: miriData,    color: pal[1] },
+    { label: 'Común',          data: commonData,  color: pal[2] },
+    { label: 'Depósitos',      data: depositData, color: pal[3] },
+    { label: 'Inversión',      data: investData,  color: pal[4] },
   ];
 
   // Helper: build per-bar backgroundColor arrays, dimming non-selected bars
@@ -8582,7 +8592,7 @@ function savePosition() {
     inv.lots.push({ id: Date.now().toString(), units, price, commission, date });
     inv.movements.push({ id: Date.now().toString(), type: 'buy', units, price, total, commission, sourceId: invNoDeduct ? null : sourceId, noDeduct: invNoDeduct, date, notes });
     inv.priceHistory.push({ date, price });
-    if (price > (inv.currentPrice || 0)) inv.currentPrice = price;
+    inv.currentPrice = price; // buy price = current NAV, always update
   }
 
   // Only record a transaction if money actually moved from an account
@@ -8648,11 +8658,22 @@ function saveUpdatePrice() {
   if (editingUpdateMoveId) {
     // Edit existing update movement
     const mov = (inv.movements || []).find(m => m.id === editingUpdateMoveId);
-    if (mov) { mov.price = price; mov.date = date; }
-    // Also update matching priceHistory entry
-    const ph = (inv.priceHistory || []).find(h => h.date === mov?.date || h.price === mov?.price);
-    if (ph) { ph.price = price; ph.date = date; }
-    else inv.priceHistory.push({ date, price });
+    if (mov) {
+      // Capture OLD values BEFORE overwriting
+      const oldDate  = mov.date;
+      const oldPrice = mov.price;
+      mov.price = price;
+      mov.date  = date;
+      // Remove the old priceHistory entry using old values, then add updated one
+      let removed = false;
+      inv.priceHistory = (inv.priceHistory || []).filter(h => {
+        if (!removed && h.date === oldDate && h.price === oldPrice) { removed = true; return false; }
+        return true;
+      });
+      inv.priceHistory.push({ date, price });
+    } else {
+      inv.priceHistory.push({ date, price });
+    }
   } else {
     // New update
     inv.priceHistory.push({ date, price });
@@ -8903,7 +8924,7 @@ function savePositionInfo() {
 // FIFO — calculates fiscal cost basis for a given number of units
 // ══════════════════════════════════════════════════════════
 function calcFifoPl(inv, unitsSelling) {
-  const lots = [...(inv.lots || [])].sort((a, b) => a.date.localeCompare(b.date));
+  const lots = [...(inv.lots || [])].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
   let remaining = unitsSelling;
   let cost = 0;
   const usedLots = [];
@@ -9787,7 +9808,7 @@ function renderPositionChart(inv) {
 
 function renderPositionHistory(inv) {
   const el = document.getElementById('pd-history');
-  const moves = [...(inv.movements || [])].sort((a, b) => b.date.localeCompare(a.date));
+  const moves = [...(inv.movements || [])].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 
   if (moves.length === 0) {
     el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">Sin movimientos</div>`;
@@ -9885,7 +9906,7 @@ function calcTWR(startDate) {
       events.push({ date: d, type: m.type, invId: inv.id, units: m.units, price: m.price });
     });
   });
-  events.sort((a, b) => a.date.localeCompare(b.date));
+  events.sort((a, b) => a.date.localeCompare(b.date) || a.invId.localeCompare(b.invId));
 
   // Build sub-period boundaries: startDate + each unique cash-flow date + today
   const today = new Date().toISOString().split('T')[0];
@@ -10504,6 +10525,8 @@ function applyTheme(theme, silent) {
   if (theme !== 'aurora') document.body.classList.add('theme-' + theme);
   localStorage.setItem('finanzas_theme', theme);
   updateThemeButtons(theme);
+  // Regenerate patrimony chart so it picks up the new palette
+  if (typeof renderGlobalPatrimonyChart === 'function') renderGlobalPatrimonyChart();
   if (!silent) showToast('Información guardada ✓', 'success');
 }
 
@@ -12588,6 +12611,12 @@ function openEditInvMovement(positionId, movementId) {
   const mov = (inv.movements || []).find(m => m.id === movementId);
   if (!mov) return;
 
+  // Transfers are not editable — they involve two linked funds and require dedicated logic
+  if (mov.type === 'transfer_in' || mov.type === 'transfer_out') {
+    showToast('Los traspasos no son editables directamente. Elimínalos y vuelve a registrarlos.', '');
+    return;
+  }
+
   editInvPositionId = positionId;
   editInvMovementId = movementId;
   eimNoDeduct = !!mov.noDeduct;
@@ -12781,8 +12810,8 @@ function deleteInvMovement() {
 }
 
 function recalcPositionFromMovements(inv) {
-  // Sort all movements chronologically to process in order
-  const sorted = [...(inv.movements || [])].sort((a, b) => a.date.localeCompare(b.date));
+  // Sort chronologically; same-day movements preserve insertion order (id = timestamp)
+  const sorted = [...(inv.movements || [])].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
 
   // Rebuild lots[] from scratch using FIFO
   const lots = [];
