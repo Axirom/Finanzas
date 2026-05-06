@@ -10428,12 +10428,6 @@ function renderInvestDonut() {
   if (msgEl)  msgEl.style.display  = 'none';
   if (wrapEl) wrapEl.style.display = 'block';
 
-  const palette = [
-    'rgba(168,247,200,0.85)','rgba(126,184,247,0.85)','rgba(247,217,120,0.85)',
-    'rgba(196,168,247,0.85)','rgba(247,168,196,0.85)','rgba(86,207,225,0.85)',
-    'rgba(111,207,151,0.85)','rgba(247,184,126,0.85)','rgba(240,130,130,0.85)'
-  ];
-
   const total = invs.reduce((s, i) => s + i.units * i.currentPrice, 0);
   const sorted = [...invs].sort((a, b) => (b.units * b.currentPrice) - (a.units * a.currentPrice));
   const c = getChartColors();
@@ -10462,7 +10456,7 @@ function renderInvestDonut() {
               const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0';
               return {
                 text: `${l.length > 10 ? l.slice(0, 10) + '…' : l}  ${pct}%`,
-                fillStyle: palette[i % palette.length],
+                fillStyle: c.donut[i % c.donut.length],
                 fontColor: '#c8d0e8',
                 index: i
               };
@@ -12203,7 +12197,7 @@ function renderInOutChart(person) {
   const id = person + '-chart-inout';
   destroyChart(id);
   const ctx = document.getElementById(id);
-  if (!ctx) return;
+  if (!ctx || ctx.offsetWidth === 0) return;
 
   const months = getLastNMonths(6);
   const personAccIds = new Set([
@@ -12259,7 +12253,7 @@ function renderSavingChart(person) {
   const id = person + '-chart-saving';
   destroyChart(id);
   const ctx = document.getElementById(id);
-  if (!ctx) return;
+  if (!ctx || ctx.offsetWidth === 0) return;
 
   ensureSnapshots();
   const allSnaps = state.snapshots[person] || [];
@@ -12344,7 +12338,7 @@ function renderCatChart(person) {
   const id = person + '-chart-cat';
   destroyChart(id);
   const ctx = document.getElementById(id);
-  if (!ctx) return;
+  if (!ctx || ctx.offsetWidth === 0) return;
 
   // Build month filter pills (last 6 months)
   const months = getLastNMonths(6);
@@ -12417,7 +12411,7 @@ function renderCatChart(person) {
     type: 'doughnut',
     data: {
       labels: sorted.map(e => e[0]),
-      datasets: [{ data: sorted.map(e => e[1]), backgroundColor: catPalette, borderWidth: 0, hoverOffset: 6 }]
+      datasets: [{ data: sorted.map(e => e[1]), backgroundColor: palette, borderWidth: 0, hoverOffset: 6 }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
@@ -12428,7 +12422,7 @@ function renderCatChart(person) {
           labels: { boxWidth: 10, padding: 10, font: { size: 11 },
             generateLabels: chart => chart.data.labels.map((l, i) => ({
               text: `${l}  €${fmt(sorted[i][1])}`,
-              fillStyle: catPalette[i % catPalette.length],
+              fillStyle: palette[i % palette.length],
               fontColor: '#c8d0e8',
               index: i
             }))
