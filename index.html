@@ -5398,9 +5398,53 @@ const DriveSync = (() => {
       ${shareSection}
       <div style="display:flex;gap:10px;flex-direction:column;margin-top:16px;">
         <button class="btn-primary" onclick="DriveSync._forceSyncNow()">🔄 Sincronizar ahora</button>
-        <button class="modal-btn-secondary" onclick="DriveSync._showFileSelector()">📂 Cambiar archivo de datos</button>
+        <button class="modal-btn-secondary" onclick="DriveSync._openNativePicker()">📂 Abrir archivo desde Drive / Archivos</button>
+        <button class="modal-btn-secondary" onclick="DriveSync._showFileSelector()">🔍 Buscar archivos automáticamente</button>
         <button class="modal-btn-secondary" onclick="DriveSync.signOut()">Desconectar cuenta</button>
       </div>`;
+  }
+
+  // ── NATIVE FILE PICKER ─────────────────────────────────────
+  function _openNativePicker() {
+    closeDriveModal();
+    const input = document.createElement('input');
+    input.type   = 'file';
+    input.accept = '.json,application/json';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.onchange = async (e) => {
+      document.body.removeChild(input);
+      const file = e.target.files?.[0];
+      if (!file) return;
+      _setBadge('syncing', 'Cargando…');
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        // Validate it looks like our app data
+        if (!data.accounts && !data.transactions) {
+          showToast('El archivo no parece ser de esta app', 'error');
+          _setBadge('synced', 'Sincronizado');
+          return;
+        }
+        state = migrateState(data);
+        localStorage.setItem('finanzas_v2', JSON.stringify(state));
+        localStorage.setItem('finanzas_v2_ts', Date.now().toString());
+        renderAll();
+        if (typeof renderGlobalPatrimonyChart === 'function') renderGlobalPatrimonyChart();
+        showToast('Datos cargados correctamente ✓', 'success');
+        // Try to locate the Drive file ID for future syncs
+        if (_accessToken) {
+          try { await _findOrCreateFile(); } catch(err) { /* non-critical */ }
+        }
+        _setBadge('synced', 'Sincronizado');
+      } catch(err) {
+        console.error('[Drive] native picker error', err);
+        showToast('Error al leer el archivo', 'error');
+        _setBadge(_accessToken ? 'synced' : 'reconnect', _accessToken ? 'Sincronizado' : 'Reconectar');
+      }
+    };
+    input.oncancel = () => { document.body.removeChild(input); };
+    input.click();
   }
 
   async function _showFileSelector() {
@@ -5578,7 +5622,7 @@ const DriveSync = (() => {
 
   return {
     init, signIn, signOut, reconnect, scheduleSave, resolveConflict, shareFile,
-    _badgeClick, _doShare, _showFileSelector, _selectFile,
+    _badgeClick, _doShare, _openNativePicker, _showFileSelector, _selectFile,
     _onClientIdInput, _saveClientIdAndConnect, _resetClientId,
     _forceSyncNow, _renderModalBody
   };
