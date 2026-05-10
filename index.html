@@ -5402,7 +5402,7 @@ const DriveSync = (() => {
       ${shareSection}
       <div style="display:flex;gap:10px;flex-direction:column;margin-top:16px;">
         <button class="btn-primary" onclick="DriveSync._forceSyncNow()">🔄 Sincronizar ahora</button>
-        <button class="modal-btn-secondary" onclick="document.getElementById('driveNativeFilePicker').click()">📂 Abrir archivo desde Drive / Archivos</button>
+        <label for="driveNativeFilePicker" class="modal-btn-secondary" style="display:block;text-align:center;cursor:pointer;">📂 Abrir archivo desde Drive / Archivos</label>
         <button class="modal-btn-secondary" onclick="DriveSync._showFileSelector()">🔍 Buscar archivos automáticamente</button>
         <button class="modal-btn-secondary" onclick="DriveSync.signOut()">Desconectar cuenta</button>
       </div>`;
