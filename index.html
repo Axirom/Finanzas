@@ -3985,6 +3985,15 @@ body:not(.values-hidden) .account-rate-inline {
     </button>
     <input type="file" id="importInput" accept=".json" style="display:none" onchange="importBackup(event)">
 
+    <button class="settings-btn" id="driveLoadFileBtn" onclick="document.getElementById('driveFileInput').click()" style="display:none;">
+      <span class="settings-btn-icon">☁️</span>
+      <div class="settings-btn-info">
+        <div class="settings-btn-label">Cargar archivo de Drive</div>
+        <div class="settings-btn-desc">Abre un archivo finanzas_data.json desde Google Drive o Archivos</div>
+      </div>
+    </button>
+    <input type="file" id="driveFileInput" accept=".json,application/json" style="display:none" onchange="DriveSync._onNativeFileSelected(this)">
+
     <button class="settings-btn" id="settings-import-profile-btn" onclick="document.getElementById('importProfileInput').click()" style="display:none;">
       <span class="settings-btn-icon">👤</span>
       <div class="settings-btn-info">
@@ -4982,6 +4991,9 @@ const DriveSync = (() => {
     badge.className = 'sync-badge drive-' + status;
     dot.className   = 'sync-dot' + (status === 'syncing' ? ' spinning' : '');
     lbl.textContent = label;
+    // Show Drive file loader in Settings only when connected
+    const btn = document.getElementById('driveLoadFileBtn');
+    if (btn) btn.style.display = (status === 'synced' || status === 'syncing') ? '' : 'none';
   }
 
   // ── WAIT FOR GIS (Google Identity Services) ───────────────
@@ -5399,12 +5411,6 @@ const DriveSync = (() => {
       ${shareSection}
       <div style="display:flex;gap:10px;flex-direction:column;margin-top:16px;">
         <button class="btn-primary" onclick="DriveSync._forceSyncNow()">🔄 Sincronizar ahora</button>
-        <label class="modal-btn-secondary" style="display:block;text-align:center;cursor:pointer;position:relative;overflow:hidden;">
-          📂 Abrir archivo desde Drive / Archivos
-          <input type="file" accept=".json,application/json"
-            style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
-            onchange="DriveSync._onNativeFileSelected(this)">
-        </label>
         <button class="modal-btn-secondary" onclick="DriveSync._showFileSelector()">🔍 Buscar archivos automáticamente</button>
         <button class="modal-btn-secondary" onclick="DriveSync.signOut()">Desconectar cuenta</button>
       </div>`;
