@@ -2910,9 +2910,6 @@ body:not(.values-hidden) .account-rate-inline {
   </div>
 </div>
 <!-- Hidden file input for native Drive/Files picker — must live in DOM for mobile gesture chain -->
-<input type="file" id="driveNativeFilePicker" accept=".json,application/json"
-  style="display:none;position:fixed;top:-9999px;"
-  onchange="DriveSync._onNativeFileSelected(this)">
 
 <!-- ==================== MODAL: DRIVE CONFLICT ==================== -->
 <div class="modal-overlay" id="modalDriveConflict">
@@ -5402,7 +5399,12 @@ const DriveSync = (() => {
       ${shareSection}
       <div style="display:flex;gap:10px;flex-direction:column;margin-top:16px;">
         <button class="btn-primary" onclick="DriveSync._forceSyncNow()">🔄 Sincronizar ahora</button>
-        <label for="driveNativeFilePicker" class="modal-btn-secondary" style="display:block;text-align:center;cursor:pointer;">📂 Abrir archivo desde Drive / Archivos</label>
+        <label class="modal-btn-secondary" style="display:block;text-align:center;cursor:pointer;position:relative;overflow:hidden;">
+          📂 Abrir archivo desde Drive / Archivos
+          <input type="file" accept=".json,application/json"
+            style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"
+            onchange="DriveSync._onNativeFileSelected(this)">
+        </label>
         <button class="modal-btn-secondary" onclick="DriveSync._showFileSelector()">🔍 Buscar archivos automáticamente</button>
         <button class="modal-btn-secondary" onclick="DriveSync.signOut()">Desconectar cuenta</button>
       </div>`;
