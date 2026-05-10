@@ -5158,7 +5158,8 @@ const DriveSync = (() => {
     }
 
     // 2. Search in "Shared with me"
-    const sharedQ = encodeURIComponent(`name='${FILE_NAME}' and sharedWithMe=true and trashed=false`);
+    // Single query with corpora=user finds both own and shared files
+    const sharedQ = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
     const sharedSearch = await _driveRequest(`files?q=${sharedQ}&fields=files(id,owners)&corpora=user`);
     if (sharedSearch.files?.length > 0) {
       const f = sharedSearch.files[0];
@@ -5407,12 +5408,11 @@ const DriveSync = (() => {
     body.innerHTML = `<div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;">🔍 Buscando archivos…</div>`;
 
     try {
-      // Search own files
-      const ownQ  = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
-      const ownR  = await _driveRequest(`files?q=${ownQ}&fields=files(id,modifiedTime,owners)&spaces=drive`);
-      // Search shared files using corpora=user (includes all accessible files, not just My Drive)
-      const shrQ  = encodeURIComponent(`name='${FILE_NAME}' and sharedWithMe=true and trashed=false`);
-      const shrR  = await _driveRequest(`files?q=${shrQ}&fields=files(id,modifiedTime,owners)&corpora=user`);
+      // Single query with corpora=user returns both owned and shared files
+      const allQ = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
+      const allR = await _driveRequest(`files?q=${allQ}&fields=files(id,modifiedTime,owners)&corpora=user`);
+      const ownR = { files: allR.files || [] };
+      const shrR = { files: [] };
 
       // Merge and deduplicate by id
       const seen = new Set();
