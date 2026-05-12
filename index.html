@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Finanzas">
-<title>Finanzas v4</title>
+<title>Finanzas v5</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -293,6 +293,144 @@ body.theme-jade::before {
   border-bottom: 1px solid rgba(255,255,255,0.07);
   flex-shrink: 0;
 }
+
+/* ===================== DRIVE SYNC ===================== */
+.sync-bar {
+  position: fixed;
+  top: 14px;
+  left: 16px;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+}
+.sync-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  user-select: none;
+}
+.sync-badge:active { opacity: 0.7; }
+.sync-badge.drive-disconnected {
+  background: rgba(255,255,255,0.06);
+  color: var(--muted);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.sync-badge.drive-syncing {
+  background: rgba(99,179,237,0.15);
+  color: #63b3ed;
+  border: 1px solid rgba(99,179,237,0.25);
+}
+.sync-badge.drive-synced {
+  background: rgba(104,211,145,0.12);
+  color: #68d391;
+  border: 1px solid rgba(104,211,145,0.2);
+}
+.sync-badge.drive-error {
+  background: rgba(252,129,129,0.12);
+  color: #fc8181;
+  border: 1px solid rgba(252,129,129,0.2);
+}
+.sync-badge.drive-offline {
+  background: rgba(255,255,255,0.04);
+  color: var(--muted);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.sync-badge.drive-reconnect {
+  background: rgba(246,173,85,0.12);
+  color: #f6ad55;
+  border: 1px solid rgba(246,173,85,0.25);
+}
+.sync-badge.drive-needsetup {
+  background: rgba(255,255,255,0.06);
+  color: var(--muted);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.sync-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.sync-dot.spinning {
+  animation: syncSpin 1s linear infinite;
+  background: transparent;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  width: 8px; height: 8px;
+}
+@keyframes syncSpin { to { transform: rotate(360deg); } }
+
+/* Drive modal */
+#modalDrive .modal-body { text-align: center; padding: 24px 20px; }
+.drive-logo { font-size: 40px; margin-bottom: 12px; }
+.drive-account-info {
+  background: var(--surface2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+.drive-account-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.drive-account-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.drive-account-email { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.drive-file-info {
+  font-size: 12px; color: var(--muted);
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  text-align: left;
+}
+.drive-file-info span { color: var(--text); font-weight: 500; }
+.drive-conflict-box {
+  background: rgba(252,129,129,0.08);
+  border: 1px solid rgba(252,129,129,0.2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 16px 0;
+  font-size: 13px;
+  text-align: left;
+}
+.drive-conflict-box strong { color: #fc8181; display: block; margin-bottom: 6px; }
+.client-id-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: monospace;
+  padding: 10px 12px;
+  margin: 8px 0 4px;
+  box-sizing: border-box;
+}
+.client-id-input:focus { outline: none; border-color: var(--accent); }
+.drive-help-text {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 6px;
+  text-align: left;
+}
+.drive-help-text a { color: var(--accent); text-decoration: none; }
+
+
 
 .section-tabs {
   display: flex;
@@ -2187,6 +2325,8 @@ body:not(.values-hidden) .account-rate-inline {
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" onerror="window.Chart=function(){this.destroy=function(){};}"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js" async defer></script>
 </head>
 <body>
 
@@ -2224,6 +2364,14 @@ body:not(.values-hidden) .account-rate-inline {
   <button class="visibility-btn" id="visibilityBtn" onclick="toggleVisibility()">
     <span id="visibilityIcon">👁️</span>
   </button>
+
+  <!-- SYNC BADGE -->
+  <div class="sync-bar">
+    <div class="sync-badge drive-disconnected" id="syncBadge" onclick="DriveSync._badgeClick()">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncLabel">Drive</span>
+    </div>
+  </div>
 
   <!-- TOP NAV -->
 
@@ -2748,6 +2896,40 @@ body:not(.values-hidden) .account-rate-inline {
 
 <!-- ==================== TOAST ==================== -->
 <div class="toast" id="toast"></div>
+
+<!-- ==================== MODAL: GOOGLE DRIVE ==================== -->
+<div class="modal-overlay" id="modalDrive" onclick="if(event.target===this)closeDriveModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Google Drive Sync</span>
+      <button class="modal-close" onclick="closeDriveModal()">✕</button>
+    </div>
+    <div class="modal-body" id="driveModalBody">
+      <!-- Rendered dynamically -->
+    </div>
+  </div>
+</div>
+<!-- Hidden file input for native Drive/Files picker — must live in DOM for mobile gesture chain -->
+
+<!-- ==================== MODAL: DRIVE CONFLICT ==================== -->
+<div class="modal-overlay" id="modalDriveConflict">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">⚠️ Datos más recientes en Drive</span>
+    </div>
+    <div class="modal-body">
+      <div class="drive-conflict-box">
+        <strong>Se detectaron datos más nuevos en Drive</strong>
+        <span id="conflictDetail">Drive tiene una versión más reciente que los datos locales.</span>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 16px;">¿Qué datos quieres usar?</p>
+      <div style="display:flex;gap:10px;flex-direction:column;">
+        <button class="btn-primary" onclick="DriveSync.resolveConflict('drive')">📥 Cargar desde Drive (más reciente)</button>
+        <button class="modal-btn-secondary" onclick="DriveSync.resolveConflict('local')">💾 Mantener datos locales</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ==================== MODAL: BÚSQUEDA GLOBAL ==================== -->
 <div class="modal-overlay" id="modalGlobalSearch" onclick="closeModalOutside(event,'modalGlobalSearch')">
@@ -3803,6 +3985,15 @@ body:not(.values-hidden) .account-rate-inline {
     </button>
     <input type="file" id="importInput" accept=".json" style="display:none" onchange="importBackup(event)">
 
+    <button class="settings-btn" id="driveLoadFileBtn" onclick="document.getElementById('driveFileInput').click()" style="display:none;">
+      <span class="settings-btn-icon">☁️</span>
+      <div class="settings-btn-info">
+        <div class="settings-btn-label">Cargar archivo de Drive</div>
+        <div class="settings-btn-desc">Abre un archivo finanzas_data.json desde Google Drive o Archivos</div>
+      </div>
+    </button>
+    <input type="file" id="driveFileInput" accept=".json,application/json" style="display:none" onchange="DriveSync._onNativeFileSelected(this)">
+
     <button class="settings-btn" id="settings-import-profile-btn" onclick="document.getElementById('importProfileInput').click()" style="display:none;">
       <span class="settings-btn-icon">👤</span>
       <div class="settings-btn-info">
@@ -4766,7 +4957,777 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem('finanzas_v2', JSON.stringify(state));
+  localStorage.setItem('finanzas_v2_ts', Date.now().toString());
+  DriveSync.scheduleSave();
 }
+
+// ===================== GOOGLE DRIVE SYNC =====================
+const DriveSync = (() => {
+  // ── CONFIG ── Fill in your Google Cloud OAuth Client ID:
+  const STORAGE_KEY_CLIENT_ID = 'finanzas_drive_client_id';
+  const STORAGE_KEY_PREV_AUTH = 'finanzas_drive_prev_auth';
+  const FILE_NAME   = 'finanzas_data.json';
+  const FOLDER_NAME = 'Finanzas App';
+  const SCOPES      = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
+
+  let _clientId    = localStorage.getItem(STORAGE_KEY_CLIENT_ID) || '';
+  let _prevAuth    = localStorage.getItem(STORAGE_KEY_PREV_AUTH) === '1';
+  let _accessToken = null;
+  let _fileId      = null;
+  let _tokenClient = null;
+  let _gapiReady   = false;
+  let _saveTimer   = null;
+  let _userInfo    = null;
+  let _lastDriveTs    = null;
+  let _tokenTimestamp = 0;     // ms timestamp when access token was received
+  let _pollTimer      = null;  // setInterval handle for background Drive polling
+  let _isSharedFile = false;   // true if file belongs to another user
+  let _fileOwner    = null;    // { name, email } of file owner when shared
+
+  // ── UI ─────────────────────────────────────────────────────
+  function _setBadge(status, label) {
+    const badge = document.getElementById('syncBadge');
+    const dot   = document.getElementById('syncDot');
+    const lbl   = document.getElementById('syncLabel');
+    if (!badge) return;
+    badge.className = 'sync-badge drive-' + status;
+    dot.className   = 'sync-dot' + (status === 'syncing' ? ' spinning' : '');
+    lbl.textContent = label;
+    // Show Drive file loader in Settings only when connected
+    const btn = document.getElementById('driveLoadFileBtn');
+    if (btn) btn.style.display = (status === 'synced' || status === 'syncing') ? '' : 'none';
+  }
+
+  // ── WAIT FOR GIS (Google Identity Services) ───────────────
+  function _waitForGis() {
+    return new Promise((resolve, reject) => {
+      if (typeof google !== 'undefined' && google.accounts) { resolve(); return; }
+      let attempts = 0;
+      const id = setInterval(() => {
+        if (typeof google !== 'undefined' && google.accounts) { clearInterval(id); resolve(); }
+        if (++attempts > 40) { clearInterval(id); reject(new Error('GIS timeout')); }
+      }, 250);
+    });
+  }
+
+  // ── DRIVE API HELPER (all ops via fetch, no gapi needed) ───
+  async function _driveRequest(path, options = {}) {
+    const url = 'https://www.googleapis.com/drive/v3/' + path;
+    const resp = await fetch(url, {
+      method: options.method || 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + _accessToken,
+        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(options.headers || {})
+      },
+      body: options.body || undefined
+    });
+    if (resp.status === 204) return {};
+    const data = await resp.json();
+    if (!resp.ok) throw Object.assign(new Error(data.error?.message || 'Drive API error'), { status: resp.status });
+    return data;
+  }
+
+  function _initTokenClient() {
+    if (!_clientId) return false;
+    if (typeof google === 'undefined' || !google.accounts) return false;
+    _tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: _clientId,
+      scope: SCOPES,
+      prompt: '',
+      callback: async (resp) => {
+    if (resp.error) {
+        // If error is interaction_required, show reconnect badge (iOS popup was blocked)
+        if (resp.error === 'interaction_required' || resp.error === 'access_denied') {
+          _setBadge('reconnect', 'Reconectar');
+        } else {
+          _setBadge('error', 'Error auth');
+        }
+        return;
+      }
+        _accessToken    = resp.access_token;
+        _tokenTimestamp = Date.now();
+        _prevAuth = true;
+        localStorage.setItem(STORAGE_KEY_PREV_AUTH, '1');
+        await _fetchUserInfo();
+        await _onAuthorized();
+      }
+    });
+    return true;
+  }
+
+  async function _fetchUserInfo() {
+    try {
+      const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: 'Bearer ' + _accessToken }
+      });
+      _userInfo = await r.json();
+    } catch(e) { _userInfo = null; }
+  }
+
+  // ── AUTH ───────────────────────────────────────────────────
+  async function signIn() {
+    if (!_clientId) { openDriveModal(); return; }
+    try {
+      await _waitForGis();
+      if (!_initTokenClient()) { _setBadge('error', 'Config error'); return; }
+      _setBadge('syncing', 'Conectando…');
+      _tokenClient.requestAccessToken({ prompt: 'consent' });
+    } catch(e) {
+      console.error('[Drive] signIn error', e);
+      _setBadge('error', 'Error');
+    }
+  }
+
+  function signOut() {
+    _stopPolling();
+    if (_accessToken && typeof google !== 'undefined') {
+      google.accounts.oauth2.revoke(_accessToken, () => {});
+    }
+    _accessToken    = null;
+    _tokenTimestamp = 0;
+    _fileId         = null;
+    _userInfo       = null;
+    _lastDriveTs    = null;
+    _prevAuth       = false;
+    localStorage.removeItem('finanzas_drive_file_id');
+    localStorage.removeItem(STORAGE_KEY_PREV_AUTH);
+    _setBadge('needsetup', 'Drive');
+    openDriveModal();
+  }
+
+  // ── AFTER SUCCESSFUL AUTH ──────────────────────────────────
+  async function _onAuthorized() {
+    _setBadge('syncing', 'Sincronizando…');
+    try {
+      _fileId = null;
+      await _findOrCreateFile();
+
+      // Get Drive file timestamp
+      const meta = await _driveRequest('files/' + _fileId + '?fields=modifiedTime');
+      const driveTs = meta.modifiedTime ? new Date(meta.modifiedTime).getTime() : 0;
+      _lastDriveTs = driveTs;
+
+      const hasLocalData = !!localStorage.getItem('finanzas_v2');
+      const localTs      = parseInt(localStorage.getItem('finanzas_v2_ts') || '0', 10);
+      const driveIsNewer = driveTs > localTs + 5000;
+
+      if (!hasLocalData || _isSharedFile || driveIsNewer) {
+        // No local data, shared file, or Drive has newer changes → load from Drive
+        await _loadAndApplyFromDrive();
+      } else {
+        // Local is up to date → push to Drive
+        await _saveNow();
+        _setBadge('synced', 'Sincronizado');
+        _renderModalConnected();
+      }
+      // Start periodic sync polling now that we're authenticated
+      _startPolling();
+    } catch(e) {
+      console.error('[Drive] _onAuthorized error', e);
+      _setBadge('error', 'Error sync');
+    }
+  }
+
+  async function _loadAndApplyFromDrive() {
+    try {
+      const driveData = await loadFromDrive();
+      if (driveData) {
+        state = migrateState(driveData);
+        localStorage.setItem('finanzas_v2', JSON.stringify(state));
+        localStorage.setItem('finanzas_v2_ts', (_lastDriveTs || Date.now()).toString());
+        renderAll();
+        if (typeof renderGlobalPatrimonyChart === 'function') renderGlobalPatrimonyChart();
+        showToast('Datos cargados desde Drive ✓', 'success');
+      }
+      _setBadge('synced', 'Sincronizado');
+      _renderModalConnected();
+    } catch(e) {
+      console.error('[Drive] _loadAndApplyFromDrive error', e);
+      _setBadge('error', 'Error al cargar');
+    }
+  }
+
+
+  // ── FIND OR CREATE FILE ────────────────────────────────────
+  async function _findOrCreateFile() {
+    _isSharedFile = false;
+    _fileOwner    = null;
+
+    // 1. Search in own Drive
+    const folderQ = encodeURIComponent(`name='${FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+    const folderSearch = await _driveRequest(`files?q=${folderQ}&fields=files(id)&spaces=drive`);
+
+    let folderId = null;
+    if (folderSearch.files?.length > 0) {
+      folderId = folderSearch.files[0].id;
+      const fileQ = encodeURIComponent(`name='${FILE_NAME}' and '${folderId}' in parents and trashed=false`);
+      const fileSearch = await _driveRequest(`files?q=${fileQ}&fields=files(id,owners)&spaces=drive`);
+      if (fileSearch.files?.length > 0) {
+        const f = fileSearch.files[0];
+        _fileId = f.id;
+        // Check ownership — the folder may be shared so the file inside
+        // could belong to another user (e.g. Mario's file on Miri's device)
+        const myEmail = _userInfo?.email?.toLowerCase() || '';
+        if (myEmail && f.owners?.[0]?.emailAddress?.toLowerCase() !== myEmail) {
+          _isSharedFile = true;
+          if (f.owners?.[0]) {
+            _fileOwner = { name: f.owners[0].displayName, email: f.owners[0].emailAddress };
+          }
+        }
+        localStorage.setItem('finanzas_drive_file_id', _fileId);
+        return; // Found in own Drive
+      }
+    }
+
+    // 2. Search in "Shared with me"
+    // Single query with corpora=user finds both own and shared files
+    const sharedQ = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
+    const sharedSearch = await _driveRequest(`files?q=${sharedQ}&fields=files(id,owners)&corpora=user`);
+    if (sharedSearch.files?.length > 0) {
+      const f = sharedSearch.files[0];
+      _fileId       = f.id;
+      _isSharedFile = true;
+      if (f.owners?.[0]) {
+        _fileOwner = { name: f.owners[0].displayName, email: f.owners[0].emailAddress };
+      }
+      localStorage.setItem('finanzas_drive_file_id', _fileId);
+      return; // Found in shared files
+    }
+
+    // 3. Not found anywhere → create folder + file in own Drive
+    if (!folderId) {
+      const folder = await _driveRequest('files', {
+        method: 'POST',
+        body: JSON.stringify({ name: FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
+      });
+      folderId = folder.id;
+    }
+    const file = await _driveRequest('files', {
+      method: 'POST',
+      body: JSON.stringify({ name: FILE_NAME, parents: [folderId] })
+    });
+    _fileId = file.id;
+    localStorage.setItem('finanzas_drive_file_id', _fileId);
+  }
+
+  // ── SHARE FILE ─────────────────────────────────────────────
+  async function shareFile(email) {
+    if (!_fileId || !_accessToken) return { ok: false, msg: 'No hay archivo activo' };
+    if (_isSharedFile) return { ok: false, msg: 'Solo el propietario puede compartir el archivo' };
+    email = email.trim().toLowerCase();
+    if (!email || !email.includes('@')) return { ok: false, msg: 'Email inválido' };
+
+    const headers = {
+      'Authorization': 'Bearer ' + _accessToken,
+      'Content-Type': 'application/json'
+    };
+    const body = JSON.stringify({ type: 'user', role: 'writer', emailAddress: email });
+
+    try {
+      // Share the file itself
+      const fileResp = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${_fileId}/permissions?sendNotificationEmail=false&fields=id`,
+        { method: 'POST', headers, body }
+      );
+      const fileData = await fileResp.json();
+      console.log('[Drive] share file response:', fileResp.status, fileData);
+      if (!fileResp.ok) {
+        return { ok: false, msg: fileData.error?.message || `Error ${fileResp.status}` };
+      }
+
+      // Share the parent folder (best-effort)
+      try {
+        const metaResp = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${_fileId}?fields=parents`,
+          { headers: { 'Authorization': 'Bearer ' + _accessToken } }
+        );
+        const meta = await metaResp.json();
+        if (meta.parents?.[0]) {
+          const folderResp = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${meta.parents[0]}/permissions?sendNotificationEmail=false&fields=id`,
+            { method: 'POST', headers, body }
+          );
+          const folderData = await folderResp.json();
+          console.log('[Drive] share folder response:', folderResp.status, folderData);
+        }
+      } catch(e) { console.warn('[Drive] folder share failed (non-critical):', e); }
+
+      return { ok: true };
+    } catch(e) {
+      console.error('[Drive] shareFile error:', e);
+      return { ok: false, msg: e.message || 'Error al compartir' };
+    }
+  }
+
+  // ── READ FROM DRIVE ────────────────────────────────────────
+  async function loadFromDrive() {
+    if (!_fileId || !_accessToken) return null;
+    const resp = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${_fileId}?alt=media`,
+      { headers: { 'Authorization': 'Bearer ' + _accessToken } }
+    );
+    if (!resp.ok) throw new Error('Drive read failed: ' + resp.status);
+    const text = await resp.text();
+    if (!text || text.trim() === '') return null;
+    return JSON.parse(text);
+  }
+
+  // ── WRITE TO DRIVE ─────────────────────────────────────────
+  async function _saveNow() {
+    if (!_fileId || !_accessToken) return;
+    const body = localStorage.getItem('finanzas_v2') || '{}';
+    const blob = new Blob([body], { type: 'application/json' });
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify({
+      name: FILE_NAME, mimeType: 'application/json'
+    })], { type: 'application/json' }));
+    form.append('file', blob);
+    await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${_fileId}?uploadType=multipart`,
+      { method: 'PATCH', headers: { Authorization: 'Bearer ' + _accessToken }, body: form }
+    );
+    _lastDriveTs = Date.now();
+    _setBadge('synced', 'Sincronizado');
+  }
+
+  // ── DEBOUNCED SAVE ─────────────────────────────────────────
+  function scheduleSave() {
+    if (!_accessToken || !_fileId) return;
+    _setBadge('syncing', 'Guardando…');
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(async () => {
+      try { await _saveNow(); }
+      catch(e) {
+        console.error('[Drive] save error', e);
+        if (e.status === 401) { _accessToken = null; _setBadge('disconnected', 'Drive'); }
+        else _setBadge('error', 'Error al guardar');
+      }
+    }, 1500);
+  }
+
+  // ── CONFLICT RESOLUTION ────────────────────────────────────
+  async function resolveConflict(choice) {
+    document.getElementById('modalDriveConflict').style.display = 'none';
+    if (choice === 'drive') {
+      await _loadAndApplyFromDrive();
+    } else {
+      await _saveNow();
+      _setBadge('synced', 'Sincronizado');
+      _renderModalConnected();
+    }
+  }
+
+  // ── MODAL RENDER ───────────────────────────────────────────
+  function _renderModalBody() {
+    const body = document.getElementById('driveModalBody');
+    if (!body) return;
+    if (!_clientId) { _renderModalSetup(body); return; }
+    if (!_accessToken && _prevAuth) { _renderModalReconnect(body); return; }
+    if (!_accessToken) { _renderModalDisconnected(body); return; }
+    _renderModalConnected(body);
+  }
+
+  function _renderModalReconnect(body) {
+    body = body || document.getElementById('driveModalBody');
+    body.innerHTML = `
+      <div class="drive-logo">🔄</div>
+      <p style="font-size:14px;color:var(--text);margin:0 0 6px;">Sesión caducada</p>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 20px;">Tus datos locales están seguros. Reconecta para volver a sincronizar con Drive.</p>
+      <button class="btn-primary" onclick="closeDriveModal();DriveSync.reconnect();" style="margin-bottom:10px;">Reconectar con Google</button>
+      <button class="modal-btn-secondary" onclick="DriveSync.signOut()">Desconectar cuenta</button>`;
+  }
+
+  function _renderModalSetup(body) {
+    const saved = localStorage.getItem(STORAGE_KEY_CLIENT_ID) || '';
+    body = body || document.getElementById('driveModalBody');
+    body.innerHTML = `
+      <div class="drive-logo">☁️</div>
+      <p style="font-size:14px;color:var(--text);margin:0 0 6px;">Conecta Google Drive para sincronizar los datos entre dispositivos de forma privada.</p>
+      <p class="drive-help-text">Necesitas un <strong>Client ID</strong> de Google Cloud. Sigue estos pasos:<br>
+        1. Ve a <a href="https://console.cloud.google.com/" target="_blank">console.cloud.google.com</a><br>
+        2. Crea un proyecto → APIs → Habilita <em>Google Drive API</em><br>
+        3. Credenciales → Crear → OAuth 2.0 → Aplicación web<br>
+        4. En "Orígenes JS autorizados" añade la URL de tu app en GitHub Pages<br>
+        5. Copia el Client ID aquí abajo:
+      </p>
+      <input class="client-id-input" id="driveClientIdInput" type="text"
+        placeholder="XXXXXXXX.apps.googleusercontent.com"
+        value="${saved}" oninput="DriveSync._onClientIdInput(this.value)">
+      <div class="drive-help-text" style="margin-top:4px;">
+        El Client ID se guarda solo en este dispositivo y no se sube a ningún servidor.
+      </div>
+      <div style="margin-top:20px;">
+        <button class="btn-primary" id="driveConnectBtn"
+          onclick="DriveSync._saveClientIdAndConnect()"
+          ${saved ? '' : 'disabled'}>
+          Conectar con Google
+        </button>
+      </div>`;
+  }
+
+  function _renderModalDisconnected(body) {
+    body = body || document.getElementById('driveModalBody');
+    body.innerHTML = `
+      <div class="drive-logo">☁️</div>
+      <p style="font-size:14px;color:var(--text);margin:0 0 16px;">Sincroniza tus datos con Google Drive de forma privada. Solo tú y Miri tendréis acceso.</p>
+      <button class="btn-primary" onclick="DriveSync.signIn()" style="margin-bottom:10px;">Conectar con Google</button>
+      <button class="modal-btn-secondary" onclick="DriveSync._resetClientId()">Cambiar Client ID</button>`;
+  }
+
+  function _renderModalConnected(body) {
+    body = body || document.getElementById('driveModalBody');
+    const name     = _userInfo?.name  || '—';
+    const email    = _userInfo?.email || '—';
+    const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const lastSync = _lastDriveTs
+      ? new Date(_lastDriveTs).toLocaleString('es-ES', { dateStyle:'short', timeStyle:'short' })
+      : '—';
+
+    const sharedBadge = _isSharedFile
+      ? `<div style="font-size:11px;background:rgba(104,211,145,0.1);border:1px solid rgba(104,211,145,0.25);
+           color:#68d391;border-radius:8px;padding:6px 10px;margin-top:8px;text-align:left;">
+           📎 Archivo compartido por <strong>${_fileOwner?.name || _fileOwner?.email || 'otro usuario'}</strong>
+         </div>`
+      : '';
+
+    const shareSection = !_isSharedFile ? `
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-align:left;">
+          Compartir con otro usuario:
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="driveShareEmail" type="email" class="client-id-input"
+            style="margin:0;flex:1;" placeholder="correo@gmail.com">
+          <button class="btn-primary" style="flex-shrink:0;padding:8px 14px;font-size:13px;"
+            onclick="DriveSync._doShare()">Compartir</button>
+        </div>
+        <div id="driveShareResult" style="font-size:11px;margin-top:6px;min-height:16px;text-align:left;"></div>
+      </div>` : '';
+
+    body.innerHTML = `
+      <div class="drive-account-info">
+        <div class="drive-account-avatar">${initials}</div>
+        <div>
+          <div class="drive-account-name">${name}</div>
+          <div class="drive-account-email">${email}</div>
+        </div>
+      </div>
+      <div class="drive-file-info">
+        📁 ${FOLDER_NAME} / <span>${FILE_NAME}</span><br>
+        🕐 Última sync: <span>${lastSync}</span>
+      </div>
+      ${sharedBadge}
+      ${shareSection}
+      <div style="display:flex;gap:10px;flex-direction:column;margin-top:16px;">
+        <button class="btn-primary" onclick="DriveSync._forceSyncNow()">🔄 Sincronizar ahora</button>
+        <button class="modal-btn-secondary" onclick="DriveSync._showFileSelector()">🔍 Buscar archivos automáticamente</button>
+        <button class="modal-btn-secondary" onclick="DriveSync.signOut()">Desconectar cuenta</button>
+      </div>`;
+  }
+
+  // ── NATIVE FILE PICKER ─────────────────────────────────────
+  async function _onNativeFileSelected(input) {
+    const file = input?.files?.[0];
+    // Reset input so same file can be selected again if needed
+    input.value = '';
+    if (!file) return;
+    closeDriveModal();
+    _setBadge('syncing', 'Cargando…');
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!data.accounts && !data.transactions) {
+        showToast('El archivo no parece ser de esta app', 'error');
+        _setBadge(_accessToken ? 'synced' : 'reconnect', _accessToken ? 'Sincronizado' : 'Reconectar');
+        return;
+      }
+      state = migrateState(data);
+      localStorage.setItem('finanzas_v2', JSON.stringify(state));
+      renderAll();
+      if (typeof renderGlobalPatrimonyChart === 'function') renderGlobalPatrimonyChart();
+      showToast('Datos cargados correctamente ✓', 'success');
+      if (_accessToken) {
+        try {
+          await _findOrCreateFile();
+          // Use the Drive file's actual modifiedTime as the local sync timestamp.
+          // This prevents the "driveIsNewer = false" trap where Date.now() would
+          // be more recent than the Drive file's modifiedTime, causing the next
+          // auto-connect to incorrectly skip loading and upload stale local data.
+          try {
+            const meta = await _driveRequest(`files/${_fileId}?fields=modifiedTime`);
+            const driveTs = meta.modifiedTime ? new Date(meta.modifiedTime).getTime() : 0;
+            localStorage.setItem('finanzas_v2_ts', driveTs.toString());
+            _lastDriveTs = driveTs;
+          } catch(e) {
+            // Fallback: use 0 so next auto-connect always loads from Drive
+            localStorage.setItem('finanzas_v2_ts', '0');
+          }
+        } catch(e) { /* non-critical */ }
+      } else {
+        // Not connected to Drive API; use 0 so next connect loads from Drive
+        localStorage.setItem('finanzas_v2_ts', '0');
+      }
+      _setBadge('synced', 'Sincronizado');
+    } catch(err) {
+      console.error('[Drive] file load error', err);
+      showToast('Error al leer el archivo', 'error');
+      _setBadge(_accessToken ? 'synced' : 'reconnect', _accessToken ? 'Sincronizado' : 'Reconectar');
+    }
+  }
+
+  async function _showFileSelector() {
+    const body = document.getElementById('driveModalBody');
+    body.innerHTML = `<div style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px;">🔍 Buscando archivos…</div>`;
+
+    try {
+      // Single query with corpora=user returns both owned and shared files
+      const allQ = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
+      const allR = await _driveRequest(`files?q=${allQ}&fields=files(id,modifiedTime,owners)&corpora=user`);
+      const ownR = { files: allR.files || [] };
+      const shrR = { files: [] };
+
+      // Merge and deduplicate by id
+      const seen = new Set();
+      const files = [...(ownR.files || []), ...(shrR.files || [])].filter(f => {
+        if (seen.has(f.id)) return false;
+        seen.add(f.id); return true;
+      });
+
+      if (files.length === 0) {
+        body.innerHTML = `
+          <p style="font-size:13px;color:var(--muted);text-align:center;margin:20px 0;">
+            No se encontraron archivos accesibles.
+          </p>
+          <button class="modal-btn-secondary" onclick="DriveSync._renderModalBody()">← Volver</button>`;
+        return;
+      }
+
+      const rows = files.map(f => {
+        const owner   = f.owners?.[0];
+        const isMe    = owner?.me === true;
+        const ownerTx = isMe ? 'Mío' : (owner?.displayName || owner?.emailAddress || 'Compartido');
+        const date    = new Date(f.modifiedTime).toLocaleString('es-ES', { dateStyle:'short', timeStyle:'short' });
+        const active  = f.id === _fileId;
+        return `
+          <div style="background:var(--surface2);border:1px solid ${active ? 'var(--accent)' : 'var(--border)'};
+               border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:${active?'default':'pointer'};
+               opacity:1;" onclick="${active ? '' : `DriveSync._selectFile('${f.id}')`}">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--text);">
+                  ${active ? '✓ ' : ''}${FILE_NAME}
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px;">
+                  👤 ${ownerTx} · 🕐 ${date}
+                </div>
+              </div>
+              ${active
+                ? '<span style="font-size:11px;color:var(--accent);font-weight:600;">Activo</span>'
+                : '<span style="font-size:11px;color:var(--muted);">Usar este →</span>'}
+            </div>
+          </div>`;
+      }).join('');
+
+      body.innerHTML = `
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px;text-align:left;">
+          Selecciona el archivo que quieres usar como fuente de datos:
+        </p>
+        ${rows}
+        <button class="modal-btn-secondary" style="margin-top:8px;" onclick="DriveSync._renderModalBody()">← Volver</button>`;
+
+    } catch(e) {
+      console.error('[Drive] _showFileSelector error', e);
+      body.innerHTML = `
+        <p style="color:#fc8181;font-size:13px;text-align:center;">Error al buscar archivos</p>
+        <button class="modal-btn-secondary" onclick="DriveSync._renderModalBody()">← Volver</button>`;
+    }
+  }
+
+  async function _selectFile(fileId) {
+    _fileId = fileId;
+    localStorage.setItem('finanzas_drive_file_id', fileId);
+    // Get owner info for the selected file
+    try {
+      const meta = await _driveRequest(`files/${fileId}?fields=modifiedTime,owners`);
+      _lastDriveTs = meta.modifiedTime ? new Date(meta.modifiedTime).getTime() : 0;
+      const owner = meta.owners?.[0];
+      _isSharedFile = owner?.me === false;
+      _fileOwner    = _isSharedFile ? { name: owner?.displayName, email: owner?.emailAddress } : null;
+    } catch(e) { /* non-critical */ }
+
+    closeDriveModal();
+    await _loadAndApplyFromDrive();
+  }
+
+  async function _doShare() {
+    const email  = document.getElementById('driveShareEmail')?.value || '';
+    const result = document.getElementById('driveShareResult');
+    if (result) result.textContent = 'Compartiendo…';
+    const res = await shareFile(email);
+    if (!result) return;
+    if (res.ok) {
+      result.style.color = '#68d391';
+      result.textContent = `✓ Compartido con ${email.trim()}`;
+      document.getElementById('driveShareEmail').value = '';
+    } else {
+      result.style.color = '#fc8181';
+      result.textContent = '✗ ' + res.msg;
+    }
+  }
+
+  // ── PUBLIC HELPERS ─────────────────────────────────────────
+  function _onClientIdInput(val) {
+    const btn = document.getElementById('driveConnectBtn');
+    if (btn) btn.disabled = !val.trim();
+  }
+
+  function _saveClientIdAndConnect() {
+    const val = (document.getElementById('driveClientIdInput')?.value || '').trim();
+    if (!val) return;
+    _clientId = val;
+    localStorage.setItem(STORAGE_KEY_CLIENT_ID, val);
+    closeDriveModal();
+    signIn();
+  }
+
+  function _resetClientId() {
+    _clientId = '';
+    localStorage.removeItem(STORAGE_KEY_CLIENT_ID);
+    _renderModalSetup();
+  }
+
+  async function _forceSyncNow() {
+    closeDriveModal();
+    _setBadge('syncing', 'Guardando…');
+    try { await _saveNow(); showToast('Sincronizado con Drive ✓', 'success'); }
+    catch(e) { _setBadge('error', 'Error'); }
+  }
+
+  // ── INIT (called after unlock) ─────────────────────────────
+  async function init() {
+    if (!_clientId) {
+      _setBadge('needsetup', 'Drive');
+      return;
+    }
+    if (!_prevAuth) {
+      // First time — never connected yet, just show the badge passively
+      _setBadge('disconnected', 'Drive');
+      return;
+    }
+    // Previously connected → attempt silent reconnect automatically.
+    // If Google session cookie is still valid, the callback fires with a
+    // token immediately (no popup, no user tap needed).
+    // If interaction is required (session expired) the callback fires with
+    // error 'interaction_required' → we fall back to the Reconectar badge.
+    _setBadge('syncing', 'Conectando…');
+    try {
+      await _waitForGis();
+      if (!_initTokenClient()) { _setBadge('reconnect', 'Reconectar'); return; }
+      _tokenClient.requestAccessToken({ prompt: '' });
+      // → success  : _onAuthorized() auto-loads Drive data
+      // → failure  : callback sets badge to 'reconnect'
+    } catch(e) {
+      _setBadge('reconnect', 'Reconectar');
+    }
+  }
+
+  // Called when user taps the reconnect badge or Connect button (user gesture → popup allowed)
+  async function reconnect() {
+    if (!_clientId) { openDriveModal(); return; }
+    _setBadge('syncing', 'Conectando…');
+    try {
+      await _waitForGis();
+      if (!_initTokenClient()) { _setBadge('error', 'Config error'); return; }
+      _tokenClient.requestAccessToken({ prompt: '' });
+    } catch(e) {
+      console.warn('[Drive] reconnect error', e);
+      _setBadge('reconnect', 'Reconectar');
+    }
+  }
+
+  // ── BACKGROUND POLLING ─────────────────────────────────────
+  // Checks Drive every 3 minutes while the app is open and authenticated.
+  // If Drive is newer than local, loads silently — no user interaction needed.
+  const POLL_INTERVAL = 3 * 60 * 1000; // 3 minutes
+
+  function _startPolling() {
+    _stopPolling(); // clear any existing interval first
+    _pollTimer = setInterval(async () => {
+      if (!_accessToken || !_fileId) return;
+      if (document.visibilityState !== 'visible') return; // skip if app in background
+      try {
+        const meta    = await _driveRequest('files/' + _fileId + '?fields=modifiedTime');
+        const driveTs = meta.modifiedTime ? new Date(meta.modifiedTime).getTime() : 0;
+        const localTs = parseInt(localStorage.getItem('finanzas_v2_ts') || '0', 10);
+        if (driveTs > localTs + 5000) {
+          // Drive has newer data → load silently
+          _lastDriveTs = driveTs;
+          await _loadAndApplyFromDrive();
+        }
+      } catch(e) {
+        console.warn('[Drive] poll error', e);
+      }
+    }, POLL_INTERVAL);
+  }
+
+  function _stopPolling() {
+    if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+  }
+
+  // ── OFFLINE DETECTION ──────────────────────────────────────
+  window.addEventListener('online',  () => { if (_clientId && !_accessToken && _prevAuth) _setBadge('reconnect', 'Reconectar'); });
+  window.addEventListener('offline', () => _setBadge('offline', 'Offline'));
+
+  // ── FOREGROUND RECONNECT ────────────────────────────────────
+  // When the PWA comes back to the foreground (tab/app switch), re-check the
+  // token. If it's missing or older than 50 min (tokens last ~60 min) try a
+  // silent refresh so Miri always sees fresh data without tapping anything.
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState !== 'visible') return;
+    if (!_clientId || !_prevAuth) return;
+    const TOKEN_TTL = 50 * 60 * 1000; // 50 minutes
+    const tokenStale = !_tokenTimestamp || (Date.now() - _tokenTimestamp > TOKEN_TTL);
+    if (!_accessToken || tokenStale) {
+      _accessToken    = null;
+      _tokenTimestamp = 0;
+      _setBadge('syncing', 'Conectando…');
+      try {
+        await _waitForGis();
+        if (!_initTokenClient()) { _setBadge('reconnect', 'Reconectar'); return; }
+        _tokenClient.requestAccessToken({ prompt: '' });
+      } catch(e) { _setBadge('reconnect', 'Reconectar'); }
+    }
+  });
+
+  function _badgeClick() {
+    const badge = document.getElementById('syncBadge');
+    if (!badge) return;
+    if (badge.classList.contains('drive-reconnect')) {
+      reconnect();
+    } else {
+      openDriveModal();
+    }
+  }
+
+  return {
+    init, signIn, signOut, reconnect, scheduleSave, resolveConflict, shareFile,
+    _badgeClick, _doShare, _onNativeFileSelected, _showFileSelector, _selectFile,
+    _onClientIdInput, _saveClientIdAndConnect, _resetClientId,
+    _forceSyncNow, _renderModalBody
+  };
+})();
+
+// ── DRIVE MODAL OPEN/CLOSE ────────────────────────────────────
+function openDriveModal() {
+  DriveSync._renderModalBody();
+  document.getElementById('modalDrive').style.display = 'flex';
+}
+function closeDriveModal() {
+  document.getElementById('modalDrive').style.display = 'none';
+}
+
+
 
 let state = loadState();
 let currentSection = 'mario';
@@ -4863,6 +5824,7 @@ function unlockApp() {
     setTimeout(() => checkPendingSubscriptions(), 600);
     setTimeout(() => checkPendingContributions(), 1200);
     setTimeout(() => checkPendingDeposits(), 1800);
+    setTimeout(() => DriveSync.init(), 2200);
   }, 400);
 }
 
