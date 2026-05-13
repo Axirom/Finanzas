@@ -5622,18 +5622,21 @@ function renderGlobalPatrimonyChart() {
     let total = 0;
     state.accounts[person].forEach(a => {
       let bal = a.balance;
+      // FIX: filter by a.id (current account), not accIds (all person accounts).
+      // Using accIds caused future transactions from account A to be wrongly
+      // subtracted from account B's historical balance.
       state.transactions
-        .filter(t => t.date > endDate && accIds.has(t.accountId))
+        .filter(t => t.date > endDate && t.accountId === a.id)
         .forEach(t => {
           if (t.type === 'income')  bal -= t.amount;
           if (t.type === 'expense') bal += t.amount;
         });
-      // deposits
-      (state.deposits[person] || []).forEach(dep => {
-        if ((dep.createdAt || '') > endDate) bal += dep.amount;
-        if (dep.liquidated && (dep.liquidationDate || '') > endDate) bal -= dep.amount;
-      });
       total += bal;
+    });
+    // Deposits are per-person, not per-account — compute once outside account loop.
+    (state.deposits[person] || []).forEach(dep => {
+      if ((dep.createdAt || '') > endDate) total += dep.amount;
+      if (dep.liquidated && (dep.liquidationDate || '') > endDate) total -= dep.amount;
     });
     // Return null if no transactions or accounts exist yet at this point
     const hasActivity = state.transactions.some(t => t.date <= endDate && accIds.has(t.accountId));
@@ -5648,8 +5651,9 @@ function renderGlobalPatrimonyChart() {
     let total = 0;
     state.accounts.common.forEach(a => {
       let bal = a.balance;
+      // FIX: filter by a.id (current account), not accIds (all common accounts).
       state.transactions
-        .filter(t => t.date > endDate && accIds.has(t.accountId))
+        .filter(t => t.date > endDate && t.accountId === a.id)
         .forEach(t => {
           if (t.type === 'income')  bal -= t.amount;
           if (t.type === 'expense') bal += t.amount;
@@ -5845,9 +5849,9 @@ function renderGlobalChartTapSummary(idx, months, series) {
   const total = series.reduce((s, serie) => s + (serie.data[idx] || 0), 0);
   if (total === 0) { sumEl.style.display = 'none'; return; }
 
-  const colors = { 0:'#60c8f5', 1:'#f472b6', 2:'#a78bfa', 3:'#fb923c', 4:'#34d399' };
+  // Use s.color from the series array — already theme-aware, no hardcoded palette needed
   const rows = series
-    .map((s, i) => ({ label: s.label, val: s.data[idx] || 0, color: colors[i] }))
+    .map((s, i) => ({ label: s.label, val: s.data[idx] || 0, color: s.color }))
     .filter(r => r.val > 0)
     .map(r => `<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;">
         <span style="display:flex;align-items:center;gap:5px;">
