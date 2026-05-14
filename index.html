@@ -5190,8 +5190,50 @@ function getPersonTotal(person) {
   return state.accounts[person].reduce((s, a) => s + a.balance, 0);
 }
 
+// Returns the reconstructed balance at the end of a given monthKey (YYYY-MM).
+// Usa la misma lógica de rebobinado que la gráfica de patrimonio.
+function getPersonBalanceAtMonth(person, monthKey) {
+  const endDate = monthKey + '-31';
+  const accIds  = new Set(state.accounts[person].map(a => a.id));
+  let total = 0;
+  state.accounts[person].forEach(a => {
+    let bal = a.balance;
+    state.transactions
+      .filter(t => t.date > endDate && t.accountId === a.id)
+      .forEach(t => {
+        if (t.type === 'income')  bal -= t.amount;
+        if (t.type === 'expense') bal += t.amount;
+      });
+    total += bal;
+  });
+  (state.deposits[person] || []).forEach(dep => {
+    if ((dep.createdAt || '') > endDate) total += dep.amount;
+    if (dep.liquidated && (dep.liquidationDate || '') > endDate) total -= dep.amount;
+  });
+  return Math.max(0, total);
+}
+
 function getCommonBalance() {
   return state.accounts.common.reduce((s, a) => s + a.balance, 0);
+}
+
+// Returns the reconstructed common balance at the end of a given monthKey (YYYY-MM).
+function getCommonBalanceAtMonth(monthKey) {
+  const endDate = monthKey + '-31';
+  const accIds  = new Set(state.accounts.common.map(a => a.id));
+  if (accIds.size === 0) return 0;
+  let total = 0;
+  state.accounts.common.forEach(a => {
+    let bal = a.balance;
+    state.transactions
+      .filter(t => t.date > endDate && t.accountId === a.id)
+      .forEach(t => {
+        if (t.type === 'income')  bal -= t.amount;
+        if (t.type === 'expense') bal += t.amount;
+      });
+    total += bal;
+  });
+  return Math.max(0, total);
 }
 
 // ===================== MONTH PICKER =====================
@@ -5261,7 +5303,10 @@ function getMonthLabelForPerson(person) {
 }
 
 function renderTotals(person) {
-  const total = getPersonTotal(person);
+  const sel = selectedMonth[person];
+  const total = sel
+    ? getPersonBalanceAtMonth(person, `${sel.year}-${String(sel.month + 1).padStart(2, '0')}`)
+    : getPersonTotal(person);
   const commonTotal = getCommonBalance();
   countUp(document.getElementById(person + '-total'), total);
   document.getElementById(person + '-common-balance').textContent = fmtShort(commonTotal);
@@ -5616,52 +5661,19 @@ function renderGlobalPatrimonyChart() {
 
   // Helper: get person personal balance at end of a month (excl. common accounts)
   function snapBalance(person, monthKey) {
-    // Reconstruct from current balance minus transactions after monthKey
-    const endDate  = monthKey + '-31';
-    const accIds   = new Set(state.accounts[person].map(a => a.id));
-    let total = 0;
-    state.accounts[person].forEach(a => {
-      let bal = a.balance;
-      // FIX: filter by a.id (current account), not accIds (all person accounts).
-      // Using accIds caused future transactions from account A to be wrongly
-      // subtracted from account B's historical balance.
-      state.transactions
-        .filter(t => t.date > endDate && t.accountId === a.id)
-        .forEach(t => {
-          if (t.type === 'income')  bal -= t.amount;
-          if (t.type === 'expense') bal += t.amount;
-        });
-      total += bal;
-    });
-    // Deposits are per-person, not per-account — compute once outside account loop.
-    (state.deposits[person] || []).forEach(dep => {
-      if ((dep.createdAt || '') > endDate) total += dep.amount;
-      if (dep.liquidated && (dep.liquidationDate || '') > endDate) total -= dep.amount;
-    });
-    // Return null if no transactions or accounts exist yet at this point
+    const endDate = monthKey + '-31';
+    const accIds  = new Set(state.accounts[person].map(a => a.id));
     const hasActivity = state.transactions.some(t => t.date <= endDate && accIds.has(t.accountId));
-    return (state.accounts[person].length > 0 && hasActivity) ? Math.max(0, total) : null;
+    if (!state.accounts[person].length || !hasActivity) return null;
+    return getPersonBalanceAtMonth(person, monthKey);
   }
 
-  // Helper: get common balance at end of month
   function commonBalanceAt(monthKey) {
     const endDate = monthKey + '-31';
     const accIds  = new Set(state.accounts.common.map(a => a.id));
     if (accIds.size === 0) return null;
-    let total = 0;
-    state.accounts.common.forEach(a => {
-      let bal = a.balance;
-      // FIX: filter by a.id (current account), not accIds (all common accounts).
-      state.transactions
-        .filter(t => t.date > endDate && t.accountId === a.id)
-        .forEach(t => {
-          if (t.type === 'income')  bal -= t.amount;
-          if (t.type === 'expense') bal += t.amount;
-        });
-      total += bal;
-    });
     const hasActivity = state.transactions.some(t => t.date <= endDate && accIds.has(t.accountId));
-    return hasActivity ? Math.max(0, total) : null;
+    return hasActivity ? getCommonBalanceAtMonth(monthKey) : null;
   }
 
   // Helper: investment value at end of month
@@ -7044,6 +7056,8 @@ function renderDebts(person) {
     const capitalPct  = d.total > 0 ? Math.min(100, (d.capitalPaid / d.total) * 100) : 0;
     const interestPct = d.totalInterest > 0 ? Math.min(100, (d.interestPaid / d.totalInterest) * 100) : 0;
 
+    const paidSoFar = (d.paidQuotas || 0) + (d.payments ? d.payments.filter(p => p.type === 'quota').length : 0);
+
     const ratesBadges = [
       d.tin != null ? `<span class="debt-rate-badge debt-rate-tin">TIN ${d.tin}%</span>` : '',
       d.tae != null ? `<span class="debt-rate-badge debt-rate-tae">TAE ${d.tae}%</span>` : ''
@@ -7073,7 +7087,10 @@ function renderDebts(person) {
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <div class="debt-card-name">${d.name}</div>${ratesBadges}
             </div>
-            ${d.quota > 0 ? `<div style="font-size:11px;color:var(--muted);margin-top:3px;">Cuota: €${fmt(d.quota)}/mes${d.months ? ' · ' + d.months + ' meses' : ''}</div>` : ''}
+            ${d.quota > 0 ? `<div style="font-size:11px;color:var(--muted);margin-top:3px;display:flex;justify-content:space-between;align-items:center;">
+              <span>Cuota: €${fmt(d.quota)}/mes${d.months ? ' · ' + d.months + ' meses' : ''}</span>
+              ${paidSoFar > 0 && d.months ? `<span>${paidSoFar}/${d.months} cuotas</span>` : ''}
+            </div>` : ''}
           </div>
           <div class="debt-card-type ${d.type}" style="flex-shrink:0;margin-left:8px;">${typeLabel[d.type]}</div>
         </div>
