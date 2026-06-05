@@ -7394,12 +7394,13 @@ function updateAmortPreview() {
   const intWithout = r > 0 ? q * monthsLeft - capitalBefore : 0;
 
   if (amortMode === 'time') {
-    const newMonths = r > 0
-      ? Math.ceil(-Math.log(1 - capitalAfter * r / q) / Math.log(1 + r))
-      : Math.ceil(capitalAfter / q);
-    const intWith = r > 0 ? q * newMonths - capitalAfter : 0;
+    const newMonthsExact = r > 0
+      ? -Math.log(1 - capitalAfter * r / q) / Math.log(1 + r)
+      : capitalAfter / q;
+    const newMonthsDisplay = Math.ceil(newMonthsExact);
+    const intWith = r > 0 ? q * newMonthsExact - capitalAfter : 0;
     const saving  = Math.max(0, intWithout - intWith);
-    previewEl.innerHTML = `Cuota: <strong style="color:var(--text)">\u20ac${fmt(q)}</strong> (sin cambio)<br>Meses restantes: <strong style="color:#60c8f5">${newMonths}</strong> (antes: ${monthsLeft})<br>Ahorro en intereses: <strong style="color:var(--income)">\u20ac${fmt(saving)}</strong>`;
+    previewEl.innerHTML = `Cuota: <strong style="color:var(--text)">\u20ac${fmt(q)}</strong> (sin cambio)<br>Meses restantes: <strong style="color:#60c8f5">${newMonthsDisplay}</strong> (antes: ${monthsLeft})<br>Ahorro en intereses: <strong style="color:var(--income)">\u20ac${fmt(saving)}</strong>`;
   } else {
     const newQuota = frenchQuota(capitalAfter, d.tin, monthsLeft);
     const intWith  = r > 0 ? newQuota * monthsLeft - capitalAfter : 0;
