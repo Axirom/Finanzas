@@ -2368,7 +2368,13 @@ body:not(.values-hidden) .account-rate-inline {
         </div>
         <div class="chart-card">
           <div class="chart-card-title">Gastos por categoría — <span id="mario-chart-cat-month"></span></div>
-          <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;" id="mario-cat-filter"></div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+            <button class="month-picker-year-btn" onclick="changeCatYear('mario',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
+            <span id="mario-cat-year-label" style="font-size:13px;font-weight:600;color:var(--accent);min-width:38px;text-align:center;"></span>
+            <button class="month-picker-year-btn" onclick="changeCatYear('mario',1)" id="mario-cat-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
+          </div>
+          <div id="mario-cat-filter-h1" style="display:flex;gap:5px;margin-bottom:5px;justify-content:flex-start;"></div>
+          <div id="mario-cat-filter-h2" style="display:flex;gap:5px;margin-bottom:12px;justify-content:flex-end;"></div>
           <div id="mario-cat-msg" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:12px;"></div>
           <div class="chart-wrap" id="mario-cat-wrap"><canvas id="mario-chart-cat"></canvas></div>
         </div>
@@ -2499,7 +2505,13 @@ body:not(.values-hidden) .account-rate-inline {
         </div>
         <div class="chart-card">
           <div class="chart-card-title">Gastos por categoría — <span id="miri-chart-cat-month"></span></div>
-          <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;" id="miri-cat-filter"></div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+            <button class="month-picker-year-btn" onclick="changeCatYear('miri',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
+            <span id="miri-cat-year-label" style="font-size:13px;font-weight:600;color:var(--accent);min-width:38px;text-align:center;"></span>
+            <button class="month-picker-year-btn" onclick="changeCatYear('miri',1)" id="miri-cat-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
+          </div>
+          <div id="miri-cat-filter-h1" style="display:flex;gap:5px;margin-bottom:5px;justify-content:flex-start;"></div>
+          <div id="miri-cat-filter-h2" style="display:flex;gap:5px;margin-bottom:12px;justify-content:flex-end;"></div>
           <div id="miri-cat-msg" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:12px;"></div>
           <div class="chart-wrap" id="miri-cat-wrap"><canvas id="miri-chart-cat"></canvas></div>
         </div>
@@ -12242,6 +12254,20 @@ function autoSnapshot() {
 // ===================== CHARTS =====================
 const chartInstances = {};
 const catFilterMonth = { mario: null, miri: null };
+const catFilterYear  = { mario: new Date().getFullYear(), miri: new Date().getFullYear() };
+
+function changeCatYear(person, dir) {
+  const newYear = catFilterYear[person] + dir;
+  const currentYear = new Date().getFullYear();
+  if (newYear > currentYear) return;
+  catFilterYear[person] = newYear;
+  const now = new Date();
+  const maxMonth = newYear === currentYear ? now.getMonth() + 1 : 12;
+  const currentMonthNum = catFilterMonth[person] ? parseInt(catFilterMonth[person].split('-')[1]) : maxMonth;
+  const clampedMonth = Math.min(currentMonthNum, maxMonth);
+  catFilterMonth[person] = `${newYear}-${String(clampedMonth).padStart(2, '0')}`;
+  renderCatChart(person);
+}
 
 if (typeof Chart !== 'undefined' && Chart.defaults) {
   Chart.defaults.color = '#c8d0e8';
@@ -12489,49 +12515,63 @@ function renderSavingChart(person) {
 function renderCatChart(person) {
   const id = person + '-chart-cat';
   destroyChart(id);
-  const ctx = document.getElementById(id);
-  if (!ctx || ctx.offsetWidth === 0) return;
 
-  // Build month filter pills (last 6 months)
-  const months = getLastNMonths(6);
-  if (!catFilterMonth[person]) catFilterMonth[person] = months[months.length - 1].key;
+  const now         = new Date();
+  const currentYear = now.getFullYear();
+  const year        = catFilterYear[person] || currentYear;
+  const maxMonth    = year === currentYear ? now.getMonth() + 1 : 12;
 
-  const filterEl = document.getElementById(person + '-cat-filter');
-  const labelEl  = document.getElementById(person + '-chart-cat-month');
-  if (filterEl) {
-    filterEl.innerHTML = months.map(m =>
-      `<button class="chart-pill ${m.key === catFilterMonth[person] ? 'active' : ''}"
-        onclick="setCatMonth('${person}','${m.key}')">${m.label}</button>`
-    ).join('');
+  if (!catFilterMonth[person] || parseInt(catFilterMonth[person].split('-')[0]) !== year) {
+    catFilterMonth[person] = `${year}-${String(maxMonth).padStart(2, '0')}`;
   }
-  if (labelEl) {
-    const sel = months.find(m => m.key === catFilterMonth[person]);
-    labelEl.textContent = sel ? sel.label : '';
+  const selectedKey = catFilterMonth[person];
+
+  const yearLabelEl = document.getElementById(person + '-cat-year-label');
+  const yearNextBtn = document.getElementById(person + '-cat-year-next');
+  if (yearLabelEl) yearLabelEl.textContent = year;
+  if (yearNextBtn) yearNextBtn.style.opacity = year >= currentYear ? '0.3' : '1';
+
+  const monthNames = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const h1El = document.getElementById(person + '-cat-filter-h1');
+  const h2El = document.getElementById(person + '-cat-filter-h2');
+
+  function makePill(i) {
+    const key      = `${year}-${String(i + 1).padStart(2, '0')}`;
+    const disabled = i + 1 > maxMonth;
+    const active   = key === selectedKey;
+    return `<button class="chart-pill${active ? ' active' : ''}"
+      style="${disabled ? 'opacity:0.25;pointer-events:none;' : ''}"
+      onclick="setCatMonth('${person}','${key}')">${monthNames[i]}</button>`;
   }
+  if (h1El) h1El.innerHTML = [0,1,2,3,4,5].map(makePill).join('');
+  if (h2El) h2El.innerHTML = [6,7,8,9,10,11].map(makePill).join('');
+
+  const labelEl = document.getElementById(person + '-chart-cat-month');
+  if (labelEl) labelEl.textContent = monthNames[parseInt(selectedKey.split('-')[1]) - 1] + ' ' + year;
 
   const personAccIds = new Set([
     ...state.accounts[person].map(a => a.id),
     ...state.accounts.common.map(a => a.id)
   ]);
-  const monthKey = catFilterMonth[person];
   const cats = {};
-
   state.transactions
-    .filter(t => t.date && t.date.startsWith(monthKey) && t.type === 'expense' && t.category !== 'Transferencia' && t.category !== 'Inversión' && personAccIds.has(t.accountId))
+    .filter(t => t.date && t.date.startsWith(selectedKey) && t.type === 'expense' && t.category !== 'Transferencia' && t.category !== 'Inversión' && personAccIds.has(t.accountId))
     .forEach(t => { cats[t.category] = (cats[t.category] || 0) + t.amount; });
 
   const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
-
   const msgEl  = document.getElementById(person + '-cat-msg');
   const wrapEl = document.getElementById(person + '-cat-wrap');
 
   if (sorted.length === 0) {
-    if (msgEl)  { msgEl.textContent  = 'Sin gastos registrados este mes'; msgEl.style.display  = 'block'; }
+    if (msgEl)  { msgEl.textContent = 'Sin gastos registrados este mes'; msgEl.style.display = 'block'; }
     if (wrapEl) wrapEl.style.display = 'none';
     return;
   }
   if (msgEl)  msgEl.style.display  = 'none';
   if (wrapEl) wrapEl.style.display = 'block';
+
+  const ctx = document.getElementById(id);
+  if (!ctx || ctx.offsetWidth === 0) return;
 
   const c = getChartColors();
   const palette = c.donut;
