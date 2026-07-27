@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Finanzas">
-<title>Finanzas v4</title>
+<title>Finanzas v5</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -293,6 +293,8 @@ body.theme-jade::before {
   border-bottom: 1px solid rgba(255,255,255,0.07);
   flex-shrink: 0;
 }
+
+
 
 .section-tabs {
   display: flex;
@@ -1301,6 +1303,17 @@ body.theme-jade::before {
 .debt-rate-tin { background: rgba(86,207,225,0.12); color: var(--saving); border: 1px solid rgba(86,207,225,0.25); }
 .debt-rate-tae { background: rgba(247,217,120,0.12); color: var(--global); border: 1px solid rgba(247,217,120,0.25); }
 
+/* ── Periodic amortization simulator ── */
+.pam-freq-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:16px; }
+.pam-freq-btn  { padding:8px 4px; font-size:11px; text-align:center; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--muted); cursor:pointer; transition:all .15s; }
+.pam-freq-btn.active { background:rgba(96,200,245,.12); border-color:rgba(96,200,245,.4); color:#60c8f5; }
+.pam-result-box { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:10px; }
+.pam-result-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-size:12px; color:var(--muted); }
+.pam-result-row + .pam-result-row { border-top:1px solid var(--border); }
+.pam-result-val { font-weight:600; color:var(--text); }
+.pam-saving-row { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:rgba(111,207,151,.08); border:1px solid rgba(111,207,151,.22); border-radius:var(--radius-sm); font-size:12px; color:var(--muted); margin-bottom:8px; }
+.pam-saving-val { font-weight:700; color:var(--income); font-size:13px; }
+
 .debt-history-item {
   display: flex;
   align-items: center;
@@ -2003,11 +2016,15 @@ body.theme-jade::before {
 .debt-bar-fill.capital  { background: linear-gradient(90deg, #60c8f5, #a78bfa); }
 .debt-bar-fill.interest { background: linear-gradient(90deg, #f97316, #ef4444); }
 .debt-bar-fill.done     { background: var(--income); }
-.debt-bar-val { font-size:10px; font-weight:600; width:56px; text-align:right; flex-shrink:0; }
+.debt-bar-val { font-size:10px; font-weight:600; min-width:82px; text-align:right; flex-shrink:0; white-space:nowrap; }
 .debt-amounts {
-  display: flex; justify-content: space-between;
   font-size: 12px; color: var(--muted); margin-bottom: 12px;
 }
+.debt-amounts-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 8px; margin-bottom: 3px;
+}
+.debt-amounts-row:last-child { margin-bottom: 0; }
 .debt-amounts .paid { color: var(--income); font-weight: 500; }
 .debt-amounts .remaining { color: var(--expense); font-weight: 500; }
 .debt-card-actions { display: flex; gap: 8px; }
@@ -2353,7 +2370,13 @@ body:not(.values-hidden) .account-rate-inline {
         </div>
         <div class="chart-card">
           <div class="chart-card-title">Gastos por categoría — <span id="mario-chart-cat-month"></span></div>
-          <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;" id="mario-cat-filter"></div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+            <button class="month-picker-year-btn" onclick="changeCatYear('mario',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
+            <span id="mario-cat-year-label" style="font-size:13px;font-weight:600;color:var(--accent);min-width:38px;text-align:center;"></span>
+            <button class="month-picker-year-btn" onclick="changeCatYear('mario',1)" id="mario-cat-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
+          </div>
+          <div id="mario-cat-filter-h1" style="display:flex;gap:5px;margin-bottom:5px;justify-content:flex-start;"></div>
+          <div id="mario-cat-filter-h2" style="display:flex;gap:5px;margin-bottom:12px;justify-content:flex-end;"></div>
           <div id="mario-cat-msg" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:12px;"></div>
           <div class="chart-wrap" id="mario-cat-wrap"><canvas id="mario-chart-cat"></canvas></div>
         </div>
@@ -2484,7 +2507,13 @@ body:not(.values-hidden) .account-rate-inline {
         </div>
         <div class="chart-card">
           <div class="chart-card-title">Gastos por categoría — <span id="miri-chart-cat-month"></span></div>
-          <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;" id="miri-cat-filter"></div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+            <button class="month-picker-year-btn" onclick="changeCatYear('miri',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
+            <span id="miri-cat-year-label" style="font-size:13px;font-weight:600;color:var(--accent);min-width:38px;text-align:center;"></span>
+            <button class="month-picker-year-btn" onclick="changeCatYear('miri',1)" id="miri-cat-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
+          </div>
+          <div id="miri-cat-filter-h1" style="display:flex;gap:5px;margin-bottom:5px;justify-content:flex-start;"></div>
+          <div id="miri-cat-filter-h2" style="display:flex;gap:5px;margin-bottom:12px;justify-content:flex-end;"></div>
           <div id="miri-cat-msg" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:12px;"></div>
           <div class="chart-wrap" id="miri-cat-wrap"><canvas id="miri-chart-cat"></canvas></div>
         </div>
@@ -4286,6 +4315,42 @@ body:not(.values-hidden) .account-rate-inline {
   </div>
 </div>
 
+<!-- ==================== MODAL: PERIODIC AMORTIZATION SIMULATOR ==================== -->
+<div class="modal-overlay" id="modalPeriodicAmort" onclick="closeModalOutside(event,'modalPeriodicAmort')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="margin-bottom:4px;">Simulador periódico</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:18px;" id="pam-subtitle"></div>
+    <div class="form-group">
+      <label class="form-label">Aportación extra (€)</label>
+      <input class="form-input" id="pam-amount" type="number" min="1" step="0.01" inputmode="decimal" placeholder="Ej: 500">
+    </div>
+    <label class="form-label" style="margin-bottom:8px;">Frecuencia</label>
+    <div class="pam-freq-grid">
+      <button class="pam-freq-btn" onclick="setPamFreq(1,this)">Mensual</button>
+      <button class="pam-freq-btn" onclick="setPamFreq(3,this)">Trimestral</button>
+      <button class="pam-freq-btn active" onclick="setPamFreq(6,this)">Semestral</button>
+      <button class="pam-freq-btn" onclick="setPamFreq(12,this)">Anual</button>
+    </div>
+    <button class="btn-primary" style="width:100%;margin-bottom:18px;" onclick="runPeriodicAmortSim()">Calcular ahorro</button>
+    <div id="pam-results" style="display:none;">
+      <div class="pam-result-box">
+        <div class="pam-result-row"><span>Sin aportaciones</span><span class="pam-result-val" id="pam-base-months"></span></div>
+        <div class="pam-result-row"><span>Con aportaciones</span><span class="pam-result-val" id="pam-new-months"></span></div>
+        <div class="pam-result-row"><span>Intereses sin aportaciones</span><span class="pam-result-val" id="pam-base-int"></span></div>
+        <div class="pam-result-row"><span>Intereses con aportaciones</span><span class="pam-result-val" id="pam-new-int"></span></div>
+      </div>
+      <div class="pam-saving-row"><span>⏱ Tiempo ahorrado</span><span class="pam-saving-val" id="pam-saved-time"></span></div>
+      <div class="pam-saving-row"><span>💰 Intereses ahorrados</span><span class="pam-saving-val" id="pam-saved-int"></span></div>
+      <div class="chart-wrap" style="height:180px;margin-top:14px;"><canvas id="pam-chart"></canvas></div>
+      <div style="display:flex;gap:16px;justify-content:center;margin-top:8px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);"><div style="width:16px;height:2px;background:#f97316;border-radius:2px;"></div>Sin aportaciones</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);"><div style="width:16px;height:2px;background:var(--income);border-radius:2px;"></div>Con aportaciones</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== MODAL: EDIT DEBT ==================== -->
 <div class="modal-overlay" id="modalEditDebt" onclick="closeEditDebtOutside(event)">
   <div class="modal">
@@ -4766,6 +4831,7 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem('finanzas_v2', JSON.stringify(state));
+  localStorage.setItem('finanzas_v2_ts', Date.now().toString());
 }
 
 let state = loadState();
@@ -5190,8 +5256,6 @@ function getPersonTotal(person) {
   return state.accounts[person].reduce((s, a) => s + a.balance, 0);
 }
 
-// Returns the reconstructed balance at the end of a given monthKey (YYYY-MM).
-// Usa la misma lógica de rebobinado que la gráfica de patrimonio.
 function getPersonBalanceAtMonth(person, monthKey) {
   const endDate = monthKey + '-31';
   const accIds  = new Set(state.accounts[person].map(a => a.id));
@@ -5217,11 +5281,8 @@ function getCommonBalance() {
   return state.accounts.common.reduce((s, a) => s + a.balance, 0);
 }
 
-// Returns the reconstructed common balance at the end of a given monthKey (YYYY-MM).
 function getCommonBalanceAtMonth(monthKey) {
   const endDate = monthKey + '-31';
-  const accIds  = new Set(state.accounts.common.map(a => a.id));
-  if (accIds.size === 0) return 0;
   let total = 0;
   state.accounts.common.forEach(a => {
     let bal = a.balance;
@@ -5668,6 +5729,7 @@ function renderGlobalPatrimonyChart() {
     return getPersonBalanceAtMonth(person, monthKey);
   }
 
+  // Helper: get common balance at end of month
   function commonBalanceAt(monthKey) {
     const endDate = monthKey + '-31';
     const accIds  = new Set(state.accounts.common.map(a => a.id));
@@ -5861,7 +5923,6 @@ function renderGlobalChartTapSummary(idx, months, series) {
   const total = series.reduce((s, serie) => s + (serie.data[idx] || 0), 0);
   if (total === 0) { sumEl.style.display = 'none'; return; }
 
-  // Use s.color from the series array — already theme-aware, no hardcoded palette needed
   const rows = series
     .map((s, i) => ({ label: s.label, val: s.data[idx] || 0, color: s.color }))
     .filter(r => r.val > 0)
@@ -7096,9 +7157,15 @@ function renderDebts(person) {
         </div>
         ${barsHtml}
         <div class="debt-amounts">
-          <span>Capital: <strong style="color:var(--text)">€${fmt(d.total)}</strong></span>
-          ${hasFrench ? `<span style="color:var(--expense)">+ €${fmt(d.totalInterest)} int.</span>` : ''}
-          <span class="remaining">${isFinished ? '✅ Saldado' : 'Resta: €' + fmt(capitalRem + interestRem)}</span>
+          <div class="debt-amounts-row">
+            <span>Capital: <strong style="color:var(--text)">€${fmt(d.total)}</strong></span>
+            ${hasFrench ? `<span style="color:rgba(249,115,22,0.85);font-size:11px;">+€${fmt(d.totalInterest)} int.</span>` : ''}
+          </div>
+          <div class="debt-amounts-row">
+            ${isFinished
+              ? `<span class="paid" style="font-size:13px;">✅ Saldado</span>`
+              : `<span style="color:var(--muted);">Resta</span><span class="remaining" style="font-size:13px;font-weight:600;">€${fmt(capitalRem + interestRem)}</span>`}
+          </div>
         </div>
       </div>`;
   }).join('');
@@ -7216,7 +7283,8 @@ function openDebtDetail(person, debtId) {
   } else {
     actionsEl.innerHTML = `
       <button class="btn-pay-quota" onclick="openPayFromDetail('quota')" style="padding:11px 8px;font-size:12px;">💸 Pagar cuota<br><span style="font-size:10px;opacity:0.8;">${d.quota > 0 ? '€' + fmt(d.quota) : 'Importe libre'}</span></button>
-      <button class="btn-pay-quota" onclick="openPayFromDetail('amortization')" style="padding:11px 8px;font-size:12px;background:rgba(247,217,120,0.1);border-color:rgba(247,217,120,0.3);color:var(--global);">⚡ Amortización<br><span style="font-size:10px;opacity:0.8;">Pago extra</span></button>`;
+      <button class="btn-pay-quota" onclick="openPayFromDetail('amortization')" style="padding:11px 8px;font-size:12px;background:rgba(247,217,120,0.1);border-color:rgba(247,217,120,0.3);color:var(--global);">⚡ Amortización<br><span style="font-size:10px;opacity:0.8;">Pago extra</span></button>
+      ${d.tin && d.quota ? `<button onclick="openPeriodicAmortSim()" style="grid-column:1/-1;padding:10px 8px;font-size:12px;background:rgba(96,200,245,.08);border:1px solid rgba(96,200,245,.25);border-radius:var(--radius-sm);color:#60c8f5;cursor:pointer;">📈 Simulador de aportaciones periódicas</button>` : ''}`;
   }
 
   // History
@@ -7262,6 +7330,98 @@ function closeAmortTable(e) {
   if (e && e.target !== document.getElementById('modalAmortTable')) return;
   closeModal('modalAmortTable');
   if (detailDebtPerson && detailDebtId) openDebtDetail(detailDebtPerson, detailDebtId);
+}
+
+// ===================== PERIODIC AMORTIZATION SIMULATOR =====================
+let pamFreq = 6;
+let pamChart = null;
+
+function setPamFreq(f, btn) {
+  pamFreq = f;
+  document.querySelectorAll('.pam-freq-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function openPeriodicAmortSim() {
+  const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
+  if (!d) return;
+  const capitalRem = Math.max(0, d.total - (d.capitalPaid || d.paid || 0));
+  document.getElementById('pam-subtitle').textContent =
+    `${d.name} · Capital pendiente: €${fmt(capitalRem)} · TIN ${d.tin}% · Cuota €${fmt(d.quota)}/mes`;
+  document.getElementById('pam-amount').value = '';
+  document.getElementById('pam-results').style.display = 'none';
+  if (pamChart) { pamChart.destroy(); pamChart = null; }
+  document.getElementById('modalPeriodicAmort').classList.add('open');
+}
+
+function runPeriodicAmortSim() {
+  const d = (state.debts[detailDebtPerson] || []).find(x => x.id === detailDebtId);
+  if (!d) return;
+  const extra = parseFloat(document.getElementById('pam-amount').value);
+  if (!extra || extra <= 0) { showToast('Introduce un importe válido', 'error'); return; }
+  const r = d.tin / 100 / 12;
+  const q = d.quota;
+  const capitalRem = Math.max(0, d.total - (d.capitalPaid || d.paid || 0));
+  if (!q || q <= 0 || capitalRem <= 0) { showToast('El préstamo necesita cuota y capital pendiente', 'error'); return; }
+  if (r > 0 && q <= capitalRem * r) { showToast('La cuota no cubre los intereses mensuales', 'error'); return; }
+  const MAX = 1200;
+  const balWithout = [capitalRem];
+  let bal = capitalRem, intWithout = 0;
+  while (bal > 0.005 && balWithout.length <= MAX) {
+    const interest = bal * r; intWithout += interest;
+    bal = bal * (1 + r) - q; balWithout.push(Math.max(0, bal));
+  }
+  const monthsWithout = balWithout.length - 1;
+  const balWith = [capitalRem];
+  bal = capitalRem; let intWith = 0, month = 0;
+  while (bal > 0.005 && balWith.length <= MAX) {
+    month++;
+    const interest = bal * r; intWith += interest;
+    bal = bal * (1 + r) - q;
+    if (month % pamFreq === 0) bal = Math.max(0, bal - extra);
+    balWith.push(Math.max(0, bal));
+  }
+  const monthsWith = balWith.length - 1;
+  const monthsSaved = monthsWithout - monthsWith;
+  const interestSaved = Math.max(0, intWithout - intWith);
+  function fmtMonths(m) {
+    const y = Math.floor(m / 12), mo = m % 12;
+    return [y > 0 ? y + ' año' + (y > 1 ? 's' : '') : '', mo > 0 ? mo + ' mes' + (mo > 1 ? 'es' : '') : ''].filter(Boolean).join(' ') || '< 1 mes';
+  }
+  document.getElementById('pam-base-months').textContent = fmtMonths(monthsWithout);
+  document.getElementById('pam-new-months').textContent  = fmtMonths(monthsWith);
+  document.getElementById('pam-base-int').textContent    = '€' + fmt(intWithout);
+  document.getElementById('pam-new-int').textContent     = '€' + fmt(intWith);
+  document.getElementById('pam-saved-time').textContent  = monthsSaved > 0 ? fmtMonths(monthsSaved) : 'Sin cambio';
+  document.getElementById('pam-saved-int').textContent   = '€' + fmt(interestSaved);
+  document.getElementById('pam-results').style.display   = 'block';
+  const step = Math.max(1, Math.floor(monthsWithout / 60));
+  const labels = [], dataA = [], dataB = [];
+  for (let i = 0; i <= monthsWithout; i += step) {
+    const y = Math.floor(i / 12), mo = i % 12;
+    labels.push(y > 0 && mo === 0 ? `Año ${y}` : (i === 0 ? 'Hoy' : `M${i}`));
+    dataA.push(+(balWithout[i] ?? 0).toFixed(2));
+    dataB.push(+(balWith[i] ?? 0).toFixed(2));
+  }
+  if (pamChart) { pamChart.destroy(); pamChart = null; }
+  const ctx = document.getElementById('pam-chart');
+  if (!ctx) return;
+  pamChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Sin aportaciones', data: dataA, borderColor: '#f97316', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: 0.3 },
+      { label: 'Con aportaciones', data: dataB, borderColor: '#6fcf97', backgroundColor: 'rgba(111,207,151,0.08)', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: true }
+    ]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.dataset.label}: €${fmt(c.raw)}` } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 }, maxTicksLimit: 8, maxRotation: 0 } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.4)', callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v } }
+      }
+    }
+  });
 }
 
 function openAmortTable() {
@@ -7394,12 +7554,13 @@ function updateAmortPreview() {
   const intWithout = r > 0 ? q * monthsLeft - capitalBefore : 0;
 
   if (amortMode === 'time') {
-    const newMonths = r > 0
-      ? Math.ceil(-Math.log(1 - capitalAfter * r / q) / Math.log(1 + r))
-      : Math.ceil(capitalAfter / q);
-    const intWith = r > 0 ? q * newMonths - capitalAfter : 0;
+    const newMonthsExact = r > 0
+      ? -Math.log(1 - capitalAfter * r / q) / Math.log(1 + r)
+      : capitalAfter / q;
+    const newMonthsDisplay = Math.ceil(newMonthsExact);
+    const intWith = r > 0 ? q * newMonthsExact - capitalAfter : 0;
     const saving  = Math.max(0, intWithout - intWith);
-    previewEl.innerHTML = `Cuota: <strong style="color:var(--text)">\u20ac${fmt(q)}</strong> (sin cambio)<br>Meses restantes: <strong style="color:#60c8f5">${newMonths}</strong> (antes: ${monthsLeft})<br>Ahorro en intereses: <strong style="color:var(--income)">\u20ac${fmt(saving)}</strong>`;
+    previewEl.innerHTML = `Cuota: <strong style="color:var(--text)">\u20ac${fmt(q)}</strong> (sin cambio)<br>Meses restantes: <strong style="color:#60c8f5">${newMonthsDisplay}</strong> (antes: ${monthsLeft})<br>Ahorro en intereses: <strong style="color:var(--income)">\u20ac${fmt(saving)}</strong>`;
   } else {
     const newQuota = frenchQuota(capitalAfter, d.tin, monthsLeft);
     const intWith  = r > 0 ? newQuota * monthsLeft - capitalAfter : 0;
@@ -8613,7 +8774,8 @@ function savePosition() {
     inv.lots.push({ id: Date.now().toString(), units, price, commission, date });
     inv.movements.push({ id: Date.now().toString(), type: 'buy', units, price, total, commission, sourceId: invNoDeduct ? null : sourceId, noDeduct: invNoDeduct, date, notes });
     inv.priceHistory.push({ date, price });
-    inv.currentPrice = price; // buy price = current NAV, always update
+    const latestPriceDate = (inv.priceHistory || []).reduce((latest, h) => h.date > latest ? h.date : latest, '');
+    if (date >= latestPriceDate) inv.currentPrice = price;
   }
 
   // Only record a transaction if money actually moved from an account
@@ -9986,8 +10148,8 @@ function renderInvPeriodSummary() {
     });
   }
   const trueGain = currentVal - startVal - netFlows;
-  const base     = startVal > 0 ? startVal : netFlows;
-  const mwrPct   = base > 0 ? (trueGain / base) * 100 : 0;
+  const base   = startVal + netFlows / 2;
+  const mwrPct = base > 0 ? (trueGain / base) * 100 : 0;
 
   if (startVal <= 0 && currentVal <= 0) { summaryEl.style.display = 'none'; return; }
   summaryEl.style.display = 'block';
@@ -10247,16 +10409,13 @@ function renderPortfolioChart() {
   const wrapEl = document.getElementById('inv-portfolio-wrap');
   if (!ctx) return;
 
-  // Collect all relevant dates (price updates + buy/sell movements)
-  const allDates = new Set();
+  ensureInvestments();
+  const allRawDates = [];
   state.investments.forEach(inv => {
-    (inv.priceHistory || []).forEach(h => allDates.add(h.date));
-    (inv.movements    || []).forEach(m => { if (m.type === 'buy' || m.type === 'sell') allDates.add(m.date); });
+    (inv.priceHistory || []).forEach(h => allRawDates.push(h.date));
+    (inv.movements    || []).forEach(m => { if (m.type === 'buy' || m.type === 'sell') allRawDates.push(m.date); });
   });
-
-  const sorted = [...allDates].sort();
-
-  if (sorted.length < 2) {
+  if (allRawDates.length < 2) {
     if (msgEl)  { msgEl.innerHTML = 'Actualiza el precio de tus posiciones<br>para ver la evolución de la cartera.'; msgEl.style.display = 'block'; }
     if (wrapEl) wrapEl.style.display = 'none';
     return;
@@ -10264,86 +10423,71 @@ function renderPortfolioChart() {
   if (msgEl)  msgEl.style.display  = 'none';
   if (wrapEl) wrapEl.style.display = 'block';
 
-  const currentValues  = [];
-  const investedValues = [];
+  const today    = new Date().toISOString().split('T')[0];
+  const earliest = [...allRawDates].sort()[0];
+  const startDate = periodStartDate(currentInvPeriod) || earliest;
+  const period    = currentInvPeriod;
 
-  sorted.forEach(date => {
-    let totalValue    = 0;
-    let totalInvested = 0;
-    const isLastDate  = date === sorted[sorted.length - 1];
+  function buildDates(start, end, step) {
+    const dates = [];
+    const cur   = new Date(start + 'T12:00:00');
+    const last  = new Date(end   + 'T12:00:00');
+    while (cur <= last) {
+      dates.push(cur.toISOString().split('T')[0]);
+      if (step === 'day')        cur.setDate(cur.getDate() + 1);
+      else if (step === 'week')  cur.setDate(cur.getDate() + 7);
+      else if (step === 'month') cur.setMonth(cur.getMonth() + 1);
+    }
+    if (dates[dates.length - 1] !== end) dates.push(end);
+    return dates;
+  }
 
+  let step;
+  if (period === '1M')                          step = 'day';
+  else if (period === '3M' || period === '6M')  step = 'week';
+  else                                          step = 'month';
+
+  const dates = buildDates(startDate, today, step);
+
+  function capitalAt(dateStr) {
+    let total = 0;
     state.investments.forEach(inv => {
-      // --- Valor actual a esta fecha ---
-      // For the last (most recent) date, use inv.currentPrice directly
-      // to match exactly what getInvestCurrentTotal() returns
-      let priceToUse;
-      if (isLastDate) {
-        priceToUse = inv.currentPrice || inv.avgBuyPrice || 0;
-      } else {
-        const prices = (inv.priceHistory || []).filter(h => h.date <= date);
-        if (prices.length === 0) { /* skip */ }
-        else priceToUse = prices[prices.length - 1].price;
-      }
-
-      if (priceToUse != null) {
-        let units = inv.units;
-        (inv.movements || []).filter(m => m.type === 'sell' && m.date > date).forEach(m => units += m.units);
-        (inv.movements || []).filter(m => m.type === 'buy'  && m.date > date).forEach(m => units -= m.units);
-        totalValue += Math.max(0, units) * priceToUse;
-      }
-
-      // --- Capital invertido a esta fecha (compras acumuladas - ventas al precio de coste) ---
-      const buyMoves  = (inv.movements || []).filter(m => m.type === 'buy'  && m.date <= date);
-      const sellMoves = (inv.movements || []).filter(m => m.type === 'sell' && m.date <= date);
-      const totalBought = buyMoves.reduce((s, m) => s + m.total, 0);
-      // For sells, subtract cost basis (units sold × avg buy price at that point)
-      const totalSold = sellMoves.reduce((s, m) => {
+      const buyMoves  = (inv.movements || []).filter(m => m.type === 'buy'  && m.date <= dateStr);
+      const sellMoves = (inv.movements || []).filter(m => m.type === 'sell' && m.date <= dateStr);
+      const totalBought = buyMoves.reduce((s, m) => s + (m.total || m.units * m.price), 0);
+      const totalSold   = sellMoves.reduce((s, m) => {
         const buysBeforeSell = (inv.movements || []).filter(b => b.type === 'buy' && b.date <= m.date);
         const avgCost = buysBeforeSell.length > 0
-          ? buysBeforeSell.reduce((t, b) => t + b.total, 0) / buysBeforeSell.reduce((t, b) => t + b.units, 0)
+          ? buysBeforeSell.reduce((t, b) => t + (b.total || b.units * b.price), 0) / buysBeforeSell.reduce((t, b) => t + b.units, 0)
           : 0;
         return s + m.units * avgCost;
       }, 0);
-      totalInvested += Math.max(0, totalBought - totalSold);
+      total += Math.max(0, totalBought - totalSold);
     });
+    return total;
+  }
 
-    currentValues.push(totalValue);
-    investedValues.push(totalInvested);
+  const currentValues  = dates.map(d => {
+    if (d === today) return state.investments.reduce((s, inv) => s + inv.units * (inv.currentPrice || inv.avgBuyPrice || 0), 0);
+    return getPortfolioValueAt(d);
   });
+  const investedValues = dates.map(d => capitalAt(d));
 
-  const fmtD = d => new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  function fmtLabel(d) {
+    const dt = new Date(d + 'T12:00:00');
+    if (step === 'day')   return dt.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    if (step === 'week')  return dt.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    return dt.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+  }
+
   const c = getChartColors();
-
   invPortfolioChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: sorted.map(fmtD),
+      labels: dates.map(fmtLabel),
       datasets: [
-        {
-          label: 'Capital invertido',
-          data: investedValues,
-          borderColor: c.accent2,
-          backgroundColor: c.accent2.replace('0.8)', '0.06)'),
-          borderWidth: 2,
-          borderDash: [5, 4],
-          pointRadius: 3,
-          pointBackgroundColor: c.accent2,
-          fill: false,
-          tension: 0.3,
-          order: 2
-        },
-        {
-          label: 'Valor actual',
-          data: currentValues,
-          borderColor: c.accent,
-          backgroundColor: c.accent.replace('0.9)', '0.08)'),
-          borderWidth: 2.5,
-          pointRadius: 4,
-          pointBackgroundColor: c.accent,
-          fill: true,
-          tension: 0.3,
-          order: 1
-        }
+        { label: 'Capital invertido', data: investedValues, borderColor: c.accent2, backgroundColor: 'transparent', borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.3, order: 2 },
+        { label: 'Valor actual', data: currentValues, borderColor: c.accent, backgroundColor: c.accent.replace('0.9)', '0.08)'), borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, fill: true, tension: 0.3, order: 1 }
       ]
     },
     options: {
@@ -10351,40 +10495,33 @@ function renderPortfolioChart() {
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: €${fmt(ctx.raw)}`,
-            footer: items => {
-              const invested = items.find(i => i.dataset.label === 'Capital invertido')?.raw || 0;
-              const current  = items.find(i => i.dataset.label === 'Valor actual')?.raw    || 0;
-              const diff     = current - invested;
-              return diff >= 0
-                ? `Ganancia: +€${fmt(diff)}`
-                : `Pérdida: -€${fmt(Math.abs(diff))}`;
-            }
+        tooltip: { callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: €${fmt(ctx.raw)}`,
+          footer: items => {
+            const invested = items.find(i => i.dataset.label === 'Capital invertido')?.raw || 0;
+            const current  = items.find(i => i.dataset.label === 'Valor actual')?.raw    || 0;
+            const diff = current - invested;
+            return diff >= 0 ? `Ganancia: +€${fmt(diff)}` : `Pérdida: -€${fmt(Math.abs(diff))}`;
           }
-        }
+        }}
       },
       scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 } } },
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 }, maxTicksLimit: step === 'day' ? 10 : step === 'week' ? 8 : 7, maxRotation: 0 } },
         y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.4)', callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k' : '€'+v.toFixed(0) } }
       }
     }
   });
 
-  // Render custom legend below chart
   const legEl = document.getElementById('inv-portfolio-legend');
   if (legEl) {
     const c2 = getChartColors();
     legEl.innerHTML = `
       <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;flex-wrap:wrap;">
         <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);">
-          <svg width="20" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="${c2.accent2}" stroke-width="2" stroke-dasharray="4,3"/></svg>
-          Capital invertido
+          <svg width="20" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="${c2.accent2}" stroke-width="2" stroke-dasharray="4,3"/></svg>Capital invertido
         </div>
         <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);">
-          <div style="width:20px;height:3px;background:${c2.accent};border-radius:2px;"></div>
-          Valor actual
+          <div style="width:20px;height:3px;background:${c2.accent};border-radius:2px;"></div>Valor actual
         </div>
       </div>`;
   }
@@ -10623,29 +10760,29 @@ function getCurrentBalance(scope) {
 }
 
 function getMonthlyRate(scope) {
-  // Estimate from last 4 snapshots. For 'global', combine mario+miri balance per month.
-  if (scope === 'global') {
-    const mSnaps = (state.snapshots || {}).mario || [];
-    const rSnaps = (state.snapshots || {}).miri  || [];
-    const byMonth = {};
-    mSnaps.forEach(s => { byMonth[s.month] = (byMonth[s.month] || 0) + s.balance; });
-    rSnaps.forEach(s => { byMonth[s.month] = (byMonth[s.month] || 0) + s.balance; });
-    const combined = Object.entries(byMonth)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .slice(-4);
-    if (combined.length < 2) return null;
-    const oldest = combined[0][1];
-    const newest = combined[combined.length - 1][1];
-    const months = combined.length - 1;
-    return months > 0 ? (newest - oldest) / months : null;
+  const now = new Date();
+  const LOOKBACK = 4;
+  const keys = [];
+  for (let i = LOOKBACK; i >= 1; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    keys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   }
-  const snaps = ((state.snapshots || {})[scope] || [])
-    .slice(-4).sort((a, b) => a.month.localeCompare(b.month));
-  if (snaps.length < 2) return null;
-  const oldest = snaps[0].balance;
-  const newest = snaps[snaps.length - 1].balance;
-  const months = snaps.length - 1;
-  return months > 0 ? (newest - oldest) / months : null;
+  const balances = keys.map(k => {
+    if (scope === 'global') {
+      return getPersonBalanceAtMonth('mario', k)
+           + getPersonBalanceAtMonth('miri',  k)
+           + getCommonBalanceAtMonth(k);
+    }
+    return getPersonBalanceAtMonth(scope, k);
+  });
+  let totalChange = 0, count = 0;
+  for (let i = 1; i < balances.length; i++) {
+    if (balances[i] > 0 || balances[i - 1] > 0) {
+      totalChange += balances[i] - balances[i - 1];
+      count++;
+    }
+  }
+  return count > 0 ? totalChange / count : null;
 }
 
 function openGoalModal(scope) {
@@ -10721,8 +10858,8 @@ function renderGoals() {
         const months = Math.ceil(remaining / rate);
         etaHtml = `~${months} mes${months !== 1 ? 'es' : ''} al ritmo actual`;
       } else if (goal.date) {
-        const daysLeft = Math.ceil((new Date(goal.date) - new Date()) / 86400000);
-        etaHtml = daysLeft > 0 ? `${daysLeft} días restantes` : '⚠️ Fecha superada';
+        const monthsLeft = Math.ceil((new Date(goal.date) - new Date()) / (1000 * 60 * 60 * 24 * 30.44));
+        etaHtml = monthsLeft > 0 ? `~${monthsLeft} mes${monthsLeft !== 1 ? 'es' : ''} restantes` : '⚠️ Fecha superada';
       }
     }
 
@@ -12111,6 +12248,21 @@ function autoSnapshot() {
 // ===================== CHARTS =====================
 const chartInstances = {};
 const catFilterMonth = { mario: null, miri: null };
+const catFilterYear  = { mario: new Date().getFullYear(), miri: new Date().getFullYear() };
+
+function changeCatYear(person, dir) {
+  const newYear = catFilterYear[person] + dir;
+  const currentYear = new Date().getFullYear();
+  if (newYear > currentYear) return;
+  catFilterYear[person] = newYear;
+  // Reset month to last available in new year
+  const now = new Date();
+  const maxMonth = newYear === currentYear ? now.getMonth() + 1 : 12;
+  const currentMonthNum = catFilterMonth[person] ? parseInt(catFilterMonth[person].split('-')[1]) : maxMonth;
+  const clampedMonth = Math.min(currentMonthNum, maxMonth);
+  catFilterMonth[person] = `${newYear}-${String(clampedMonth).padStart(2, '0')}`;
+  renderCatChart(person);
+}
 
 if (typeof Chart !== 'undefined' && Chart.defaults) {
   Chart.defaults.color = '#c8d0e8';
@@ -12221,7 +12373,6 @@ function renderInOutChart(person) {
   if (!ctx || ctx.offsetWidth === 0) return;
 
   const months = getLastNMonths(6);
-
   const personalAccIds = new Set(state.accounts[person].map(a => a.id));
   const commonAccIds   = new Set(state.accounts.common.map(a => a.id));
   const personAccIds   = new Set([...personalAccIds, ...commonAccIds]);
@@ -12361,53 +12512,71 @@ function renderSavingChart(person) {
 function renderCatChart(person) {
   const id = person + '-chart-cat';
   destroyChart(id);
-  const ctx = document.getElementById(id);
-  if (!ctx || ctx.offsetWidth === 0) return;
 
-  // Build month filter pills (last 6 months)
-  const months = getLastNMonths(6);
-  if (!catFilterMonth[person]) catFilterMonth[person] = months[months.length - 1].key;
+  const now         = new Date();
+  const currentYear = now.getFullYear();
+  const year        = catFilterYear[person] || currentYear;
+  const maxMonth    = year === currentYear ? now.getMonth() + 1 : 12;
 
-  const filterEl = document.getElementById(person + '-cat-filter');
-  const labelEl  = document.getElementById(person + '-chart-cat-month');
-  if (filterEl) {
-    filterEl.innerHTML = months.map(m =>
-      `<button class="chart-pill ${m.key === catFilterMonth[person] ? 'active' : ''}"
-        onclick="setCatMonth('${person}','${m.key}')">${m.label}</button>`
-    ).join('');
+  // Default selected month: last available in this year
+  if (!catFilterMonth[person] || parseInt(catFilterMonth[person].split('-')[0]) !== year) {
+    catFilterMonth[person] = `${year}-${String(maxMonth).padStart(2, '0')}`;
   }
-  if (labelEl) {
-    const sel = months.find(m => m.key === catFilterMonth[person]);
-    labelEl.textContent = sel ? sel.label : '';
+  const selectedKey = catFilterMonth[person];
+
+  // Year label & next-year button
+  const yearLabelEl = document.getElementById(person + '-cat-year-label');
+  const yearNextBtn = document.getElementById(person + '-cat-year-next');
+  if (yearLabelEl) yearLabelEl.textContent = year;
+  if (yearNextBtn) yearNextBtn.style.opacity = year >= currentYear ? '0.3' : '1';
+
+  // 12 pills in two rows of 6 (jan–jun left-aligned, jul–dec right-aligned)
+  const monthNames = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const h1El = document.getElementById(person + '-cat-filter-h1');
+  const h2El = document.getElementById(person + '-cat-filter-h2');
+
+  function makePill(i) {
+    const key      = `${year}-${String(i + 1).padStart(2, '0')}`;
+    const disabled = i + 1 > maxMonth;
+    const active   = key === selectedKey;
+    return `<button class="chart-pill${active ? ' active' : ''}"
+      style="${disabled ? 'opacity:0.25;pointer-events:none;' : ''}"
+      onclick="setCatMonth('${person}','${key}')">${monthNames[i]}</button>`;
   }
+  if (h1El) h1El.innerHTML = [0,1,2,3,4,5].map(makePill).join('');
+  if (h2El) h2El.innerHTML = [6,7,8,9,10,11].map(makePill).join('');
+
+  // Title label
+  const labelEl = document.getElementById(person + '-chart-cat-month');
+  if (labelEl) labelEl.textContent = monthNames[parseInt(selectedKey.split('-')[1]) - 1] + ' ' + year;
 
   const personalAccIds = new Set(state.accounts[person].map(a => a.id));
   const commonAccIds   = new Set(state.accounts.common.map(a => a.id));
   const allAccIds      = new Set([...personalAccIds, ...commonAccIds]);
-  const monthKey = catFilterMonth[person];
   const cats = {};
-
   state.transactions
-    .filter(t => t.date && t.date.startsWith(monthKey) && t.type === 'expense' && t.category !== 'Transferencia' && t.category !== 'Inversión' && allAccIds.has(t.accountId))
+    .filter(t => t.date && t.date.startsWith(selectedKey) && t.type === 'expense' && t.category !== 'Transferencia' && t.category !== 'Inversión' && allAccIds.has(t.accountId))
     .forEach(t => {
       const factor = commonAccIds.has(t.accountId) ? 0.5 : 1;
       cats[t.category] = (cats[t.category] || 0) + t.amount * factor;
     });
 
   const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
-
   const msgEl  = document.getElementById(person + '-cat-msg');
   const wrapEl = document.getElementById(person + '-cat-wrap');
 
   if (sorted.length === 0) {
-    if (msgEl)  { msgEl.textContent  = 'Sin gastos registrados este mes'; msgEl.style.display  = 'block'; }
+    if (msgEl)  { msgEl.textContent = 'Sin gastos registrados este mes'; msgEl.style.display = 'block'; }
     if (wrapEl) wrapEl.style.display = 'none';
     return;
   }
   if (msgEl)  msgEl.style.display  = 'none';
   if (wrapEl) wrapEl.style.display = 'block';
 
-  const c = getChartColors();
+  const ctx = document.getElementById(id);
+  if (!ctx || ctx.offsetWidth === 0) return;
+
+  const c       = getChartColors();
   const palette = c.donut;
 
   const total = sorted.reduce((s, e) => s + e[1], 0);
@@ -13021,11 +13190,11 @@ function closeModalOutside(e, id) {
 }
 
 // ===================== TOAST =====================
-function showToast(msg, type = '') {
+function showToast(msg, type = '', duration = 2500) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast show ' + type;
-  setTimeout(() => t.className = 'toast', 2500);
+  setTimeout(() => t.className = 'toast', duration);
 }
 
 // ===================== INIT =====================
