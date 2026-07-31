@@ -2344,8 +2344,8 @@ body:not(.values-hidden) .account-rate-inline {
             <div class="total-stat-value" id="mario-saving-rate">—</div>
           </div>
           <div class="total-stat">
-            <div class="total-stat-label">vs mes anterior</div>
-            <div class="total-stat-value" id="mario-prev-month">—</div>
+            <div class="total-stat-label">Balance mensual</div>
+            <div class="total-stat-value" id="mario-monthly-balance">—</div>
           </div>
         </div>
       </div>
@@ -2480,8 +2480,8 @@ body:not(.values-hidden) .account-rate-inline {
             <div class="total-stat-value" id="miri-saving-rate">—</div>
           </div>
           <div class="total-stat">
-            <div class="total-stat-label">vs mes anterior</div>
-            <div class="total-stat-value" id="miri-prev-month">—</div>
+            <div class="total-stat-label">Balance mensual</div>
+            <div class="total-stat-value" id="miri-monthly-balance">—</div>
           </div>
         </div>
       </div>
@@ -5529,49 +5529,16 @@ function renderTotals(person) {
     }
   }
 
-  // Comparativa mes anterior
-  const prevEl = document.getElementById(person + '-prev-month');
-  if (prevEl) {
-    // Get prev month key
-    const [y, m] = monthStr.split('-').map(Number);
-    const prevDate = new Date(y, m - 2, 1); // m-1 is current (1-indexed), so m-2 is prev
-    const prevStr  = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
-
-    let prevIncome = 0, prevExpense = 0;
-    state.transactions
-      .filter(t => t.date && t.date.startsWith(prevStr))
-      .forEach(t => {
-        const inMyPool   = myPool.has(t.accountId);
-        const isTransfer = t.category === 'Transferencia' && t.transferFromId && t.transferToId;
-        if (t.category === 'Inversión') return;
-        if (isTransfer) {
-          const fromInPersonal = personAccIds.has(t.transferFromId);
-          const toInPersonal   = personAccIds.has(t.transferToId);
-          const fromInOther    = otherAccIds.has(t.transferFromId);
-          const toInOther      = otherAccIds.has(t.transferToId);
-          if (fromInPersonal && toInOther && t.type === 'expense') prevExpense += t.amount;
-          if (fromInOther && toInPersonal && t.type === 'income')  prevIncome  += t.amount;
-          return;
-        }
-        if (!inMyPool) return;
-        if (t.type === 'income')  prevIncome  += t.amount;
-        if (t.type === 'expense') prevExpense += t.amount;
-      });
-
-    const currNet = income - expense;
-    const prevNet = prevIncome - prevExpense;
-
-    if (prevIncome === 0 && prevExpense === 0) {
-      prevEl.textContent = '—';
-      prevEl.style.color = 'var(--muted)';
-    } else if (prevNet === 0) {
-      prevEl.textContent = '0%';
-      prevEl.style.color = 'var(--muted)';
+  // Balance mensual (ingresos - gastos, en dinero — complementa la Tasa de ahorro en %)
+  const balEl = document.getElementById(person + '-monthly-balance');
+  if (balEl) {
+    const net = income - expense;
+    if (income === 0 && expense === 0) {
+      balEl.textContent = '—';
+      balEl.style.color = 'var(--muted)';
     } else {
-      const diff = currNet - prevNet;
-      const pct  = prevNet !== 0 ? (diff / Math.abs(prevNet)) * 100 : 0;
-      prevEl.textContent = (diff >= 0 ? '▲ +' : '▼ ') + pct.toFixed(1) + '%';
-      prevEl.style.color = diff >= 0 ? 'var(--income)' : 'var(--expense)';
+      balEl.textContent = (net >= 0 ? '+€' : '-€') + Math.abs(net).toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      balEl.style.color = net >= 0 ? 'var(--income)' : 'var(--expense)';
     }
   }
 }
