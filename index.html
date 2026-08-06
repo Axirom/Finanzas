@@ -3323,6 +3323,16 @@ body:not(.values-hidden) .account-rate-inline {
       <div class="chart-wrap" style="height:160px;"><canvas id="pd-chart"></canvas></div>
     </div>
 
+    <!-- Position value evolution chart (invested vs current value, like the portfolio chart but for this position) -->
+    <div class="chart-card" style="margin-bottom:16px;">
+      <div class="chart-card-title">Evolución del valor de la posición</div>
+      <div id="pd-value-msg" style="display:none;text-align:center;padding:24px 12px;color:var(--muted);font-size:12px;">Aún no hay datos suficientes para esta gráfica.</div>
+      <div id="pd-value-wrap" style="display:none;">
+        <div class="chart-wrap" style="height:160px;"><canvas id="pd-value-chart"></canvas></div>
+        <div id="pd-value-legend"></div>
+      </div>
+    </div>
+
     <!-- Movement history -->
     <div class="block-title" style="margin-bottom:10px;">Historial de movimientos</div>
     <div id="pd-history"></div>
@@ -6156,6 +6166,7 @@ function renderDetailTransactions(accountId) {
   const balanceAfter = new Map();
   sorted.forEach(t => {
     balanceAfter.set(t.id, running);
+    if (t.noDeduct) return; // never actually touched the balance, so don't step back through it
     if (t.type === 'income')  running -= t.amount;
     else                       running += t.amount;
   });
@@ -6191,15 +6202,16 @@ function renderDetailTransactions(accountId) {
         </div>`;
     }
 
-    const sign  = t.type === 'income' ? '+' : '-';
-    const color = t.type === 'income' ? 'var(--income)' : 'var(--expense)';
-    const icon  = t.type === 'income' ? '🟢' : '🔴';
+    const sign  = t.noDeduct ? '' : (t.type === 'income' ? '+' : '-');
+    const color = t.noDeduct ? 'var(--muted)' : (t.type === 'income' ? 'var(--income)' : 'var(--expense)');
+    const icon  = t.noDeduct ? '⚡' : (t.type === 'income' ? '🟢' : '🔴');
+    const metaCat = t.category + (t.noDeduct ? ' / Sin cargo' : '');
     return `
       <div class="detail-tx-item" onclick="openEditTx('${t.id}')" style="cursor:pointer;">
         <div class="detail-tx-icon">${icon}</div>
         <div class="detail-tx-info">
           <div class="detail-tx-desc">${t.desc}</div>
-          <div class="detail-tx-meta">${t.category} · ${dateStr}</div>
+          <div class="detail-tx-meta">${metaCat} · ${dateStr}</div>
           <div class="detail-tx-balance">Saldo: ${balStr}</div>
         </div>
         <div class="detail-tx-amount" style="color:${color}">${sign}€${fmt(t.amount)}</div>
@@ -8490,6 +8502,11 @@ function openEditTx(id) {
   const t = state.transactions.find(x => x.id === id);
   if (!t) return;
 
+  if (t.category === 'Inversión') {
+    showToast('Este movimiento pertenece a una inversión. Edítalo o elimínalo desde el detalle de la posición.', '');
+    return;
+  }
+
   editTxId = id;
   editTxPerson = t.person;
   const isTransfer = t.category === 'Transferencia';
@@ -8640,8 +8657,9 @@ function getPersonFromAccountId(accountId) {
 let currentPositionId = null;
 let addPositionMode   = 'new'; // 'new' | 'expand'
 let invType           = 'index';
-let pdChartInstance   = null;
-let invPortfolioChart = null;
+let pdChartInstance      = null;
+let pdValueChartInstance = null;
+let invPortfolioChart    = null;
 let invBarChart       = null;
 
 const INV_TYPE_LABELS = { index: 'Fondo indexado', active: 'Gestión activa', etf: 'ETF', stock: 'Acción', crypto: 'Cripto' };
@@ -9973,6 +9991,9 @@ function openPositionDetail(id) {
   // Price chart
   renderPositionChart(inv);
 
+  // Position value evolution chart (invested vs current, like the portfolio chart)
+  renderPositionValueChart(inv);
+
   // Real & net return
   renderRealNetReturn(inv);
 
@@ -10038,20 +10059,131 @@ function renderPositionChart(inv) {
         data: history.map(h => h.price),
         borderColor: c.accent,
         backgroundColor: c.accent.replace('0.9)', '0.07)'),
-        borderWidth: 2, pointRadius: 4,
+        borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
         pointBackgroundColor: c.accent,
         fill: true, tension: 0.3
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: ctx => ` €${fmt(ctx.raw)}`
+        }}
+      },
       scales: {
         x: { grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => '€' + Number(v).toFixed(2) } }
       }
     }
   });
+}
+
+// Value of a single position at a given date (units held at that date × price on/before that date)
+function getPositionValueAt(inv, dateStr) {
+  const prices = (inv.priceHistory || [])
+    .filter(h => h.date <= dateStr)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  if (!prices.length) return 0;
+  const price = prices[0].price;
+
+  let units = inv.units;
+  (inv.movements || []).filter(m => m.date > dateStr).forEach(m => {
+    if (m.type === 'sell' || m.type === 'transfer_out') units += m.units;
+    if (m.type === 'buy'  || m.type === 'transfer_in')  units -= m.units;
+  });
+  return Math.max(0, units) * price;
+}
+
+// Capital invested in a single position at a given date (same cost-basis logic as the portfolio chart)
+function getPositionCapitalAt(inv, dateStr) {
+  const buyMoves  = (inv.movements || []).filter(m => m.type === 'buy'  && m.date <= dateStr);
+  const sellMoves = (inv.movements || []).filter(m => m.type === 'sell' && m.date <= dateStr);
+  const totalBought = buyMoves.reduce((s, m) => s + (m.total || m.units * m.price), 0);
+  const totalSold   = sellMoves.reduce((s, m) => {
+    const buysBeforeSell = (inv.movements || []).filter(b => b.type === 'buy' && b.date <= m.date);
+    const avgCost = buysBeforeSell.length > 0
+      ? buysBeforeSell.reduce((t, b) => t + (b.total || b.units * b.price), 0) / buysBeforeSell.reduce((t, b) => t + b.units, 0)
+      : 0;
+    return s + m.units * avgCost;
+  }, 0);
+  return Math.max(0, totalBought - totalSold);
+}
+
+function renderPositionValueChart(inv) {
+  if (pdValueChartInstance) { pdValueChartInstance.destroy(); pdValueChartInstance = null; }
+  const ctx    = document.getElementById('pd-value-chart');
+  const msgEl  = document.getElementById('pd-value-msg');
+  const wrapEl = document.getElementById('pd-value-wrap');
+  if (!ctx) return;
+
+  const rawDates = [];
+  (inv.priceHistory || []).forEach(h => rawDates.push(h.date));
+  (inv.movements    || []).forEach(m => { if (m.type === 'buy' || m.type === 'sell') rawDates.push(m.date); });
+
+  const today = new Date().toISOString().split('T')[0];
+  const dates = [...new Set([...rawDates, today])].sort();
+
+  if (dates.length < 2) {
+    if (msgEl)  msgEl.style.display  = 'block';
+    if (wrapEl) wrapEl.style.display = 'none';
+    return;
+  }
+  if (msgEl)  msgEl.style.display  = 'none';
+  if (wrapEl) wrapEl.style.display = 'block';
+
+  const currentValues  = dates.map(d => d === today ? inv.units * (inv.currentPrice || inv.avgBuyPrice || 0) : getPositionValueAt(inv, d));
+  const investedValues = dates.map(d => getPositionCapitalAt(inv, d));
+
+  const fmtD = d => new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  const c = getChartColors();
+
+  pdValueChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dates.map(fmtD),
+      datasets: [
+        { label: 'Capital invertido', data: investedValues, borderColor: c.accent2, backgroundColor: 'transparent', borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.3, order: 2 },
+        { label: 'Valor de la posición', data: currentValues, borderColor: c.accent, backgroundColor: c.accent.replace('0.9)', '0.08)'), borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, fill: true, tension: 0.3, order: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: €${fmt(ctx.raw)}`,
+          footer: items => {
+            const invested = items.find(i => i.dataset.label === 'Capital invertido')?.raw || 0;
+            const current  = items.find(i => i.dataset.label === 'Valor de la posición')?.raw || 0;
+            const diff = current - invested;
+            return diff >= 0 ? `Ganancia: +€${fmt(diff)}` : `Pérdida: -€${fmt(Math.abs(diff))}`;
+          }
+        }}
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 }, maxTicksLimit: 7, maxRotation: 0 } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.4)', callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k' : '€'+v.toFixed(0) } }
+      }
+    }
+  });
+
+  const legEl = document.getElementById('pd-value-legend');
+  if (legEl) {
+    const c2 = getChartColors();
+    legEl.innerHTML = `
+      <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);">
+          <svg width="20" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="${c2.accent2}" stroke-width="2" stroke-dasharray="4,3"/></svg>Capital invertido
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);">
+          <div style="width:20px;height:3px;background:${c2.accent};border-radius:2px;"></div>Valor de la posición
+        </div>
+      </div>`;
+  }
 }
 
 function renderPositionHistory(inv) {
