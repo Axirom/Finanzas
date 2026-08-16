@@ -2427,6 +2427,19 @@ body:not(.values-hidden) .account-rate-inline {
           <div class="chart-wrap" id="mario-saving-wrap"><canvas id="mario-chart-saving"></canvas></div>
         </div>
         <div class="chart-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div class="chart-card-title" style="margin-bottom:0;">Distribución por cuenta</div>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <button class="month-picker-year-btn" onclick="changeAccDistYear('mario',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
+              <span id="mario-accdist-year-label" style="font-size:13px;font-weight:600;color:var(--saving);min-width:34px;text-align:center;"></span>
+              <button class="month-picker-year-btn" onclick="changeAccDistYear('mario',1)" id="mario-accdist-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
+            </div>
+          </div>
+          <div id="mario-accdist-msg" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:12px;line-height:1.8;"></div>
+          <div class="chart-wrap" id="mario-accdist-wrap"><canvas id="mario-chart-accdist"></canvas></div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;justify-content:center;" id="mario-accdist-legend"></div>
+        </div>
+        <div class="chart-card">
           <div class="chart-card-title">Gastos por categoría — <span id="mario-chart-cat-month"></span></div>
           <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
             <button class="month-picker-year-btn" onclick="changeCatYear('mario',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
@@ -2562,6 +2575,19 @@ body:not(.values-hidden) .account-rate-inline {
           </div>
           <div id="miri-saving-msg" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:12px;line-height:1.8;"></div>
           <div class="chart-wrap" id="miri-saving-wrap"><canvas id="miri-chart-saving"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div class="chart-card-title" style="margin-bottom:0;">Distribución por cuenta</div>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <button class="month-picker-year-btn" onclick="changeAccDistYear('miri',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
+              <span id="miri-accdist-year-label" style="font-size:13px;font-weight:600;color:var(--saving);min-width:34px;text-align:center;"></span>
+              <button class="month-picker-year-btn" onclick="changeAccDistYear('miri',1)" id="miri-accdist-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
+            </div>
+          </div>
+          <div id="miri-accdist-msg" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:12px;line-height:1.8;"></div>
+          <div class="chart-wrap" id="miri-accdist-wrap"><canvas id="miri-chart-accdist"></canvas></div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;justify-content:center;" id="miri-accdist-legend"></div>
         </div>
         <div class="chart-card">
           <div class="chart-card-title">Gastos por categoría — <span id="miri-chart-cat-month"></span></div>
@@ -12431,15 +12457,15 @@ function autoSnapshot() {
       // Calculate what the balance was at end of that month
       // Use current balance and subtract all transactions after end of that month
       const endOfMonth = getLastDayOfMonth(y, m);
-      const personAccIds = new Set([
-        ...state.accounts[person].map(a => a.id),
-        ...state.accounts.common.map(a => a.id)
-      ]);
+      // Only this person's own accounts — currentTotal (getPersonTotal) doesn't include
+      // common accounts, so including them here would corrupt the reconstructed balance
+      const personAccIds = new Set(state.accounts[person].map(a => a.id));
 
       // Sum all transactions after end of month that affected person's accounts
       let adjustment = 0;
       state.transactions
-        .filter(t => t.date > endOfMonth && personAccIds.has(t.accountId))
+        // noDeduct transactions never touched the real balance, so they must not be reversed here
+        .filter(t => t.date > endOfMonth && personAccIds.has(t.accountId) && !t.noDeduct)
         .forEach(t => {
           // Undo the effect: income added money (subtract), expense removed (add)
           if (t.type === 'income')  adjustment -= t.amount;
@@ -12591,6 +12617,7 @@ function changeSavingYear(person, dir) {
 function renderCharts(person) {
   renderInOutChart(person);
   renderSavingChart(person);
+  renderAccDistChart(person);
   renderCatChart(person);
 }
 
@@ -12735,6 +12762,117 @@ function renderSavingChart(person) {
       }
     }
   });
+}
+
+// Balance of a single account at end of a given month (same reconstruction logic as getPersonBalanceAtMonth)
+function getAccountBalanceAtMonth(acc, monthKey) {
+  const endDate = monthKey + '-31';
+  let bal = acc.balance;
+  state.transactions
+    .filter(t => t.date > endDate && t.accountId === acc.id && !t.noDeduct)
+    .forEach(t => {
+      if (t.type === 'income')  bal -= t.amount;
+      if (t.type === 'expense') bal += t.amount;
+    });
+  return Math.max(0, bal);
+}
+
+function changeAccDistYear(person, dir) {
+  if (!window.accDistYear) window.accDistYear = { mario: new Date().getFullYear(), miri: new Date().getFullYear() };
+  const newYear = window.accDistYear[person] + dir;
+  if (newYear > new Date().getFullYear()) return;
+  window.accDistYear[person] = newYear;
+  renderAccDistChart(person);
+}
+
+function renderAccDistChart(person) {
+  const id     = person + '-chart-accdist';
+  destroyChart(id);
+  const ctx    = document.getElementById(id);
+  const msgEl  = document.getElementById(person + '-accdist-msg');
+  const wrapEl = document.getElementById(person + '-accdist-wrap');
+  const legEl  = document.getElementById(person + '-accdist-legend');
+  if (!ctx || ctx.offsetWidth === 0) return;
+
+  if (!window.accDistYear) window.accDistYear = { mario: new Date().getFullYear(), miri: new Date().getFullYear() };
+  const year = window.accDistYear[person];
+
+  const labelEl = document.getElementById(person + '-accdist-year-label');
+  const nextBtn = document.getElementById(person + '-accdist-year-next');
+  if (labelEl) labelEl.textContent = year;
+  if (nextBtn)  nextBtn.disabled = year >= new Date().getFullYear();
+
+  const accounts = state.accounts[person] || [];
+  if (!accounts.length) {
+    if (msgEl)  { msgEl.textContent = 'Aún no tienes cuentas.'; msgEl.style.display = 'block'; }
+    if (wrapEl) wrapEl.style.display = 'none';
+    if (legEl)  legEl.innerHTML = '';
+    return;
+  }
+
+  const months = [];
+  for (let m = 0; m < 12; m++) {
+    months.push({
+      key:   `${year}-${String(m+1).padStart(2,'0')}`,
+      label: new Date(year, m, 1).toLocaleDateString('es-ES', { month: 'short' })
+    });
+  }
+  const now = new Date();
+  const currentKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  const series = accounts.map((acc, i) => ({
+    label: acc.name,
+    color: acc.color || ACCOUNT_COLORS[i % ACCOUNT_COLORS.length],
+    data: months.map(m => m.key > currentKey ? null : getAccountBalanceAtMonth(acc, m.key))
+  }));
+
+  const hasData = series.some(s => s.data.some(v => v !== null && v > 0));
+  if (!hasData) {
+    if (msgEl)  { msgEl.innerHTML = `Sin datos para ${year}.<br><span style="opacity:0.6;">Los datos se acumulan mes a mes al abrir la app.</span>`; msgEl.style.display = 'block'; }
+    if (wrapEl) wrapEl.style.display = 'none';
+    if (legEl)  legEl.innerHTML = '';
+    return;
+  }
+  if (msgEl)  msgEl.style.display  = 'none';
+  if (wrapEl) wrapEl.style.display = 'block';
+
+  chartInstances[id] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: months.map(m => m.label),
+      datasets: series.map(s => ({
+        label: s.label,
+        data: s.data,
+        backgroundColor: s.color + 'cc',
+        borderColor: s.color,
+        borderWidth: 0,
+        hoverBackgroundColor: s.color,
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: €${fmt(ctx.raw)}`,
+          footer: items => `Total: €${fmt(items.reduce((s, i) => s + (i.raw || 0), 0))}`
+        }}
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : '€'+v } }
+      }
+    }
+  });
+
+  if (legEl) {
+    legEl.innerHTML = series.map(s => `
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);">
+        <div style="width:10px;height:10px;border-radius:3px;background:${s.color};flex-shrink:0;"></div>
+        <span>${s.label}</span>
+      </div>`).join('');
+  }
 }
 
 function renderCatChart(person) {
