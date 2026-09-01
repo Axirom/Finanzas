@@ -1704,6 +1704,37 @@ body.theme-jade::before {
 .position-type-badge.crypto { background: rgba(247,217,120,0.15); color: var(--global); }
 .position-type-badge.etf    { background: rgba(196,168,247,0.15); color: #c4a8f7; }
 .position-type-badge.stock  { background: rgba(247,168,168,0.15); color: #f7a8a8; }
+.position-owner-badge {
+  font-size: 10px; font-weight: 600; padding: 3px 8px;
+  border-radius: 6px; flex-shrink: 0; margin-left: 6px; cursor: pointer;
+}
+.position-owner-badge.mario  { background: rgba(126,184,247,0.15); color: var(--mario); }
+.position-owner-badge.miri   { background: rgba(244,114,182,0.15); color: var(--miri); }
+.position-owner-badge.common { background: rgba(251,191,36,0.15);  color: var(--global); }
+.position-toggle-btn {
+  flex-shrink: 0; margin-left: 6px; width: 26px; height: 26px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; cursor: pointer;
+}
+.position-card.position-card-off { opacity: 0.4; }
+.position-card.position-card-off .position-toggle-btn { border-color: var(--expense); }
+.inv-filter-chip {
+  font-size: 11px; font-weight: 600; padding: 5px 10px;
+  border-radius: 20px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted);
+  cursor: pointer; white-space: nowrap; opacity: 0.55;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+.inv-filter-chip.on { opacity: 1; }
+.inv-filter-chip.mario.on  { border-color: var(--mario); color: var(--mario); }
+.inv-filter-chip.miri.on   { border-color: var(--miri); color: var(--miri); }
+.inv-filter-chip.common.on { border-color: var(--global); color: var(--global); }
+.inv-filter-chip.index.on,
+.inv-filter-chip.active.on,
+.inv-filter-chip.etf.on,
+.inv-filter-chip.stock.on,
+.inv-filter-chip.crypto.on { border-color: var(--invest); color: var(--invest); }
 .position-values {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2617,6 +2648,14 @@ body:not(.values-hidden) .account-rate-inline {
         </div>
       </div>
 
+      <!-- Filters: person + type -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Filtrar por persona</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;" id="inv-filter-persons"></div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Filtrar por tipo</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="inv-filter-types"></div>
+      </div>
+
       <!-- Summary cards -->
       <div class="invest-summary">
         <div class="invest-stat">
@@ -3267,6 +3306,7 @@ body:not(.values-hidden) .account-rate-inline {
         <div class="modal-title" id="pd-name" style="margin-bottom:2px;"></div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
           <div id="pd-type-badge" style="display:inline-block;"></div>
+          <span id="pd-owner-badge" class="position-owner-badge" onclick="cyclePositionOwner()" title="Toca para cambiar el propietario"></span>
           <div id="pd-isin-badge" style="display:none;font-size:11px;font-family:monospace;padding:2px 8px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--muted);cursor:pointer;" onclick="copyIsin()" title="Tap para copiar"></div>
         </div>
       </div>
@@ -3343,10 +3383,23 @@ body:not(.values-hidden) .account-rate-inline {
       </div>
     </div>
 
+    <!-- Period selector for position charts (price + value evolution) -->
+    <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:16px;">
+      <button class="inv-period-btn pd-period-btn active" data-period="1M" onclick="selectPdPeriod('1M',this)">1M</button>
+      <button class="inv-period-btn pd-period-btn" data-period="3M" onclick="selectPdPeriod('3M',this)">3M</button>
+      <button class="inv-period-btn pd-period-btn" data-period="6M" onclick="selectPdPeriod('6M',this)">6M</button>
+      <button class="inv-period-btn pd-period-btn" data-period="1A" onclick="selectPdPeriod('1A',this)">1A</button>
+      <button class="inv-period-btn pd-period-btn" data-period="3A" onclick="selectPdPeriod('3A',this)">3A</button>
+      <button class="inv-period-btn pd-period-btn" data-period="TODO" onclick="selectPdPeriod('TODO',this)">Todo</button>
+    </div>
+
     <!-- Price evolution chart -->
     <div class="chart-card" style="margin-bottom:16px;">
       <div class="chart-card-title">Evolución del precio</div>
-      <div class="chart-wrap" style="height:160px;"><canvas id="pd-chart"></canvas></div>
+      <div id="pd-price-msg" style="display:none;text-align:center;padding:24px 12px;color:var(--muted);font-size:12px;">Aún no hay datos suficientes para esta gráfica.</div>
+      <div id="pd-price-wrap" style="display:none;">
+        <div class="chart-wrap" style="height:160px;"><canvas id="pd-chart"></canvas></div>
+      </div>
     </div>
 
     <!-- Position value evolution chart (invested vs current value, like the portfolio chart but for this position) -->
@@ -8703,6 +8756,12 @@ const INV_TYPE_LABELS = { index: 'Fondo indexado', active: 'Gestión activa', et
 const INV_UNITS_LABEL = { index: 'Participaciones', active: 'Participaciones', etf: 'Participaciones', stock: 'Acciones', crypto: 'Unidades' };
 const INV_FUND_TYPES  = new Set(['index', 'active', 'etf']);
 
+// ---- Portfolio filters: who owns each asset + on/off toggles for "what if" views ----
+// Transient (session-only, not persisted): resets on reload so it never masks real data.
+let invFilterPersons = new Set(['mario', 'miri', 'common']);
+let invFilterTypes   = new Set(Object.keys(INV_TYPE_LABELS));
+let invManualOff     = new Set();
+
 function ensureInvestments() {
   if (!state.investments) state.investments = [];
 }
@@ -8715,6 +8774,51 @@ function getInvestCurrentTotal() {
 function getInvestTotalCost() {
   ensureInvestments();
   return state.investments.reduce((s, inv) => s + inv.units * inv.avgBuyPrice, 0);
+}
+
+// Filtered/toggle-aware variants, used only within the investment tab's own display
+function getActiveInvestCurrentTotal() {
+  return getActiveInvestments().reduce((s, inv) => s + inv.units * inv.currentPrice, 0);
+}
+
+function getActiveInvestTotalCost() {
+  return getActiveInvestments().reduce((s, inv) => s + inv.units * inv.avgBuyPrice, 0);
+}
+
+// Owner ('mario' | 'miri' | 'common') of the account a purchase came from
+function getOwnerFromAccountId(accountId) {
+  const meta = getAccountMeta(accountId);
+  return meta ? meta.owner : 'common';
+}
+
+// Owner tag for a position: explicit inv.owner if set, otherwise inferred from
+// the account of its first purchase (covers positions created before this feature existed)
+function getInvestmentOwner(inv) {
+  if (inv.owner) return inv.owner;
+  const firstBuy = (inv.movements || []).find(m => m.type === 'buy' && m.sourceId);
+  return firstBuy ? getOwnerFromAccountId(firstBuy.sourceId) : 'common';
+}
+
+function ownerLabel(owner) {
+  if (owner === 'mario') return getName('mario');
+  if (owner === 'miri')  return getName('miri');
+  return 'Común';
+}
+
+// Does this position match the active person/type filter chips?
+function isPositionFilterMatch(inv) {
+  return invFilterPersons.has(getInvestmentOwner(inv)) && invFilterTypes.has(inv.type);
+}
+
+// Filter match AND not individually switched off
+function isPositionActive(inv) {
+  return isPositionFilterMatch(inv) && !invManualOff.has(inv.id);
+}
+
+// Positions currently contributing to totals/charts (filters + individual on/off)
+function getActiveInvestments() {
+  ensureInvestments();
+  return state.investments.filter(isPositionActive);
 }
 
 function getPositionById(id) {
@@ -8867,6 +8971,7 @@ function savePosition() {
     state.investments.push({
       id: Date.now().toString(),
       name, type: invType,
+      owner: getOwnerFromAccountId(sourceId),
       isin: document.getElementById('inv-isin').value.trim() || undefined,
       units, avgBuyPrice: price, currentPrice: price,
       distribution: INV_FUND_TYPES.has(invType) ? invDistType : undefined,
@@ -9760,6 +9865,7 @@ function saveTransfer() {
       id: Date.now().toString(),
       name: newName,
       type: inv.type,
+      owner: getInvestmentOwner(inv),
       distribution: inv.distribution,
       ter: inv.ter,
       units: 0,
@@ -9920,14 +10026,18 @@ function closeInvMenu()   { document.getElementById('invMenuDropdown').classList
 // ---- RENDER POSITIONS ----
 function renderInvestments() {
   ensureInvestments();
+  renderInvFilters();
   const el = document.getElementById('inv-positions-list');
   if (!el) return;
 
-  const invs = state.investments;
+  // Positions matching the person/type filter chips (individually toggled-off ones stay visible here, just dimmed)
+  const invs = state.investments.filter(isPositionFilterMatch);
+  // Of those, the ones actually counted in the totals/charts
+  const activeInvs = invs.filter(inv => !invManualOff.has(inv.id));
 
-  // Summary stats
-  const totalCost    = getInvestTotalCost();
-  const totalCurrent = getInvestCurrentTotal();
+  // Summary stats (reflect only what's currently switched on)
+  const totalCost    = activeInvs.reduce((s, inv) => s + inv.units * inv.avgBuyPrice, 0);
+  const totalCurrent = activeInvs.reduce((s, inv) => s + inv.units * inv.currentPrice, 0);
   const returnEur    = totalCurrent - totalCost;
   const returnPct    = totalCost > 0 ? (returnEur / totalCost) * 100 : 0;
   const returnColor  = returnEur >= 0 ? 'var(--income)' : 'var(--expense)';
@@ -9936,10 +10046,14 @@ function renderInvestments() {
   countUpShort(document.getElementById('inv-total-current'),  totalCurrent);
   document.getElementById('inv-total-return').textContent    = (returnEur >= 0 ? '+' : '') + returnPct.toFixed(2) + '%';
   document.getElementById('inv-total-return').style.color    = returnColor;
-  document.getElementById('inv-total-positions').textContent = invs.length;
+  document.getElementById('inv-total-positions').textContent = activeInvs.length;
 
-  if (invs.length === 0) {
+  if (state.investments.length === 0) {
     el.innerHTML = `<div class="deposit-no-items">Sin posiciones registradas.<br>Pulsa "+ Añadir" para crear la primera.</div>`;
+    return;
+  }
+  if (invs.length === 0) {
+    el.innerHTML = `<div class="deposit-no-items">Ninguna posición coincide con el filtro seleccionado.</div>`;
     return;
   }
 
@@ -9953,15 +10067,21 @@ function renderInvestments() {
     const retPct  = cost > 0 ? (retEur / cost) * 100 : 0;
     const isPos   = retEur >= 0;
     const retClass = retEur === 0 ? 'neutral' : isPos ? 'positive' : 'negative';
+    const owner   = getInvestmentOwner(inv);
+    const isOff   = invManualOff.has(inv.id);
 
     return `
-      <div class="position-card" onclick="openPositionDetail('${inv.id}')">
+      <div class="position-card ${isOff ? 'position-card-off' : ''}" onclick="openPositionDetail('${inv.id}')">
         <div class="position-header">
           <div>
             <div class="position-name">${inv.name}</div>
             <div style="font-size:11px;color:var(--muted);">${inv.units.toLocaleString('es-ES', {maximumFractionDigits:6})} ${INV_UNITS_LABEL[inv.type].toLowerCase()}</div>
           </div>
-          <span class="position-type-badge ${inv.type}">${INV_TYPE_LABELS[inv.type]}</span>
+          <div style="display:flex;align-items:center;">
+            <span class="position-type-badge ${inv.type}">${INV_TYPE_LABELS[inv.type]}</span>
+            <span class="position-owner-badge ${owner}">${ownerLabel(owner)}</span>
+            <button class="position-toggle-btn" onclick="togglePositionActive(event,'${inv.id}')" title="${isOff ? 'Encender posición' : 'Apagar posición'}">${isOff ? '🚫' : '👁'}</button>
+          </div>
         </div>
         <div class="position-values">
           <div>
@@ -9990,7 +10110,77 @@ function renderInvestments() {
   renderContributions();
 }
 
+// ---- Portfolio filters (person + type chips, individual on/off) ----
+function renderInvFilters() {
+  const personsEl = document.getElementById('inv-filter-persons');
+  const typesEl   = document.getElementById('inv-filter-types');
+  if (!personsEl || !typesEl) return;
+
+  const persons = [
+    { key: 'mario',  label: getName('mario') },
+    { key: 'miri',   label: getName('miri') },
+    { key: 'common', label: 'Común' }
+  ];
+  personsEl.innerHTML = persons.map(p => `
+    <button class="inv-filter-chip ${p.key} ${invFilterPersons.has(p.key) ? 'on' : ''}" onclick="toggleInvFilterPerson('${p.key}')">${p.label}</button>
+  `).join('');
+
+  typesEl.innerHTML = Object.keys(INV_TYPE_LABELS).map(t => `
+    <button class="inv-filter-chip ${t} ${invFilterTypes.has(t) ? 'on' : ''}" onclick="toggleInvFilterType('${t}')">${INV_TYPE_LABELS[t]}</button>
+  `).join('');
+}
+
+function toggleInvFilterPerson(key) {
+  if (invFilterPersons.has(key)) {
+    if (invFilterPersons.size === 1) return; // keep at least one active, avoid a confusing empty view
+    invFilterPersons.delete(key);
+  } else {
+    invFilterPersons.add(key);
+  }
+  renderInvestments();
+  renderInvestCharts();
+}
+
+function toggleInvFilterType(key) {
+  if (invFilterTypes.has(key)) {
+    if (invFilterTypes.size === 1) return;
+    invFilterTypes.delete(key);
+  } else {
+    invFilterTypes.add(key);
+  }
+  renderInvestments();
+  renderInvestCharts();
+}
+
+function togglePositionActive(ev, id) {
+  ev.stopPropagation();
+  if (invManualOff.has(id)) invManualOff.delete(id); else invManualOff.add(id);
+  renderInvestments();
+  renderInvestCharts();
+}
+
 // ---- POSITION DETAIL ----
+function updatePdOwnerBadge(inv) {
+  const el = document.getElementById('pd-owner-badge');
+  if (!el) return;
+  const owner = getInvestmentOwner(inv);
+  el.textContent  = ownerLabel(owner);
+  el.className    = 'position-owner-badge ' + owner;
+}
+
+function cyclePositionOwner() {
+  const inv = getPositionById(currentPositionId);
+  if (!inv) return;
+  const order = ['mario', 'miri', 'common'];
+  const next  = order[(order.indexOf(getInvestmentOwner(inv)) + 1) % order.length];
+  inv.owner = next;
+  saveState();
+  updatePdOwnerBadge(inv);
+  renderInvestments();
+  renderInvestCharts();
+  showToast('Propietario: ' + ownerLabel(next), 'success');
+}
+
 function openPositionDetail(id) {
   currentPositionId = id;
   const inv = getPositionById(id);
@@ -10005,6 +10195,7 @@ function openPositionDetail(id) {
 
   document.getElementById('pd-name').textContent          = inv.name;
   document.getElementById('pd-type-badge').innerHTML      = `<span class="position-type-badge ${inv.type}">${INV_TYPE_LABELS[inv.type]}</span>`;
+  updatePdOwnerBadge(inv);
   const isinBadge = document.getElementById('pd-isin-badge');
   if (inv.isin) {
     isinBadge.style.display  = 'inline-block';
@@ -10024,6 +10215,10 @@ function openPositionDetail(id) {
   document.getElementById('pd-return-pct').style.color = isPos ? 'var(--income)' : 'var(--expense)';
   document.getElementById('pd-return-eur').textContent  = (isPos ? '+' : '') + '€' + fmt(Math.abs(retEur));
   document.getElementById('pd-return-eur').style.color  = isPos ? 'var(--income)' : 'var(--expense)';
+
+  // Reset the period selector to 1M each time a position is opened
+  currentPdPeriod = '1M';
+  document.querySelectorAll('.pd-period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === '1M'));
 
   // Price chart
   renderPositionChart(inv);
@@ -10077,28 +10272,73 @@ function openPositionDetail(id) {
   document.getElementById('modalPositionDetail').classList.add('open');
 }
 
+// ===================== POSITION DETAIL PERIOD SELECTOR =====================
+let currentPdPeriod = '1M';
+
+function selectPdPeriod(period, btn) {
+  currentPdPeriod = period;
+  document.querySelectorAll('.pd-period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const inv = getPositionById(currentPositionId);
+  if (!inv) return;
+  renderPositionChart(inv);
+  renderPositionValueChart(inv);
+}
+
+// Latest known price for a position on/before a given date (null if no price known yet)
+function getPositionPriceAt(inv, dateStr, history) {
+  let latest = null;
+  for (const h of history) {
+    if (h.date > dateStr) break;
+    latest = h.price;
+  }
+  return latest;
+}
+
 function renderPositionChart(inv) {
   if (pdChartInstance) { pdChartInstance.destroy(); pdChartInstance = null; }
-  const ctx = document.getElementById('pd-chart');
+  const ctx    = document.getElementById('pd-chart');
+  const msgEl  = document.getElementById('pd-price-msg');
+  const wrapEl = document.getElementById('pd-price-wrap');
   if (!ctx) return;
 
   const history = [...(inv.priceHistory || [])].sort((a, b) => a.date.localeCompare(b.date));
-  if (history.length < 2) return;
+  if (history.length < 2) {
+    if (msgEl)  msgEl.style.display  = 'block';
+    if (wrapEl) wrapEl.style.display = 'none';
+    return;
+  }
+  if (msgEl)  msgEl.style.display  = 'none';
+  if (wrapEl) wrapEl.style.display = 'block';
 
-  const fmtD = d => new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  const today    = new Date().toISOString().split('T')[0];
+  const earliest = history[0].date;
+  const period   = currentPdPeriod;
+  const rawStart = periodStartDate(period) || earliest;
+  const startDate = rawStart > earliest ? rawStart : earliest;
+  const step      = stepForPeriod(period);
+  const dates     = buildDateRange(startDate, today, step);
+
+  const prices = dates.map(d => d === today && inv.currentPrice ? inv.currentPrice : getPositionPriceAt(inv, d, history));
+
+  function fmtLabel(d) {
+    const dt = new Date(d + 'T12:00:00');
+    if (step === 'month') return dt.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+    return dt.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  }
+
   const c = getChartColors();
 
   pdChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: history.map(h => fmtD(h.date)),
+      labels: dates.map(fmtLabel),
       datasets: [{
-        data: history.map(h => h.price),
+        data: prices,
         borderColor: c.accent,
         backgroundColor: c.accent.replace('0.9)', '0.07)'),
-        borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
-        pointBackgroundColor: c.accent,
-        fill: true, tension: 0.3
+        borderWidth: 2, pointRadius: 0, pointHoverRadius: 4,
+        fill: true, tension: 0.3, spanGaps: true
       }]
     },
     options: {
@@ -10111,8 +10351,8 @@ function renderPositionChart(inv) {
         }}
       },
       scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => '€' + Number(v).toFixed(2) } }
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 }, maxTicksLimit: step === 'day' ? 10 : step === 'week' ? 8 : 7, maxRotation: 0 } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.4)', callback: v => '€' + Number(v).toFixed(2) } }
       }
     }
   });
@@ -10161,9 +10401,7 @@ function renderPositionValueChart(inv) {
   (inv.movements    || []).forEach(m => { if (m.type === 'buy' || m.type === 'sell') rawDates.push(m.date); });
 
   const today = new Date().toISOString().split('T')[0];
-  const dates = [...new Set([...rawDates, today])].sort();
-
-  if (dates.length < 2) {
+  if (new Set([...rawDates, today]).size < 2) {
     if (msgEl)  msgEl.style.display  = 'block';
     if (wrapEl) wrapEl.style.display = 'none';
     return;
@@ -10171,16 +10409,27 @@ function renderPositionValueChart(inv) {
   if (msgEl)  msgEl.style.display  = 'none';
   if (wrapEl) wrapEl.style.display = 'block';
 
+  const earliest  = [...rawDates].sort()[0];
+  const period    = currentPdPeriod;
+  const rawStart  = periodStartDate(period) || earliest;
+  const startDate = rawStart > earliest ? rawStart : earliest;
+  const step      = stepForPeriod(period);
+  const dates     = buildDateRange(startDate, today, step);
+
   const currentValues  = dates.map(d => d === today ? inv.units * (inv.currentPrice || inv.avgBuyPrice || 0) : getPositionValueAt(inv, d));
   const investedValues = dates.map(d => getPositionCapitalAt(inv, d));
 
-  const fmtD = d => new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  function fmtLabel(d) {
+    const dt = new Date(d + 'T12:00:00');
+    if (step === 'month') return dt.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+    return dt.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  }
   const c = getChartColors();
 
   pdValueChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: dates.map(fmtD),
+      labels: dates.map(fmtLabel),
       datasets: [
         { label: 'Capital invertido', data: investedValues, borderColor: c.accent2, backgroundColor: 'transparent', borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, pointHoverRadius: 4, fill: false, tension: 0.3, order: 2 },
         { label: 'Valor de la posición', data: currentValues, borderColor: c.accent, backgroundColor: c.accent.replace('0.9)', '0.08)'), borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, fill: true, tension: 0.3, order: 1 }
@@ -10202,7 +10451,7 @@ function renderPositionValueChart(inv) {
         }}
       },
       scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 }, maxTicksLimit: 7, maxRotation: 0 } },
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 }, maxTicksLimit: step === 'day' ? 10 : step === 'week' ? 8 : 7, maxRotation: 0 } },
         y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.4)', callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k' : '€'+v.toFixed(0) } }
       }
     }
@@ -10288,10 +10537,33 @@ function periodStartDate(period) {
   return d.toISOString().split('T')[0];
 }
 
+// Shared helper: build an evenly-spaced date grid between start and end (inclusive),
+// stepping by day/week/month. Used by the portfolio chart and the position detail charts
+// so they all sample the timeline the same way for a given period.
+function buildDateRange(start, end, step) {
+  const dates = [];
+  const cur   = new Date(start + 'T12:00:00');
+  const last  = new Date(end   + 'T12:00:00');
+  while (cur <= last) {
+    dates.push(cur.toISOString().split('T')[0]);
+    if (step === 'day')        cur.setDate(cur.getDate() + 1);
+    else if (step === 'week')  cur.setDate(cur.getDate() + 7);
+    else if (step === 'month') cur.setMonth(cur.getMonth() + 1);
+  }
+  if (dates[dates.length - 1] !== end) dates.push(end);
+  return dates;
+}
+
+function stepForPeriod(period) {
+  if (period === '1M') return 'day';
+  if (period === '3M' || period === '6M') return 'week';
+  return 'month';
+}
+
 function getPortfolioValueAt(dateStr) {
-  // Sum value of each position at a given date using priceHistory
+  // Sum value of each currently active (filter+toggle) position at a given date using priceHistory
   ensureInvestments();
-  return state.investments.reduce((total, inv) => {
+  return getActiveInvestments().reduce((total, inv) => {
     // Find price on or before dateStr
     const prices = (inv.priceHistory || [])
       .filter(h => h.date <= dateStr)
@@ -10313,10 +10585,10 @@ function getPortfolioValueAt(dateStr) {
 // TWR — Time-Weighted Return
 // ══════════════════════════════════════════════════════════
 function calcTWR(startDate) {
-  // Collect all cash-flow events across the whole portfolio within the period
+  // Collect all cash-flow events across the currently active portfolio within the period
   // Each event = { date, type:'buy'|'sell', amount }
   const events = [];
-  state.investments.forEach(inv => {
+  getActiveInvestments().forEach(inv => {
     (inv.movements || []).forEach(m => {
       if (m.type !== 'buy' && m.type !== 'sell') return;
       const d = m.date;
@@ -10367,13 +10639,13 @@ function renderInvPeriodSummary() {
   if (!summaryEl) return;
 
   const startDate  = periodStartDate(currentInvPeriod);
-  const currentVal = getInvestCurrentTotal();
-  let startVal = startDate ? getPortfolioValueAt(startDate) : getInvestTotalCost();
+  const currentVal = getActiveInvestCurrentTotal();
+  let startVal = startDate ? getPortfolioValueAt(startDate) : getActiveInvestTotalCost();
 
   // MWR: simple money-weighted (our previous calculation, kept for context)
   let netFlows = 0;
   if (startDate) {
-    state.investments.forEach(inv => {
+    getActiveInvestments().forEach(inv => {
       (inv.movements || []).forEach(m => {
         if (m.date <= startDate) return;
         if (m.type === 'buy')  netFlows += (m.total || m.units * m.price);
@@ -10416,7 +10688,7 @@ function renderInvPeriodSummary() {
 
     // Show sub-period count as context
     const n = result.subPeriods.length;
-    const hasFlows = state.investments.some(inv =>
+    const hasFlows = getActiveInvestments().some(inv =>
       (inv.movements || []).some(m => (m.type === 'buy' || m.type === 'sell') && (!startDate || m.date > startDate))
     );
     twrSub.textContent = hasFlows
@@ -10644,8 +10916,9 @@ function renderPortfolioChart() {
   if (!ctx) return;
 
   ensureInvestments();
+  const activeInvs   = getActiveInvestments();
   const allRawDates = [];
-  state.investments.forEach(inv => {
+  activeInvs.forEach(inv => {
     (inv.priceHistory || []).forEach(h => allRawDates.push(h.date));
     (inv.movements    || []).forEach(m => { if (m.type === 'buy' || m.type === 'sell') allRawDates.push(m.date); });
   });
@@ -10661,31 +10934,12 @@ function renderPortfolioChart() {
   const earliest = [...allRawDates].sort()[0];
   const startDate = periodStartDate(currentInvPeriod) || earliest;
   const period    = currentInvPeriod;
-
-  function buildDates(start, end, step) {
-    const dates = [];
-    const cur   = new Date(start + 'T12:00:00');
-    const last  = new Date(end   + 'T12:00:00');
-    while (cur <= last) {
-      dates.push(cur.toISOString().split('T')[0]);
-      if (step === 'day')        cur.setDate(cur.getDate() + 1);
-      else if (step === 'week')  cur.setDate(cur.getDate() + 7);
-      else if (step === 'month') cur.setMonth(cur.getMonth() + 1);
-    }
-    if (dates[dates.length - 1] !== end) dates.push(end);
-    return dates;
-  }
-
-  let step;
-  if (period === '1M')                          step = 'day';
-  else if (period === '3M' || period === '6M')  step = 'week';
-  else                                          step = 'month';
-
-  const dates = buildDates(startDate, today, step);
+  const step      = stepForPeriod(period);
+  const dates     = buildDateRange(startDate, today, step);
 
   function capitalAt(dateStr) {
     let total = 0;
-    state.investments.forEach(inv => {
+    activeInvs.forEach(inv => {
       const buyMoves  = (inv.movements || []).filter(m => m.type === 'buy'  && m.date <= dateStr);
       const sellMoves = (inv.movements || []).filter(m => m.type === 'sell' && m.date <= dateStr);
       const totalBought = buyMoves.reduce((s, m) => s + (m.total || m.units * m.price), 0);
@@ -10702,7 +10956,7 @@ function renderPortfolioChart() {
   }
 
   const currentValues  = dates.map(d => {
-    if (d === today) return state.investments.reduce((s, inv) => s + inv.units * (inv.currentPrice || inv.avgBuyPrice || 0), 0);
+    if (d === today) return activeInvs.reduce((s, inv) => s + inv.units * (inv.currentPrice || inv.avgBuyPrice || 0), 0);
     return getPortfolioValueAt(d);
   });
   const investedValues = dates.map(d => capitalAt(d));
@@ -10810,7 +11064,7 @@ function renderInvestDonut() {
   if (!ctx) return;
 
   ensureInvestments();
-  const invs = state.investments.filter(i => i.units > 0);
+  const invs = getActiveInvestments().filter(i => i.units > 0);
 
   if (invs.length === 0) {
     if (msgEl)  { msgEl.textContent = 'Sin posiciones con valor'; msgEl.style.display = 'block'; }
@@ -10876,7 +11130,9 @@ function renderInvestBarChart() {
   const wrapEl = document.getElementById('inv-bar-wrap');
   if (!ctx) return;
 
-  if (state.investments.length === 0) {
+  ensureInvestments();
+  const activeInvs = getActiveInvestments();
+  if (activeInvs.length === 0) {
     if (msgEl)  { msgEl.textContent = 'Sin posiciones registradas'; msgEl.style.display = 'block'; }
     if (wrapEl) wrapEl.style.display = 'none';
     return;
@@ -10884,7 +11140,7 @@ function renderInvestBarChart() {
   if (msgEl)  msgEl.style.display  = 'none';
   if (wrapEl) wrapEl.style.display = 'block';
 
-  const sorted = [...state.investments].sort((a, b) => (b.units * b.currentPrice) - (a.units * a.currentPrice));
+  const sorted = [...activeInvs].sort((a, b) => (b.units * b.currentPrice) - (a.units * a.currentPrice));
   const c = getChartColors();
 
   invBarChart = new Chart(ctx, {
