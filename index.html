@@ -1711,14 +1711,18 @@ body.theme-jade::before {
 .position-owner-badge.mario  { background: rgba(126,184,247,0.15); color: var(--mario); }
 .position-owner-badge.miri   { background: rgba(244,114,182,0.15); color: var(--miri); }
 .position-owner-badge.common { background: rgba(251,191,36,0.15);  color: var(--global); }
-.position-toggle-btn {
-  flex-shrink: 0; margin-left: 6px; width: 26px; height: 26px; border-radius: 8px;
-  border: 1px solid var(--border); background: var(--surface2);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; cursor: pointer;
+.position-toggle-switch {
+  flex-shrink: 0; margin-left: 6px; width: 38px; height: 22px; border-radius: 20px;
+  background: var(--surface2); border: 1px solid var(--border); position: relative;
+  cursor: pointer; transition: background 0.2s, border-color 0.2s;
 }
+.position-toggle-switch.on { background: var(--income); border-color: var(--income); }
+.position-toggle-knob {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.position-toggle-switch.on .position-toggle-knob { transform: translateX(16px); }
 .position-card.position-card-off { opacity: 0.4; }
-.position-card.position-card-off .position-toggle-btn { border-color: var(--expense); }
 .inv-filter-chip {
   font-size: 11px; font-weight: 600; padding: 5px 10px;
   border-radius: 20px; border: 1px solid var(--border);
@@ -10073,14 +10077,16 @@ function renderInvestments() {
     return `
       <div class="position-card ${isOff ? 'position-card-off' : ''}" onclick="openPositionDetail('${inv.id}')">
         <div class="position-header">
-          <div>
+          <div style="flex:1;min-width:0;">
             <div class="position-name">${inv.name}</div>
             <div style="font-size:11px;color:var(--muted);">${inv.units.toLocaleString('es-ES', {maximumFractionDigits:6})} ${INV_UNITS_LABEL[inv.type].toLowerCase()}</div>
           </div>
-          <div style="display:flex;align-items:center;">
-            <span class="position-type-badge ${inv.type}">${INV_TYPE_LABELS[inv.type]}</span>
-            <span class="position-owner-badge ${owner}">${ownerLabel(owner)}</span>
-            <button class="position-toggle-btn" onclick="togglePositionActive(event,'${inv.id}')" title="${isOff ? 'Encender posición' : 'Apagar posición'}">${isOff ? '🚫' : '👁'}</button>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;margin-left:8px;">
+            <div style="display:flex;align-items:center;">
+              <span class="position-type-badge ${inv.type}" style="margin-left:0;">${INV_TYPE_LABELS[inv.type]}</span>
+              <div class="position-toggle-switch ${isOff ? '' : 'on'}" onclick="togglePositionActive(event,'${inv.id}')" title="${isOff ? 'Encender posición' : 'Apagar posición'}"><div class="position-toggle-knob"></div></div>
+            </div>
+            <span class="position-owner-badge ${owner}" style="margin-left:0;">${ownerLabel(owner)}</span>
           </div>
         </div>
         <div class="position-values">
@@ -10125,7 +10131,9 @@ function renderInvFilters() {
     <button class="inv-filter-chip ${p.key} ${invFilterPersons.has(p.key) ? 'on' : ''}" onclick="toggleInvFilterPerson('${p.key}')">${p.label}</button>
   `).join('');
 
-  typesEl.innerHTML = Object.keys(INV_TYPE_LABELS).map(t => `
+  // Only offer types the portfolio actually holds — no point filtering by an asset class with nothing in it
+  const typesInUse = Object.keys(INV_TYPE_LABELS).filter(t => state.investments.some(inv => inv.type === t));
+  typesEl.innerHTML = typesInUse.map(t => `
     <button class="inv-filter-chip ${t} ${invFilterTypes.has(t) ? 'on' : ''}" onclick="toggleInvFilterType('${t}')">${INV_TYPE_LABELS[t]}</button>
   `).join('');
 }
