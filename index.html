@@ -2474,6 +2474,7 @@ body:not(.values-hidden) .account-rate-inline {
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <div class="chart-card-title" style="margin-bottom:0;">Evolución del ahorro</div>
             <div style="display:flex;align-items:center;gap:5px;">
+              <button class="month-picker-year-btn" onclick="recalcSavingHistory('mario')" title="Recalcular historial" style="width:28px;height:28px;font-size:13px;">🔄</button>
               <button class="month-picker-year-btn" onclick="changeSavingYear('mario',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
               <span id="mario-saving-year-label" style="font-size:13px;font-weight:600;color:var(--saving);min-width:34px;text-align:center;"></span>
               <button class="month-picker-year-btn" onclick="changeSavingYear('mario',1)" id="mario-saving-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
@@ -2640,6 +2641,7 @@ body:not(.values-hidden) .account-rate-inline {
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <div class="chart-card-title" style="margin-bottom:0;">Evolución del ahorro</div>
             <div style="display:flex;align-items:center;gap:5px;">
+              <button class="month-picker-year-btn" onclick="recalcSavingHistory('miri')" title="Recalcular historial" style="width:28px;height:28px;font-size:13px;">🔄</button>
               <button class="month-picker-year-btn" onclick="changeSavingYear('miri',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
               <span id="miri-saving-year-label" style="font-size:13px;font-weight:600;color:var(--saving);min-width:34px;text-align:center;"></span>
               <button class="month-picker-year-btn" onclick="changeSavingYear('miri',1)" id="miri-saving-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
@@ -13792,6 +13794,20 @@ function autoSnapshot() {
   saveState();
 }
 
+function recalcSavingHistory(person) {
+  showConfirm(
+    'Recalcular historial de ahorro',
+    'Se borrará el historial mensual guardado de este perfil y se reconstruirá desde cero con los datos actuales. Útil si algún mes no aparece o se ve mal.',
+    () => {
+      ensureSnapshots();
+      state.snapshots[person] = [];
+      autoSnapshot();
+      renderSavingChart(person);
+      showToast('Historial de ahorro recalculado ✓', 'success');
+    }
+  );
+}
+
 // ===================== CHARTS =====================
 const chartInstances = {};
 const catFilterMonth = { mario: null, miri: null };
@@ -13987,7 +14003,11 @@ function renderSavingChart(person) {
   if (msgEl)  msgEl.style.display  = 'none';
   if (ctx.offsetWidth === 0) return;
 
-  ensureSnapshots();
+  // Backfill any missing past months' snapshots right before rendering — not just
+  // on app unlock. A PWA can stay open for days/weeks without a fresh unlock, so
+  // relying only on unlockApp() left recent months permanently blank until the
+  // next full lock/unlock cycle.
+  autoSnapshot();
   const allSnaps = state.snapshots[person] || [];
 
   // Year selector state
