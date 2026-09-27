@@ -1172,8 +1172,13 @@ body.theme-jade::before {
   z-index: 500;
   opacity: 0;
   transition: all 0.3s;
-  white-space: nowrap;
-  max-width: 300px;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: min(340px, calc(100vw - 32px));
+  width: max-content;
+  text-align: center;
+  line-height: 1.4;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast.success { border-color: rgba(16,217,160,0.5); color: var(--income); }
@@ -2399,7 +2404,7 @@ body:not(.values-hidden) .account-rate-inline {
         <button class="sub-tab active" onclick="switchSubTab('mario', 'movimientos', this)">Movimientos</button>
         <button class="sub-tab" onclick="switchSubTab('mario', 'ahorro', this)">Ahorro</button>
         <button class="sub-tab" onclick="switchSubTab('mario', 'deudas', this)">Deudas</button>
-        <button class="sub-tab" onclick="switchSubTab('mario', 'suscripciones', this)">Suscripciones</button>
+        <button class="sub-tab" onclick="switchSubTab('mario', 'suscripciones', this)">Recurrentes</button>
         <button class="sub-tab" onclick="switchSubTab('mario', 'graficas', this)">Gráficas</button>
       </div>
 
@@ -2425,6 +2430,12 @@ body:not(.values-hidden) .account-rate-inline {
           <button class="btn-add-small" onclick="openAddDeposit('mario')">+ Añadir</button>
         </div>
         <div id="mario-deposits-list"></div>
+
+        <div class="accounts-header" style="margin-top:22px;">
+          <div class="block-title">Cuentas remuneradas</div>
+          <button class="btn-add-small" onclick="openAddRemuneration('mario')">+ Añadir</button>
+        </div>
+        <div id="mario-remun-list"></div>
       </div>
       <div id="mario-sub-deudas" style="display:none">
         <div class="accounts-header">
@@ -2436,13 +2447,23 @@ body:not(.values-hidden) .account-rate-inline {
       <div id="mario-sub-suscripciones" style="display:none">
         <div class="accounts-header">
           <div class="block-title">Suscripciones</div>
-          <button class="btn-add-small" onclick="openAddSubscription('mario')">+ Añadir</button>
+          <button class="btn-add-small" onclick="openAddSubscription('mario','subscription')">+ Añadir</button>
         </div>
         <div id="mario-sub-total-bar" class="sub-total-bar" style="display:none">
           <span style="color:var(--muted);">Gasto mensual estimado</span>
           <span id="mario-sub-monthly" style="font-weight:700;color:var(--expense);"></span>
         </div>
         <div id="mario-subs-list"></div>
+
+        <div class="accounts-header" style="margin-top:22px;">
+          <div class="block-title">Gastos corrientes</div>
+          <button class="btn-add-small" onclick="openAddSubscription('mario','expense')">+ Añadir</button>
+        </div>
+        <div id="mario-expenses-total-bar" class="sub-total-bar" style="display:none">
+          <span style="color:var(--muted);">Gasto mensual estimado</span>
+          <span id="mario-expenses-monthly" style="font-weight:700;color:var(--expense);"></span>
+        </div>
+        <div id="mario-expenses-list"></div>
       </div>
       <div id="mario-sub-graficas" style="display:none">
         <div class="chart-card">
@@ -2549,7 +2570,7 @@ body:not(.values-hidden) .account-rate-inline {
         <button class="sub-tab active" onclick="switchSubTab('miri', 'movimientos', this)">Movimientos</button>
         <button class="sub-tab" onclick="switchSubTab('miri', 'ahorro', this)">Ahorro</button>
         <button class="sub-tab" onclick="switchSubTab('miri', 'deudas', this)">Deudas</button>
-        <button class="sub-tab" onclick="switchSubTab('miri', 'suscripciones', this)">Suscripciones</button>
+        <button class="sub-tab" onclick="switchSubTab('miri', 'suscripciones', this)">Recurrentes</button>
         <button class="sub-tab" onclick="switchSubTab('miri', 'graficas', this)">Gráficas</button>
       </div>
 
@@ -2575,6 +2596,12 @@ body:not(.values-hidden) .account-rate-inline {
           <button class="btn-add-small" onclick="openAddDeposit('miri')">+ Añadir</button>
         </div>
         <div id="miri-deposits-list"></div>
+
+        <div class="accounts-header" style="margin-top:22px;">
+          <div class="block-title">Cuentas remuneradas</div>
+          <button class="btn-add-small" onclick="openAddRemuneration('miri')">+ Añadir</button>
+        </div>
+        <div id="miri-remun-list"></div>
       </div>
       <div id="miri-sub-deudas" style="display:none">
         <div class="accounts-header">
@@ -2586,13 +2613,23 @@ body:not(.values-hidden) .account-rate-inline {
       <div id="miri-sub-suscripciones" style="display:none">
         <div class="accounts-header">
           <div class="block-title">Suscripciones</div>
-          <button class="btn-add-small" onclick="openAddSubscription('miri')">+ Añadir</button>
+          <button class="btn-add-small" onclick="openAddSubscription('miri','subscription')">+ Añadir</button>
         </div>
         <div id="miri-sub-total-bar" class="sub-total-bar" style="display:none">
           <span style="color:var(--muted);">Gasto mensual estimado</span>
           <span id="miri-sub-monthly" style="font-weight:700;color:var(--expense);"></span>
         </div>
         <div id="miri-subs-list"></div>
+
+        <div class="accounts-header" style="margin-top:22px;">
+          <div class="block-title">Gastos corrientes</div>
+          <button class="btn-add-small" onclick="openAddSubscription('miri','expense')">+ Añadir</button>
+        </div>
+        <div id="miri-expenses-total-bar" class="sub-total-bar" style="display:none">
+          <span style="color:var(--muted);">Gasto mensual estimado</span>
+          <span id="miri-expenses-monthly" style="font-weight:700;color:var(--expense);"></span>
+        </div>
+        <div id="miri-expenses-list"></div>
       </div>
       <div id="miri-sub-graficas" style="display:none">
         <div class="chart-card">
@@ -2678,6 +2715,12 @@ body:not(.values-hidden) .account-rate-inline {
           <div class="invest-stat-label">Posiciones</div>
           <div class="invest-stat-value" id="inv-total-positions">0</div>
         </div>
+      </div>
+
+      <!-- Realized P&L (accumulated from position sales) -->
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;">
+        <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Ganancia/pérdida acumulada</span>
+        <span id="inv-realized-pl" style="font-size:16px;font-weight:700;">€0,00</span>
       </div>
 
       <!-- Period return bar -->
@@ -3016,6 +3059,139 @@ body:not(.values-hidden) .account-rate-inline {
   </div>
 </div>
 
+<!-- ==================== MODAL: ADD/EDIT REMUNERATED ACCOUNT ==================== -->
+<div class="modal-overlay" id="modalAddRemuneration" onclick="closeModalOutside(event, 'modalAddRemuneration')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="addRemunTitle">Nueva cuenta remunerada</div>
+
+    <div class="form-group">
+      <label class="form-label">Cuenta</label>
+      <select class="form-select" id="remun-account"></select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Etiqueta — opcional</label>
+      <input class="form-input" id="remun-name" type="text" placeholder="Ej. Cuenta remunerada, Ahorro ING…">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Periodicidad</label>
+        <select class="form-select" id="remun-cycle">
+          <option value="monthly">Mensual</option>
+          <option value="bimonthly">Bimensual</option>
+          <option value="quarterly">Trimestral</option>
+          <option value="biannual">Semestral</option>
+          <option value="annual">Anual</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Próxima remuneración</label>
+        <input class="form-input" id="remun-nextdate" type="date">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:14px;">
+      <label class="form-label">Notas — opcional</label>
+      <input class="form-input" id="remun-notes" type="text" placeholder="Ej. Remuneración por saldo, cuenta corriente naranja…">
+    </div>
+
+    <button class="btn-submit" onclick="saveRemuneration()">Guardar</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: REMUNERATED ACCOUNT DETAIL ==================== -->
+<div class="modal-overlay" id="modalRemunDetail" onclick="closeModalOutside(event,'modalRemunDetail')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+      <div class="sub-detail-emoji">💰</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+        <button class="calc-btn" onclick="openEditRemuneration()" title="Editar">✏️</button>
+        <button class="btn-delete-debt" onclick="deleteRemunFromDetail()">🗑</button>
+      </div>
+    </div>
+
+    <div class="modal-title" id="remundetail-name" style="margin-bottom:4px;"></div>
+    <div id="remundetail-desc" style="font-size:12px;color:var(--muted);margin-bottom:12px;"></div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="remundetail-badges"></div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Total recibido</div>
+          <div id="remundetail-total" style="font-size:20px;font-weight:700;color:var(--income);"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Próxima remuneración</div>
+          <div id="remundetail-nextdate" style="font-size:14px;font-weight:600;"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Cuenta</div>
+          <div id="remundetail-account" style="font-size:13px;font-weight:500;"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Última remuneración</div>
+          <div id="remundetail-last" style="font-size:13px;font-weight:600;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="remundetail-overdue-banner" style="display:none;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.3);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px;font-size:12px;color:#fb923c;font-weight:500;"></div>
+
+    <button class="btn-charge-all" id="remundetail-register-btn" onclick="openRegisterRemuneration()" style="margin-bottom:16px;">💰 Registrar remuneración</button>
+
+    <div class="block-title" style="margin-bottom:10px;">Historial</div>
+    <div id="remundetail-history"></div>
+  </div>
+</div>
+
+<!-- ==================== MODAL: REGISTER REMUNERATION VALUE ==================== -->
+<div class="modal-overlay" id="modalRegisterRemuneration" onclick="closeModalOutside(event, 'modalRegisterRemuneration')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Registrar remuneración</div>
+    <div id="remun-reg-name" style="font-size:13px;color:var(--muted);margin-bottom:20px;"></div>
+
+    <div class="form-group">
+      <label class="form-label">Importe recibido (€)</label>
+      <input class="form-input" id="remun-reg-amount" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" id="remun-reg-date" type="date">
+    </div>
+
+    <button class="btn-submit" onclick="confirmRegisterRemuneration()">Confirmar</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: EDIT/DELETE REMUNERATION PAYMENT ==================== -->
+<div class="modal-overlay" id="modalEditRemunPayment" onclick="closeModalOutside(event, 'modalEditRemunPayment')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Editar remuneración</div>
+    <div id="editremunpay-name" style="font-size:13px;color:var(--muted);margin-bottom:20px;"></div>
+
+    <div class="form-group">
+      <label class="form-label">Importe recibido (€)</label>
+      <input class="form-input" id="editremunpay-amount" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" id="editremunpay-date" type="date">
+    </div>
+
+    <button class="btn-submit" onclick="saveEditRemunPayment()">Guardar cambios</button>
+    <button class="btn-submit" style="background:transparent;border:1px solid rgba(255,107,122,0.4);color:var(--expense);margin-top:8px;" onclick="deleteEditRemunPayment()">🗑 Eliminar</button>
+  </div>
+</div>
+
 <!-- ==================== MODAL: SAVINGS GOAL ==================== -->
 <div class="modal-overlay" id="modalGoal" onclick="closeModalOutside(event, 'modalGoal')">
   <div class="modal">
@@ -3227,6 +3403,14 @@ body:not(.values-hidden) .account-rate-inline {
       <input class="form-input" id="inv-name" type="text" placeholder="Ej. MSCI World, Bitcoin…">
     </div>
 
+    <div class="form-group" id="pos-mode-toggle-group">
+      <label class="form-label">¿Cómo quieres introducir la operación?</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button class="op-type-btn active-income" id="posmode-units" onclick="selectPosMode('units')" style="font-size:11px;padding:8px 4px;">🔢 Unidades + precio</button>
+        <button class="op-type-btn" id="posmode-amount" onclick="selectPosMode('amount')" style="font-size:11px;padding:8px 4px;">💶 Importe + precio</button>
+      </div>
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-group" style="margin-bottom:0">
         <label class="form-label" id="inv-units-label">Participaciones</label>
@@ -3239,7 +3423,7 @@ body:not(.values-hidden) .account-rate-inline {
     </div>
 
     <div class="form-group" style="margin-top:14px;">
-      <label class="form-label">Total invertido (€) — calculado</label>
+      <label class="form-label" id="inv-total-calc-label">Total invertido (€) — calculado</label>
       <div id="inv-total-calc" style="font-size:22px;font-weight:600;font-family:'Playfair Display',serif;color:var(--invest);padding:10px 0;">€0,00</div>
     </div>
 
@@ -4151,14 +4335,24 @@ body:not(.values-hidden) .account-rate-inline {
       <input class="form-input" id="subDesc" type="text" placeholder="Ej. Plan familiar, 4 pantallas…">
     </div>
 
+    <div class="form-group" id="subAmountModeGroup" style="display:none;">
+      <label class="form-label">¿Cómo quieres registrar el importe?</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button class="op-type-btn active-income" id="subAmountModeFixed" onclick="selectSubAmountMode('fixed')" style="font-size:11px;padding:8px 4px;">🔒 Fijo</button>
+        <button class="op-type-btn" id="subAmountModeVariable" onclick="selectSubAmountMode('variable')" style="font-size:11px;padding:8px 4px;">✏️ Variable cada vez</button>
+      </div>
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Importe (€)</label>
+      <div class="form-group" style="margin-bottom:0" id="subAmountField">
+        <label class="form-label" id="subAmountLabel">Importe (€)</label>
         <input class="form-input" id="subAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00">
       </div>
       <div class="form-group" style="margin-bottom:0">
         <label class="form-label">Ciclo</label>
         <select class="form-select" id="subCycle">
+          <option value="weekly">Semanal</option>
+          <option value="biweekly">Quincenal</option>
           <option value="monthly">Mensual</option>
           <option value="bimonthly">Bimensual</option>
           <option value="quarterly">Trimestral</option>
@@ -4168,8 +4362,10 @@ body:not(.values-hidden) .account-rate-inline {
       </div>
     </div>
 
+    <div id="subAmountVariableNote" style="display:none;font-size:11px;color:var(--muted);margin:-8px 0 14px;">El importe se pedirá cada vez que registres el pago, ya que varía.</div>
+
     <div class="form-group" style="margin-top:14px;">
-      <label class="form-label">Próxima renovación</label>
+      <label class="form-label" id="subNextDateLabel">Próxima renovación</label>
       <input class="form-input" id="subNextDate" type="date">
     </div>
 
@@ -4183,11 +4379,11 @@ body:not(.values-hidden) .account-rate-inline {
         <div id="subCommonToggle" class="toggle-track" onclick="toggleSubCommon()" style="width:38px;height:22px;border-radius:11px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);position:relative;cursor:pointer;transition:background 0.2s;">
           <div style="position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:all 0.2s;" id="subCommonThumb"></div>
         </div>
-        <span>Suscripción compartida</span>
+        <span id="subCommonLabel">Suscripción compartida</span>
       </label>
     </div>
 
-    <button class="btn-submit" onclick="saveSubscription()">Guardar suscripción</button>
+    <button class="btn-submit" id="subSubmitBtn" onclick="saveSubscription()">Guardar suscripción</button>
   </div>
 </div>
 
@@ -4236,6 +4432,59 @@ body:not(.values-hidden) .account-rate-inline {
 
     <div class="block-title" style="margin-bottom:10px;">Historial de pagos</div>
     <div id="subdetail-history"></div>
+  </div>
+</div>
+
+<!-- ==================== MODAL: REGISTER VARIABLE EXPENSE ==================== -->
+<div class="modal-overlay" id="modalRegisterExpense" onclick="closeModalOutside(event, 'modalRegisterExpense')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Registrar gasto</div>
+    <div id="expense-reg-name" style="font-size:13px;color:var(--muted);margin-bottom:20px;"></div>
+
+    <div class="form-group">
+      <label class="form-label">Importe (€)</label>
+      <input class="form-input" id="expense-reg-amount" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" id="expense-reg-date" type="date">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Etiqueta / nota — opcional</label>
+      <input class="form-input" id="expense-reg-note" type="text" placeholder="Ej. factura de verano, mes con calefacción…">
+    </div>
+
+    <button class="btn-submit" onclick="confirmRegisterExpense()">Confirmar</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL: EDIT/DELETE PAYMENT ==================== -->
+<div class="modal-overlay" id="modalEditPayment" onclick="closeModalOutside(event, 'modalEditPayment')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Editar pago</div>
+    <div id="editpay-name" style="font-size:13px;color:var(--muted);margin-bottom:20px;"></div>
+
+    <div class="form-group">
+      <label class="form-label">Importe (€)</label>
+      <input class="form-input" id="editpay-amount" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" id="editpay-date" type="date">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Etiqueta / nota — opcional</label>
+      <input class="form-input" id="editpay-note" type="text" placeholder="Ej. factura de verano, mes con calefacción…">
+    </div>
+
+    <button class="btn-submit" onclick="saveEditPayment()">Guardar cambios</button>
+    <button class="btn-submit" style="background:transparent;border:1px solid rgba(255,107,122,0.4);color:var(--expense);margin-top:8px;" onclick="deleteEditPayment()">🗑 Eliminar pago</button>
   </div>
 </div>
 
@@ -4933,6 +5182,7 @@ function getDefaults() {
     debts: { mario: [], miri: [] },
     deposits: { mario: [], miri: [] },
     subscriptions: { mario: [], miri: [] },
+    remunerations: { mario: [], miri: [] },
     snapshots: { mario: [], miri: [] },
     investments: [],
     goals: { mario: null, miri: null, global: null },
@@ -4963,7 +5213,7 @@ function migrateState(parsed) {
   DEFAULT_CATEGORIES.expense.forEach(c => {
     if (!parsed.categories.expense.includes(c)) parsed.categories.expense.push(c);
   });
-  ['debts','deposits','snapshots'].forEach(k => {
+  ['debts','deposits','snapshots','remunerations'].forEach(k => {
     if (!parsed[k]) parsed[k] = defaults[k];
     if (!parsed[k].mario) parsed[k].mario = [];
     if (!parsed[k].miri)  parsed[k].miri  = [];
@@ -4992,6 +5242,12 @@ function migrateState(parsed) {
   if (!parsed.subscriptions) parsed.subscriptions = { mario: [], miri: [] };
   if (!parsed.subscriptions.mario) parsed.subscriptions.mario = [];
   if (!parsed.subscriptions.miri)  parsed.subscriptions.miri  = [];
+  ['mario','miri'].forEach(p => {
+    (parsed.subscriptions[p] || []).forEach(s => {
+      if (!s.kind)       s.kind = 'subscription';
+      if (!s.amountMode) s.amountMode = 'fixed';
+    });
+  });
   if (!parsed.activeProfiles) parsed.activeProfiles = { mario: true, miri: true };
   if (!parsed.notifications) parsed.notifications = { subscriptions: true, contributions: true };
   if (typeof parsed.notifications.subscriptions !== 'boolean') parsed.notifications.subscriptions = true;
@@ -5165,6 +5421,8 @@ function renderAll() {
   renderDeposits('miri');
   renderSubscriptions('mario');
   renderSubscriptions('miri');
+  renderRemunerations('mario');
+  renderRemunerations('miri');
   renderGoals();
   renderInvestments();
   renderGlobal();
@@ -6574,12 +6832,14 @@ function subLogoHTML(name, emoji, size = 28) {
   <span id="${id}_fb" style="font-size:${Math.round(size * 0.85)}px;line-height:1;display:none;">${fallback}</span>`;
 }
 
-const CYCLE_LABELS  = { monthly: 'Mensual', bimonthly: 'Bimensual', quarterly: 'Trimestral', biannual: 'Semestral', annual: 'Anual' };
+const CYCLE_LABELS  = { weekly: 'Semanal', biweekly: 'Quincenal', monthly: 'Mensual', bimonthly: 'Bimensual', quarterly: 'Trimestral', biannual: 'Semestral', annual: 'Anual' };
 const CYCLE_MONTHS  = { monthly: 1, bimonthly: 2, quarterly: 3, biannual: 6, annual: 12 };
-const CYCLE_MONTHLY = { monthly: 1, bimonthly: 1/2, quarterly: 1/3, biannual: 1/6, annual: 1/12 };
+const CYCLE_MONTHLY = { weekly: 52/12, biweekly: 26/12, monthly: 1, bimonthly: 1/2, quarterly: 1/3, biannual: 1/6, annual: 1/12 };
 
 function subNextDateAfter(dateStr, cycle) {
   const d = new Date(dateStr + 'T12:00:00');
+  if (cycle === 'weekly')   { d.setDate(d.getDate() + 7);  return d.toISOString().split('T')[0]; }
+  if (cycle === 'biweekly') { d.setDate(d.getDate() + 14); return d.toISOString().split('T')[0]; }
   d.setMonth(d.getMonth() + (CYCLE_MONTHS[cycle] || 1));
   return d.toISOString().split('T')[0];
 }
@@ -6596,30 +6856,59 @@ function subMonthlyEquiv(amount, cycle) {
 let subPerson = 'mario';
 let subEditing = null;
 let subIsCommon = false;
+let subKind = 'subscription';       // 'subscription' | 'expense'
+let subAmountMode = 'fixed';        // 'fixed' | 'variable' (only relevant for expense)
 let detailSubPerson = null;
 let detailSubId = null;
 let pendingSubsQueue = [];
+let expenseRegCtx = { person: null, subId: null, origin: 'detail' };
 
-function openAddSubscription(person) {
-  subPerson = person;
+function openAddSubscription(person, kind = 'subscription') {
+  subPerson  = person;
   subEditing = null;
   subIsCommon = false;
+  subKind       = kind;
+  subAmountMode = 'fixed';
 
-  document.getElementById('addSubTitle').textContent = `Nueva suscripción — ${getName(person)}`;
+  document.getElementById('addSubTitle').textContent = kind === 'expense'
+    ? `Nuevo gasto corriente — ${getName(person)}`
+    : `Nueva suscripción — ${getName(person)}`;
   document.getElementById('subEmoji').value    = '';
   document.getElementById('subName').value     = '';
   document.getElementById('subDesc').value     = '';
   document.getElementById('subAmount').value   = '';
   document.getElementById('subCycle').value    = 'monthly';
-  document.getElementById('subNextDate').value = new Date().toISOString().split('T')[0];
   document.getElementById('subNextDate').value = (() => {
     const d = new Date(); d.setMonth(d.getMonth() + 1);
     return d.toISOString().split('T')[0];
   })();
 
   updateSubCommonToggle();
+  updateSubKindUI();
   populateSubAccounts(person);
   document.getElementById('modalAddSubscription').classList.add('open');
+}
+
+function updateSubKindUI() {
+  const isExpense = subKind === 'expense';
+  document.getElementById('subAmountModeGroup').style.display = isExpense ? 'block' : 'none';
+  document.getElementById('subCommonLabel').textContent = isExpense ? 'Gasto compartido' : 'Suscripción compartida';
+  document.getElementById('subNextDateLabel').textContent = isExpense ? 'Próximo cargo' : 'Próxima renovación';
+  document.getElementById('subSubmitBtn').textContent = isExpense ? 'Guardar gasto' : 'Guardar suscripción';
+
+  const isVariable = isExpense && subAmountMode === 'variable';
+  document.getElementById('subAmountField').style.display = isVariable ? 'none' : 'block';
+  document.getElementById('subAmountVariableNote').style.display = isVariable ? 'block' : 'none';
+
+  if (isExpense) {
+    document.getElementById('subAmountModeFixed').className    = 'op-type-btn' + (subAmountMode === 'fixed' ? ' active-income' : '');
+    document.getElementById('subAmountModeVariable').className = 'op-type-btn' + (subAmountMode === 'variable' ? ' active-income' : '');
+  }
+}
+
+function selectSubAmountMode(mode) {
+  subAmountMode = mode;
+  updateSubKindUI();
 }
 
 function populateSubAccounts(person) {
@@ -6646,18 +6935,22 @@ function updateSubCommonToggle() {
 }
 
 function saveSubscription() {
-  const emoji     = document.getElementById('subEmoji').value.trim()   || '📋';
+  const emoji     = document.getElementById('subEmoji').value.trim() || (subKind === 'expense' ? '🏠' : '📋');
   const name      = document.getElementById('subName').value.trim();
   const desc      = document.getElementById('subDesc').value.trim();
-  const amount    = parseFloat(document.getElementById('subAmount').value) || 0;
   const cycle     = document.getElementById('subCycle').value;
   const nextDate  = document.getElementById('subNextDate').value;
   const accountId = document.getElementById('subAccount').value;
 
-  if (!name)          { showToast('Escribe el nombre', 'error'); return; }
-  if (amount <= 0)    { showToast('Introduce el importe', 'error'); return; }
-  if (!nextDate)      { showToast('Indica la próxima renovación', 'error'); return; }
-  if (!accountId)     { showToast('Selecciona una cuenta', 'error'); return; }
+  const isExpense  = subKind === 'expense';
+  const amountMode = isExpense ? subAmountMode : 'fixed';
+  const isVariable = isExpense && amountMode === 'variable';
+  const amount     = isVariable ? 0 : (parseFloat(document.getElementById('subAmount').value) || 0);
+
+  if (!name)                        { showToast('Escribe el nombre', 'error'); return; }
+  if (!isVariable && amount <= 0)    { showToast('Introduce el importe', 'error'); return; }
+  if (!nextDate)                     { showToast(isExpense ? 'Indica el próximo cargo' : 'Indica la próxima renovación', 'error'); return; }
+  if (!accountId)                    { showToast('Selecciona una cuenta', 'error'); return; }
 
   if (!state.subscriptions) state.subscriptions = { mario: [], miri: [] };
 
@@ -6668,17 +6961,19 @@ function saveSubscription() {
       sub.emoji = emoji; sub.name = name; sub.desc = desc;
       sub.amount = amount; sub.cycle = cycle; sub.nextDate = nextDate;
       sub.accountId = accountId; sub.isCommon = subIsCommon;
+      sub.kind = subKind; sub.amountMode = amountMode;
     }
-    showToast('Suscripción actualizada ✓', 'success');
+    showToast(isExpense ? 'Gasto corriente actualizado ✓' : 'Suscripción actualizada ✓', 'success');
   } else {
     state.subscriptions[subPerson].push({
       id: Date.now().toString(),
       emoji, name, desc, amount, cycle, nextDate,
       accountId, isCommon: subIsCommon,
+      kind: subKind, amountMode,
       active: true, payments: [],
       createdAt: new Date().toISOString().split('T')[0]
     });
-    showToast('Suscripción añadida ✓', 'success');
+    showToast(isExpense ? 'Gasto corriente añadido ✓' : 'Suscripción añadida ✓', 'success');
   }
 
   saveState();
@@ -6688,47 +6983,75 @@ function saveSubscription() {
   if (subEditing && detailSubId) openSubDetail(detailSubPerson, detailSubId);
 }
 
+function subDisplayAmount(sub) {
+  if ((sub.kind || 'subscription') !== 'expense' || sub.amountMode !== 'variable') return sub.amount;
+  const payments = sub.payments || [];
+  if (!payments.length) return 0;
+  // Pick the chronologically latest payment by date, not by insertion order
+  return payments.reduce((latest, p) => (!latest || p.date > latest.date) ? p : latest, null).amount;
+}
+
+function subAverageAmount(sub) {
+  if ((sub.kind || 'subscription') !== 'expense' || sub.amountMode !== 'variable') return sub.amount;
+  const payments = sub.payments || [];
+  if (!payments.length) return 0;
+  return payments.reduce((s, p) => s + p.amount, 0) / payments.length;
+}
+
 function renderSubscriptions(person) {
-  const el = document.getElementById(person + '-subs-list');
-  if (!el) return;
   if (!state.subscriptions) state.subscriptions = { mario: [], miri: [] };
 
-  // Show own + common subs
+  // Show own + common items
   const own    = (state.subscriptions[person] || []);
   const other  = person === 'mario' ? 'miri' : 'mario';
   const shared = (state.subscriptions[other] || []).filter(s => s.isCommon);
   const all    = [...own, ...shared.map(s => ({ ...s, _fromOther: true }))];
 
-  // Monthly cost bar
-  const totalBar = document.getElementById(person + '-sub-total-bar');
-  const totalEl  = document.getElementById(person + '-sub-monthly');
-  if (all.length > 0 && totalBar && totalEl) {
-    const monthly = all.reduce((s, sub) => s + subMonthlyEquiv(sub.amount, sub.cycle), 0);
-    totalEl.textContent = '€' + fmt(monthly) + '/mes';
+  renderSubGroup(person, other, all.filter(s => (s.kind || 'subscription') === 'subscription'), 'subs',
+    'Sin suscripciones registradas.<br>Pulsa "+ Añadir" para crear una.');
+  renderSubGroup(person, other, all.filter(s => s.kind === 'expense'), 'expenses',
+    'Sin gastos corrientes registrados.<br>Pulsa "+ Añadir" para crear uno.');
+}
+
+function renderSubGroup(person, other, list, prefix, emptyMsg) {
+  const el = document.getElementById(person + '-' + prefix + '-list');
+  if (!el) return;
+
+  // Monthly cost bar (subscriptions block keeps its original 'sub' id prefix; expenses uses 'expenses')
+  const barPrefix = prefix === 'subs' ? 'sub' : prefix;
+  const totalBar = document.getElementById(person + '-' + barPrefix + '-total-bar');
+  const totalEl  = document.getElementById(person + '-' + barPrefix + '-monthly');
+  if (list.length > 0 && totalBar && totalEl) {
+    const monthly = list.reduce((s, sub) => s + subMonthlyEquiv(subAverageAmount(sub), sub.cycle), 0);
+    const hasVariable = list.some(s => s.amountMode === 'variable');
+    totalEl.textContent = '€' + fmt(monthly) + '/mes' + (hasVariable ? ' aprox.' : '');
     totalBar.style.display = 'flex';
   } else if (totalBar) {
     totalBar.style.display = 'none';
   }
 
-  if (all.length === 0) {
-    el.innerHTML = `<div class="sub-no-items">Sin suscripciones registradas.<br>Pulsa "+ Añadir" para crear una.</div>`;
+  if (list.length === 0) {
+    el.innerHTML = `<div class="sub-no-items">${emptyMsg}</div>`;
     return;
   }
 
   // Sort: overdue first, then by nextDate
   const today = new Date().toISOString().split('T')[0];
-  all.sort((a, b) => {
+  const sorted = [...list].sort((a, b) => {
     const ao = a.nextDate <= today, bo = b.nextDate <= today;
     if (ao !== bo) return ao ? -1 : 1;
     return a.nextDate.localeCompare(b.nextDate);
   });
 
-  el.innerHTML = all.map(sub => {
-    const overdue   = isSubOverdue(sub);
-    const fromOther = sub._fromOther;
-    const dateObj   = new Date(sub.nextDate + 'T12:00:00');
-    const dateStr   = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+  el.innerHTML = sorted.map(sub => {
+    const overdue     = isSubOverdue(sub);
+    const fromOther   = sub._fromOther;
+    const dateObj     = new Date(sub.nextDate + 'T12:00:00');
+    const dateStr     = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
     const clickPerson = fromOther ? other : person;
+    const isVariable  = sub.amountMode === 'variable';
+    const displayAmt  = subDisplayAmount(sub);
+    const avgAmt      = isVariable ? subAverageAmount(sub) : 0;
 
     return `<div class="sub-card${overdue ? ' overdue' : ''}${sub.isCommon ? ' common-card' : ''}" onclick="openSubDetail('${clickPerson}','${sub.id}')">
       <div class="sub-emoji">${subLogoHTML(sub.name, sub.emoji, 26)}</div>
@@ -6738,14 +7061,16 @@ function renderSubscriptions(person) {
         <div class="sub-meta">
           <span class="sub-cycle-badge">${CYCLE_LABELS[sub.cycle] || sub.cycle}</span>
           ${sub.isCommon ? `<span class="sub-cycle-badge" style="background:rgba(167,139,250,0.15);color:var(--common);border-color:rgba(167,139,250,0.3);">Común</span>` : ''}
+          ${isVariable ? `<span class="sub-cycle-badge" style="background:rgba(251,146,60,0.12);color:#fb923c;border-color:rgba(251,146,60,0.3);">Variable</span>` : ''}
           ${overdue
-            ? `<span class="sub-overdue-badge">Vencida</span>`
-            : `<span class="sub-date">Renueva ${dateStr}</span>`}
+            ? `<span class="sub-overdue-badge">${isVariable ? 'Pendiente' : 'Vencida'}</span>`
+            : `<span class="sub-date">${sub.kind === 'expense' ? 'Próximo cargo' : 'Renueva'} ${dateStr}</span>`}
         </div>
       </div>
       <div class="sub-amount">
-        <div class="sub-amount-val">€${fmt(sub.amount)}</div>
-        <div class="sub-amount-cycle">${CYCLE_LABELS[sub.cycle]?.toLowerCase() || ''}</div>
+        <div class="sub-amount-val">€${fmt(displayAmt)}</div>
+        <div class="sub-amount-cycle">${isVariable ? 'último' : (CYCLE_LABELS[sub.cycle]?.toLowerCase() || '')}</div>
+        ${isVariable ? `<div style="font-size:9px;color:var(--muted);margin-top:2px;">media €${fmt(avgAmt)}</div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -6757,17 +7082,23 @@ function openSubDetail(person, subId) {
   const sub = (state.subscriptions[person] || []).find(s => s.id === subId);
   if (!sub) return;
 
-  const today   = new Date().toISOString().split('T')[0];
-  const overdue = isSubOverdue(sub);
-  const dateObj = new Date(sub.nextDate + 'T12:00:00');
-  const dateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-  const totalPaid = (sub.payments || []).reduce((s, p) => s + p.amount, 0);
+  const today      = new Date().toISOString().split('T')[0];
+  const overdue    = isSubOverdue(sub);
+  const isExpense  = sub.kind === 'expense';
+  const isVariable = isExpense && sub.amountMode === 'variable';
+  const dateObj    = new Date(sub.nextDate + 'T12:00:00');
+  const dateStr    = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  const totalPaid  = (sub.payments || []).reduce((s, p) => s + p.amount, 0);
+  const lastAmount = subDisplayAmount(sub);
+  const avgAmount  = isVariable ? subAverageAmount(sub) : 0;
 
   document.getElementById('subdetail-emoji').innerHTML = subLogoHTML(sub.name, sub.emoji, 34);
   document.getElementById('subdetail-name').textContent   = sub.name;
   document.getElementById('subdetail-desc').textContent   = sub.desc || '';
   document.getElementById('subdetail-desc').style.display = sub.desc ? 'block' : 'none';
-  document.getElementById('subdetail-amount').textContent = '€' + fmt(sub.amount);
+  document.getElementById('subdetail-amount').textContent = isVariable
+    ? (lastAmount > 0 ? '€' + fmt(lastAmount) + ' (último) · media €' + fmt(avgAmount) : '—')
+    : '€' + fmt(sub.amount);
   document.getElementById('subdetail-account').textContent = getAccountName(sub.accountId);
   document.getElementById('subdetail-total-paid').textContent = '€' + fmt(totalPaid);
 
@@ -6779,13 +7110,17 @@ function openSubDetail(person, subId) {
   document.getElementById('subdetail-badges').innerHTML = `
     <span class="sub-cycle-badge" style="font-size:10px;">${CYCLE_LABELS[sub.cycle] || sub.cycle}</span>
     ${sub.isCommon ? `<span class="sub-cycle-badge" style="background:rgba(167,139,250,0.15);color:var(--common);border-color:rgba(167,139,250,0.3);font-size:10px;">Común</span>` : ''}
-    ${overdue ? `<span class="sub-overdue-badge">Renovación vencida</span>` : ''}`;
+    ${isVariable ? `<span class="sub-cycle-badge" style="background:rgba(251,146,60,0.12);color:#fb923c;border-color:rgba(251,146,60,0.3);font-size:10px;">Variable</span>` : ''}
+    ${overdue ? `<span class="sub-overdue-badge">${isExpense ? 'Pendiente' : 'Renovación vencida'}</span>` : ''}`;
 
   // Overdue banner
   const banner = document.getElementById('subdetail-overdue-banner');
   if (overdue) {
     const days = Math.round((new Date(today) - new Date(sub.nextDate + 'T12:00:00')) / 86400000);
-    banner.textContent = `⚠️ La renovación venció hace ${days} día${days !== 1 ? 's' : ''}. Pulsa "Cobrar renovación" para registrar el pago y avanzar la fecha.`;
+    const daysStr = days === 0 ? 'desde hoy' : `hace ${days} día${days !== 1 ? 's' : ''}`;
+    banner.textContent = isExpense
+      ? `⚠️ Este gasto está pendiente ${daysStr}. Pulsa el botón de abajo para registrarlo y avanzar la fecha.`
+      : `⚠️ La renovación venció hace ${days} día${days !== 1 ? 's' : ''}. Pulsa "Cobrar renovación" para registrar el pago y avanzar la fecha.`;
     banner.style.display = 'block';
   } else {
     banner.style.display = 'none';
@@ -6793,7 +7128,13 @@ function openSubDetail(person, subId) {
 
   // Charge button
   const chargeBtn = document.getElementById('subdetail-charge-btn');
-  chargeBtn.textContent = overdue ? `💳 Cobrar renovación vencida · €${fmt(sub.amount)}` : `💳 Cobrar renovación anticipada · €${fmt(sub.amount)}`;
+  if (isVariable) {
+    chargeBtn.textContent = '✏️ Registrar gasto';
+  } else if (isExpense) {
+    chargeBtn.textContent = overdue ? `💸 Pagar gasto pendiente · €${fmt(sub.amount)}` : `💸 Pagar por adelantado · €${fmt(sub.amount)}`;
+  } else {
+    chargeBtn.textContent = overdue ? `💳 Cobrar renovación vencida · €${fmt(sub.amount)}` : `💳 Cobrar renovación anticipada · €${fmt(sub.amount)}`;
+  }
 
   renderSubHistory(sub);
   document.getElementById('modalSubDetail').classList.add('open');
@@ -6808,18 +7149,25 @@ function renderSubHistory(sub) {
   }
   el.innerHTML = payments.map(p => {
     const d = new Date(p.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-    return `<div class="sub-history-item">
+    return `<div class="sub-history-item" style="cursor:pointer;" onclick="openEditPayment('${detailSubPerson}','${detailSubId}','${p.id}')">
       <div style="width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${subLogoHTML(sub.name, sub.emoji, 18)}</div>
-      <div style="flex:1;">
+      <div style="flex:1;min-width:0;">
         <div style="font-size:13px;font-weight:500;">${getAccountName(p.accountId)}</div>
-        <div style="font-size:11px;color:var(--muted);">${d}</div>
+        <div style="font-size:11px;color:var(--muted);">${d}${p.note ? ` · ${p.note}` : ''}</div>
       </div>
       <div style="font-weight:600;color:var(--expense);">-€${fmt(p.amount)}</div>
+      <div style="color:var(--muted);font-size:12px;margin-left:6px;">›</div>
     </div>`;
   }).join('');
 }
 
 function chargeSubFromDetail() {
+  const sub = (state.subscriptions[detailSubPerson] || []).find(s => s.id === detailSubId);
+  if (!sub) return;
+  if (sub.kind === 'expense' && sub.amountMode === 'variable') {
+    openRegisterExpense(detailSubPerson, detailSubId, 'detail');
+    return;
+  }
   chargeSub(detailSubPerson, detailSubId);
   openSubDetail(detailSubPerson, detailSubId);
 }
@@ -6827,55 +7175,215 @@ function chargeSubFromDetail() {
 function chargeSub(person, subId) {
   const sub = (state.subscriptions[person] || []).find(s => s.id === subId);
   if (!sub) return;
+  const isExpense = sub.kind === 'expense';
 
   // Deduct from account
   const acc = findAccountById(sub.accountId);
   if (acc) acc.balance -= sub.amount;
 
-  // Register transaction
+  // Register transaction and payment with a shared id, so a payment can be
+  // matched back to its transaction later if the person needs to edit/delete it
+  const paymentId = Date.now().toString();
+  const today = new Date().toISOString().split('T')[0];
+
   state.transactions.push({
-    id: Date.now().toString(),
+    id: paymentId,
     person,
     type: 'expense',
     accountId: sub.accountId,
-    category: 'Suscripción',
-    desc: `Suscripción: ${sub.name}`,
+    category: isExpense ? 'Gasto corriente' : 'Suscripción',
+    desc: `${isExpense ? 'Gasto' : 'Suscripción'}: ${sub.name}`,
     amount: sub.amount,
-    date: new Date().toISOString().split('T')[0]
+    date: today
   });
 
   // Record payment and advance next date
   if (!sub.payments) sub.payments = [];
   sub.payments.push({
-    id: Date.now().toString(),
+    id: paymentId,
     amount: sub.amount,
     accountId: sub.accountId,
-    date: new Date().toISOString().split('T')[0]
+    date: today
   });
   sub.nextDate = subNextDateAfter(sub.nextDate, sub.cycle);
 
   saveState();
   renderAll();
-  showToast(`${sub.name} cobrado ✓ · Próxima: ${new Date(sub.nextDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`, 'success');
+  showToast(`${sub.name} ${isExpense ? 'pagado' : 'cobrado'} ✓ · Próxima: ${new Date(sub.nextDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`, 'success');
+}
+
+function openRegisterExpense(person, subId, origin = 'detail') {
+  const sub = (state.subscriptions[person] || []).find(s => s.id === subId);
+  if (!sub) return;
+  expenseRegCtx = { person, subId, origin };
+
+  document.getElementById('expense-reg-name').textContent = sub.name;
+  document.getElementById('expense-reg-amount').value = '';
+  document.getElementById('expense-reg-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('expense-reg-note').value = '';
+
+  if (origin === 'detail')  closeModal('modalSubDetail');
+  if (origin === 'pending') closeModal('modalPendingSubs');
+
+  document.getElementById('modalRegisterExpense').classList.add('open');
+}
+
+function confirmRegisterExpense() {
+  const { person, subId, origin } = expenseRegCtx;
+  const sub = (state.subscriptions[person] || []).find(s => s.id === subId);
+  if (!sub) return;
+
+  const amount = parseFloat(document.getElementById('expense-reg-amount').value) || 0;
+  const date   = document.getElementById('expense-reg-date').value;
+  const note   = document.getElementById('expense-reg-note').value.trim();
+
+  if (amount <= 0) { showToast('Introduce el importe', 'error'); return; }
+  if (!date)       { showToast('Indica la fecha', 'error'); return; }
+
+  const acc = findAccountById(sub.accountId);
+  if (acc) acc.balance -= amount;
+
+  const paymentId = Date.now().toString();
+
+  state.transactions.push({
+    id: paymentId,
+    person,
+    type: 'expense',
+    accountId: sub.accountId,
+    category: 'Gasto corriente',
+    desc: `Gasto: ${sub.name}${note ? ` — ${note}` : ''}`,
+    amount,
+    date
+  });
+
+  if (!sub.payments) sub.payments = [];
+  sub.payments.push({ id: paymentId, amount, accountId: sub.accountId, date, note });
+  sub.nextDate = subNextDateAfter(sub.nextDate, sub.cycle);
+
+  saveState();
+  closeModal('modalRegisterExpense');
+
+  if (origin === 'pending') {
+    pendingSubsQueue = pendingSubsQueue.filter(p => p.sub.id !== subId);
+    renderAll();
+    if (pendingSubsQueue.length > 0) {
+      renderPendingSubsList();
+      document.getElementById('modalPendingSubs').classList.add('open');
+    }
+  } else {
+    renderAll();
+    openSubDetail(person, subId);
+  }
+
+  showToast(`${sub.name} registrado ✓ · €${fmt(amount)}`, 'success');
+}
+
+// ---- Edit / delete an individual payment from the history ----
+
+let editPaymentCtx = { person: null, subId: null, paymentId: null };
+
+function openEditPayment(person, subId, paymentId) {
+  const sub = (state.subscriptions[person] || []).find(s => s.id === subId);
+  if (!sub) return;
+  const payment = (sub.payments || []).find(p => p.id === paymentId);
+  if (!payment) return;
+
+  editPaymentCtx = { person, subId, paymentId };
+
+  document.getElementById('editpay-name').textContent = sub.name;
+  document.getElementById('editpay-amount').value = payment.amount;
+  document.getElementById('editpay-date').value = payment.date;
+  document.getElementById('editpay-note').value = payment.note || '';
+
+  closeModal('modalSubDetail');
+  document.getElementById('modalEditPayment').classList.add('open');
+}
+
+function saveEditPayment() {
+  const { person, subId, paymentId } = editPaymentCtx;
+  const sub = (state.subscriptions[person] || []).find(s => s.id === subId);
+  if (!sub) return;
+  const payment = (sub.payments || []).find(p => p.id === paymentId);
+  if (!payment) return;
+
+  const newAmount = parseFloat(document.getElementById('editpay-amount').value) || 0;
+  const newDate   = document.getElementById('editpay-date').value;
+  const newNote   = document.getElementById('editpay-note').value.trim();
+
+  if (newAmount <= 0) { showToast('Introduce el importe', 'error'); return; }
+  if (!newDate)       { showToast('Indica la fecha', 'error'); return; }
+
+  // Adjust account balance by the difference
+  const acc = findAccountById(payment.accountId);
+  const delta = newAmount - payment.amount;
+  if (acc) acc.balance -= delta;
+
+  // Keep the linked transaction in sync, if it still exists
+  const txn = state.transactions.find(t => t.id === paymentId);
+  if (txn) {
+    txn.amount = newAmount;
+    txn.date   = newDate;
+    const baseDesc = txn.desc.split(' — ')[0];
+    txn.desc = newNote ? `${baseDesc} — ${newNote}` : baseDesc;
+  }
+
+  payment.amount = newAmount;
+  payment.date   = newDate;
+  payment.note   = newNote;
+
+  saveState();
+  closeModal('modalEditPayment');
+  renderAll();
+  openSubDetail(person, subId);
+  showToast('Pago actualizado ✓', 'success');
+}
+
+function deleteEditPayment() {
+  const { person, subId, paymentId } = editPaymentCtx;
+  const sub = (state.subscriptions[person] || []).find(s => s.id === subId);
+  if (!sub) return;
+  const payment = (sub.payments || []).find(p => p.id === paymentId);
+  if (!payment) return;
+
+  showConfirm(
+    '¿Eliminar este pago?',
+    'El importe se devolverá a la cuenta y desaparecerá del historial. La fecha del próximo cobro no se modificará.',
+    () => {
+      const acc = findAccountById(payment.accountId);
+      if (acc) acc.balance += payment.amount;
+
+      state.transactions = state.transactions.filter(t => t.id !== paymentId);
+      sub.payments = (sub.payments || []).filter(p => p.id !== paymentId);
+
+      saveState();
+      closeModal('modalEditPayment');
+      renderAll();
+      openSubDetail(person, subId);
+      showToast('Pago eliminado', '');
+    }
+  );
 }
 
 function openEditSubscription() {
   const sub = (state.subscriptions[detailSubPerson] || []).find(s => s.id === detailSubId);
   if (!sub) return;
 
-  subPerson  = detailSubPerson;
-  subEditing = detailSubId;
-  subIsCommon = !!sub.isCommon;
+  subPerson     = detailSubPerson;
+  subEditing    = detailSubId;
+  subIsCommon   = !!sub.isCommon;
+  subKind       = sub.kind || 'subscription';
+  subAmountMode = sub.amountMode || 'fixed';
 
-  document.getElementById('addSubTitle').textContent = 'Editar suscripción';
+  document.getElementById('addSubTitle').textContent = subKind === 'expense' ? 'Editar gasto corriente' : 'Editar suscripción';
   document.getElementById('subEmoji').value    = sub.emoji || '';
   document.getElementById('subName').value     = sub.name;
   document.getElementById('subDesc').value     = sub.desc || '';
-  document.getElementById('subAmount').value   = sub.amount;
+  document.getElementById('subAmount').value   = sub.amount || '';
   document.getElementById('subCycle').value    = sub.cycle;
   document.getElementById('subNextDate').value = sub.nextDate;
 
   updateSubCommonToggle();
+  updateSubKindUI();
   populateSubAccounts(subPerson);
   // Select current account
   setTimeout(() => { document.getElementById('subAccount').value = sub.accountId; }, 50);
@@ -6887,21 +7395,22 @@ function openEditSubscription() {
 function deleteSubFromDetail() {
   const sub = (state.subscriptions[detailSubPerson] || []).find(s => s.id === detailSubId);
   if (!sub) return;
+  const isExpense = sub.kind === 'expense';
   showConfirm(
     `¿Eliminar "${sub.name}"?`,
-    'Se eliminará la suscripción. Los pagos registrados en las cuentas no se revertirán.',
+    `Se eliminará ${isExpense ? 'el gasto corriente' : 'la suscripción'}. Los pagos registrados en las cuentas no se revertirán.`,
     () => {
       state.subscriptions[detailSubPerson] = state.subscriptions[detailSubPerson].filter(s => s.id !== detailSubId);
       saveState();
       closeModal('modalSubDetail');
       renderSubscriptions('mario');
       renderSubscriptions('miri');
-      showToast('Suscripción eliminada', '');
+      showToast(isExpense ? 'Gasto corriente eliminado' : 'Suscripción eliminada', '');
     }
   );
 }
 
-// ---- Pending subscriptions on unlock ----
+// ---- Pending subscriptions & recurring expenses on unlock ----
 
 function checkPendingSubscriptions() {
   if (!state.subscriptions) return;
@@ -6935,6 +7444,7 @@ function renderPendingSubsList() {
   el.innerHTML = pendingSubsQueue.map(({ person, sub }) => {
     const days = Math.round((new Date(new Date().toISOString().split('T')[0]) - new Date(sub.nextDate + 'T12:00:00')) / 86400000);
     const daysStr = days === 0 ? 'hoy' : `hace ${days} día${days !== 1 ? 's' : ''}`;
+    const isVariable = sub.kind === 'expense' && sub.amountMode === 'variable';
     return `<div class="pending-sub-item">
       <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${subLogoHTML(sub.name, sub.emoji, 22)}</div>
       <div style="flex:1;min-width:0;">
@@ -6943,15 +7453,20 @@ function renderPendingSubsList() {
         ${sub.isCommon ? `<div style="font-size:10px;color:var(--common);font-weight:600;">Común</div>` : ''}
       </div>
       <div style="text-align:right;margin-right:8px;">
-        <div style="font-size:14px;font-weight:700;color:var(--expense);">€${fmt(sub.amount)}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--expense);">${isVariable ? 'Variable' : '€' + fmt(sub.amount)}</div>
         <div style="font-size:10px;color:var(--muted);">${CYCLE_LABELS[sub.cycle] || ''}</div>
       </div>
-      <button class="btn-charge-sub" onclick="chargePendingOne('${person}','${sub.id}')">✓</button>
+      <button class="btn-charge-sub" onclick="chargePendingOne('${person}','${sub.id}')">${isVariable ? '✎' : '✓'}</button>
     </div>`;
   }).join('');
 }
 
 function chargePendingOne(person, subId) {
+  const sub = (state.subscriptions[person] || []).find(s => s.id === subId);
+  if (sub && sub.kind === 'expense' && sub.amountMode === 'variable') {
+    openRegisterExpense(person, subId, 'pending');
+    return;
+  }
   chargeSub(person, subId);
   pendingSubsQueue = pendingSubsQueue.filter(p => p.sub.id !== subId);
   if (pendingSubsQueue.length === 0) {
@@ -6962,9 +7477,14 @@ function chargePendingOne(person, subId) {
 }
 
 function chargeAllPending() {
-  [...pendingSubsQueue].forEach(({ person, sub }) => chargeSub(person, sub.id));
-  pendingSubsQueue = [];
-  closeModal('modalPendingSubs');
+  const toCharge = pendingSubsQueue.filter(({ sub }) => !(sub.kind === 'expense' && sub.amountMode === 'variable'));
+  toCharge.forEach(({ person, sub }) => chargeSub(person, sub.id));
+  pendingSubsQueue = pendingSubsQueue.filter(({ sub }) => sub.kind === 'expense' && sub.amountMode === 'variable');
+  if (pendingSubsQueue.length === 0) {
+    closeModal('modalPendingSubs');
+  } else {
+    renderPendingSubsList();
+  }
 }
 
 // ===================== DEPÓSITOS PRÓXIMOS A VENCER =====================
@@ -7486,7 +8006,7 @@ function renderDebtHistory(d) {
         ${p.amortMode === 'time' ? '· ⏱ Reduce plazo' : p.amortMode === 'quota' ? '· 💸 Reduce cuota' : ''}
       </div>` : (p.commission > 0 ? `<div style="font-size:10px;color:var(--muted);margin-top:2px;">Comisión: <span style="color:var(--expense);">€${fmt(p.commission)}</span></div>` : '');
     return `
-      <div class="debt-history-item">
+      <div class="debt-history-item" style="cursor:pointer;" onclick="deleteDebtPayment('${detailDebtPerson}','${detailDebtId}','${p.id}')">
         <span class="debt-history-type ${p.type}">${label}</span>
         <div class="debt-history-info">
           <div style="font-weight:500;">${accName}</div>
@@ -7787,6 +8307,18 @@ function saveDebtPayment() {
   if (d.capitalPaid  == null) d.capitalPaid  = d.paid;
   if (d.interestPaid == null) d.interestPaid = 0;
 
+  // Snapshot the debt's mutable fields BEFORE this payment changes them, so the
+  // payment can be cleanly reverted later (undoes amortization recalculations too)
+  const paymentSnapshot = {
+    capitalPaid: d.capitalPaid,
+    interestPaid: d.interestPaid,
+    paid: d.paid,
+    months: d.months,
+    quota: d.quota,
+    totalInterest: d.totalInterest,
+    rateHistory: d.rateHistory ? JSON.parse(JSON.stringify(d.rateHistory)) : null
+  };
+
   const capitalRem  = Math.max(0, d.total - d.capitalPaid);
   const interestRem = Math.max(0, (d.totalInterest || 0) - d.interestPaid);
   const totalRem    = capitalRem + interestRem;
@@ -7858,14 +8390,16 @@ function saveDebtPayment() {
   }
 
   if (!d.payments) d.payments = [];
+  const paymentId = Date.now().toString();
   d.payments.push({
-    id: Date.now().toString(),
+    id: paymentId,
     type: regPayType,
     amount: actualPay,
     commission,
     amortMode: regPayType === 'amortization' ? amortMode : null,
     capitalPortion, interestPortion,
-    accountId, date
+    accountId, date,
+    _snapshotBefore: paymentSnapshot
   });
 
   const totalDeducted = actualPay + commission;
@@ -7877,7 +8411,7 @@ function saveDebtPayment() {
   }
 
   state.transactions.push({
-    id: Date.now().toString(),
+    id: paymentId,
     person: detailDebtPerson,
     type: 'expense', accountId,
     category: regPayType === 'amortization' ? 'Amortización' : 'Deuda',
@@ -7896,6 +8430,62 @@ function saveDebtPayment() {
 
   const isNowFinished = d.paid >= d.total;
   showToast(isNowFinished ? '🎉 ¡Deuda saldada!' : `Pago registrado ✓ — Resta €${fmt(d.total - d.paid)}`, 'success');
+}
+
+// ---- Delete an individual debt payment ----
+// Editing the amount isn't offered here: each payment can trigger amortization
+// recalculations (capital/interest split, quota or remaining months), so only
+// a clean, full revert (delete) is safe. To fix a mistake: delete and re-register.
+
+function deleteDebtPayment(person, debtId, paymentId) {
+  const d = (state.debts[person] || []).find(x => x.id === debtId);
+  if (!d) return;
+  const payment = (d.payments || []).find(p => p.id === paymentId);
+  if (!payment) return;
+
+  showConfirm(
+    '¿Eliminar este pago?',
+    'Se revertirá el importe amortizado y se devolverá el dinero (más la comisión, si la hubo) a la cuenta de origen. Si el pago recalculó la cuota o el plazo restante, también se restaurará el valor anterior.',
+    () => {
+      // Restore the debt's mutable fields from the snapshot taken before this
+      // payment was applied — this cleanly undoes any amortization recalculation
+      if (payment._snapshotBefore) {
+        const s = payment._snapshotBefore;
+        d.capitalPaid   = s.capitalPaid;
+        d.interestPaid  = s.interestPaid;
+        d.paid          = s.paid;
+        d.months        = s.months;
+        d.quota         = s.quota;
+        d.totalInterest = s.totalInterest;
+        if (s.rateHistory) d.rateHistory = s.rateHistory;
+      } else {
+        // Best-effort fallback for older payments saved before this feature existed
+        d.capitalPaid  = Math.max(0, (d.capitalPaid  || 0) - (payment.capitalPortion  || 0));
+        d.interestPaid = Math.max(0, (d.interestPaid || 0) - (payment.interestPortion || 0));
+        d.paid = d.capitalPaid;
+      }
+
+      // Refund the account
+      const totalToRefund = payment.amount + (payment.commission || 0);
+      const commonAcc = state.accounts.common.find(a => a.id === payment.accountId);
+      if (commonAcc) commonAcc.balance += totalToRefund;
+      else {
+        const acc = state.accounts[person].find(a => a.id === payment.accountId);
+        if (acc) acc.balance += totalToRefund;
+      }
+
+      // Remove the linked transaction and the payment itself
+      state.transactions = state.transactions.filter(t => t.id !== paymentId);
+      d.payments = (d.payments || []).filter(p => p.id !== paymentId);
+
+      saveState();
+      renderAll();
+      renderDebts('mario');
+      renderDebts('miri');
+      openDebtDetail(person, debtId);
+      showToast('Pago eliminado', '');
+    }
+  );
 }
 
 function deleteDebtFromDetail() {
@@ -8503,6 +9093,381 @@ function cancelDeposit(person, depositId) {
   showToast('Depósito cancelado — importe devuelto a la cuenta origen', '');
 }
 
+// ===================== REMUNERATED ACCOUNTS (savings interest) =====================
+let remunPerson       = 'mario';
+let remunEditing      = null;
+let detailRemunPerson = null;
+let detailRemunId     = null;
+
+function ensureRemunerations() {
+  if (!state.remunerations) state.remunerations = { mario: [], miri: [] };
+  if (!state.remunerations.mario) state.remunerations.mario = [];
+  if (!state.remunerations.miri)  state.remunerations.miri  = [];
+}
+
+function remunTotalReceived(r) {
+  return (r.payments || []).reduce((s, p) => s + p.amount, 0);
+}
+
+function isRemunOverdue(r) {
+  if (!r.active) return false;
+  return r.nextDate <= new Date().toISOString().split('T')[0];
+}
+
+function openAddRemuneration(person) {
+  remunPerson  = person;
+  remunEditing = null;
+  ensureRemunerations();
+
+  document.getElementById('addRemunTitle').textContent = `Nueva cuenta remunerada — ${getName(person)}`;
+  document.getElementById('remun-name').value  = '';
+  document.getElementById('remun-cycle').value = 'monthly';
+  document.getElementById('remun-notes').value = '';
+  document.getElementById('remun-nextdate').value = (() => {
+    const d = new Date(); d.setMonth(d.getMonth() + 1);
+    return d.toISOString().split('T')[0];
+  })();
+
+  populateRemunAccounts(person);
+  document.getElementById('modalAddRemuneration').classList.add('open');
+}
+
+function populateRemunAccounts(person) {
+  const all = [...(state.accounts[person] || [])];
+  state.accounts.common.forEach(c => all.push({ ...c, name: c.name + ' (Común)' }));
+  document.getElementById('remun-account').innerHTML = all.length
+    ? all.map(a => `<option value="${a.id}">${a.name} — €${fmt(a.balance)}${a.rate != null ? ` (${a.rate}%)` : ''}</option>`).join('')
+    : '<option value="">Sin cuentas</option>';
+}
+
+function saveRemuneration() {
+  const accountId = document.getElementById('remun-account').value;
+  const name       = document.getElementById('remun-name').value.trim();
+  const cycle      = document.getElementById('remun-cycle').value;
+  const nextDate   = document.getElementById('remun-nextdate').value;
+  const notes      = document.getElementById('remun-notes').value.trim();
+
+  if (!accountId) { showToast('Selecciona una cuenta', 'error'); return; }
+  if (!nextDate)  { showToast('Indica la próxima remuneración', 'error'); return; }
+
+  ensureRemunerations();
+
+  if (remunEditing) {
+    const r = (state.remunerations[remunPerson] || []).find(x => x.id === remunEditing);
+    if (r) {
+      r.accountId = accountId; r.name = name; r.cycle = cycle;
+      r.nextDate = nextDate; r.notes = notes;
+    }
+    showToast('Cuenta remunerada actualizada ✓', 'success');
+  } else {
+    state.remunerations[remunPerson].push({
+      id: Date.now().toString(),
+      accountId, name, cycle, nextDate, notes,
+      active: true, payments: [],
+      createdAt: new Date().toISOString().split('T')[0]
+    });
+    showToast('Cuenta remunerada añadida ✓', 'success');
+  }
+
+  saveState();
+  closeModal('modalAddRemuneration');
+  renderRemunerations('mario');
+  renderRemunerations('miri');
+  if (remunEditing && detailRemunId) openRemunDetail(detailRemunPerson, detailRemunId);
+}
+
+function renderRemunerations(person) {
+  const el = document.getElementById(person + '-remun-list');
+  if (!el) return;
+  ensureRemunerations();
+  const list = state.remunerations[person] || [];
+
+  if (list.length === 0) {
+    el.innerHTML = `<div class="sub-no-items">Sin cuentas remuneradas.<br>Pulsa "+ Añadir" para crear una.</div>`;
+    return;
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const sorted = [...list].sort((a, b) => {
+    const ao = a.nextDate <= today, bo = b.nextDate <= today;
+    if (ao !== bo) return ao ? -1 : 1;
+    return a.nextDate.localeCompare(b.nextDate);
+  });
+
+  el.innerHTML = sorted.map(r => {
+    const overdue  = isRemunOverdue(r);
+    const acc      = findAccountById(r.accountId);
+    const accName  = acc ? acc.name : '—';
+    const dispName = r.name || accName;
+    const dateObj  = new Date(r.nextDate + 'T12:00:00');
+    const dateStr  = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+    const total    = remunTotalReceived(r);
+
+    return `<div class="sub-card${overdue ? ' overdue' : ''}" onclick="openRemunDetail('${person}','${r.id}')">
+      <div class="sub-emoji">💰</div>
+      <div class="sub-info">
+        <div class="sub-name">${dispName}</div>
+        <div class="sub-desc">${accName}</div>
+        <div class="sub-meta">
+          <span class="sub-cycle-badge">${CYCLE_LABELS[r.cycle] || r.cycle}</span>
+          ${acc && acc.rate != null ? `<span class="sub-cycle-badge" style="background:rgba(16,217,160,0.12);color:var(--income);border-color:rgba(16,217,160,0.3);">${acc.rate}% TAE</span>` : ''}
+          ${overdue
+            ? `<span class="sub-overdue-badge">Disponible</span>`
+            : `<span class="sub-date">Próxima ${dateStr}</span>`}
+        </div>
+      </div>
+      <div class="sub-amount">
+        <div class="sub-amount-val" style="color:var(--income);">€${fmt(total)}</div>
+        <div class="sub-amount-cycle">recibido</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openRemunDetail(person, id) {
+  detailRemunPerson = person;
+  detailRemunId     = id;
+  const r = (state.remunerations[person] || []).find(x => x.id === id);
+  if (!r) return;
+
+  const today    = new Date().toISOString().split('T')[0];
+  const overdue  = isRemunOverdue(r);
+  const acc      = findAccountById(r.accountId);
+  const accName  = acc ? acc.name : '—';
+  const dispName = r.name || accName;
+  const dateObj  = new Date(r.nextDate + 'T12:00:00');
+  const dateStr  = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  const total    = remunTotalReceived(r);
+  const payments = [...(r.payments || [])].sort((a, b) => b.date.localeCompare(a.date));
+  const last     = payments[0];
+
+  document.getElementById('remundetail-name').textContent    = dispName;
+  document.getElementById('remundetail-desc').textContent    = r.notes || '';
+  document.getElementById('remundetail-desc').style.display  = r.notes ? 'block' : 'none';
+  document.getElementById('remundetail-total').textContent   = '€' + fmt(total);
+  document.getElementById('remundetail-account').textContent = accName;
+  document.getElementById('remundetail-last').textContent = last
+    ? `€${fmt(last.amount)} · ${new Date(last.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`
+    : '—';
+
+  const nextEl = document.getElementById('remundetail-nextdate');
+  nextEl.textContent = dateStr;
+  nextEl.style.color = overdue ? '#fb923c' : 'var(--text)';
+
+  document.getElementById('remundetail-badges').innerHTML = `
+    <span class="sub-cycle-badge" style="font-size:10px;">${CYCLE_LABELS[r.cycle] || r.cycle}</span>
+    ${acc && acc.rate != null ? `<span class="sub-cycle-badge" style="background:rgba(16,217,160,0.12);color:var(--income);border-color:rgba(16,217,160,0.3);font-size:10px;">${acc.rate}% TAE</span>` : ''}
+    ${overdue ? `<span class="sub-overdue-badge">Remuneración disponible</span>` : ''}`;
+
+  const banner = document.getElementById('remundetail-overdue-banner');
+  if (overdue) {
+    const days = Math.round((new Date(today) - new Date(r.nextDate + 'T12:00:00')) / 86400000);
+    banner.textContent = days > 0
+      ? `💰 Tienes una remuneración pendiente desde hace ${days} día${days !== 1 ? 's' : ''}. Pulsa "Registrar remuneración" para introducir el importe recibido y avanzar la fecha.`
+      : `💰 Hoy toca remuneración. Pulsa "Registrar remuneración" para introducir el importe recibido.`;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
+
+  renderRemunHistory(r);
+  document.getElementById('modalRemunDetail').classList.add('open');
+}
+
+function renderRemunHistory(r) {
+  const el = document.getElementById('remundetail-history');
+  const payments = [...(r.payments || [])].sort((a, b) => b.date.localeCompare(a.date));
+  if (payments.length === 0) {
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">Sin remuneraciones registradas aún</div>`;
+    return;
+  }
+  el.innerHTML = payments.map(p => {
+    const d = new Date(p.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `<div class="sub-history-item" style="cursor:pointer;" onclick="openEditRemunPayment('${detailRemunPerson}','${detailRemunId}','${p.id}')">
+      <div style="width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;">💰</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;">${d}</div>
+      </div>
+      <div style="font-weight:600;color:var(--income);">+€${fmt(p.amount)}</div>
+      <div style="color:var(--muted);font-size:12px;margin-left:6px;">›</div>
+    </div>`;
+  }).join('');
+}
+
+function openEditRemuneration() {
+  const r = (state.remunerations[detailRemunPerson] || []).find(x => x.id === detailRemunId);
+  if (!r) return;
+
+  remunPerson  = detailRemunPerson;
+  remunEditing = detailRemunId;
+
+  document.getElementById('addRemunTitle').textContent = 'Editar cuenta remunerada';
+  document.getElementById('remun-name').value     = r.name || '';
+  document.getElementById('remun-cycle').value    = r.cycle;
+  document.getElementById('remun-nextdate').value = r.nextDate;
+  document.getElementById('remun-notes').value    = r.notes || '';
+
+  populateRemunAccounts(remunPerson);
+  setTimeout(() => { document.getElementById('remun-account').value = r.accountId; }, 50);
+
+  closeModal('modalRemunDetail');
+  document.getElementById('modalAddRemuneration').classList.add('open');
+}
+
+function deleteRemunFromDetail() {
+  const r = (state.remunerations[detailRemunPerson] || []).find(x => x.id === detailRemunId);
+  if (!r) return;
+  const acc = findAccountById(r.accountId);
+  const dispName = r.name || (acc ? acc.name : 'esta cuenta remunerada');
+  showConfirm(
+    `¿Eliminar "${dispName}"?`,
+    'Se eliminará el seguimiento de remuneración. Los movimientos ya registrados en las cuentas no se revertirán.',
+    () => {
+      state.remunerations[detailRemunPerson] = state.remunerations[detailRemunPerson].filter(x => x.id !== detailRemunId);
+      saveState();
+      closeModal('modalRemunDetail');
+      renderRemunerations('mario');
+      renderRemunerations('miri');
+      showToast('Cuenta remunerada eliminada', '');
+    }
+  );
+}
+
+function openRegisterRemuneration() {
+  const r = (state.remunerations[detailRemunPerson] || []).find(x => x.id === detailRemunId);
+  if (!r) return;
+  const acc = findAccountById(r.accountId);
+  const dispName = r.name || (acc ? acc.name : '');
+
+  document.getElementById('remun-reg-name').textContent = dispName;
+  document.getElementById('remun-reg-amount').value = '';
+  document.getElementById('remun-reg-date').value = new Date().toISOString().split('T')[0];
+
+  closeModal('modalRemunDetail');
+  document.getElementById('modalRegisterRemuneration').classList.add('open');
+}
+
+function confirmRegisterRemuneration() {
+  const r = (state.remunerations[detailRemunPerson] || []).find(x => x.id === detailRemunId);
+  if (!r) return;
+
+  const amount = parseFloat(document.getElementById('remun-reg-amount').value) || 0;
+  const date   = document.getElementById('remun-reg-date').value;
+
+  if (amount <= 0) { showToast('Introduce el importe recibido', 'error'); return; }
+  if (!date)       { showToast('Indica la fecha', 'error'); return; }
+
+  // Credit account
+  const acc = findAccountById(r.accountId);
+  if (acc) acc.balance += amount;
+
+  const dispName = r.name || (acc ? acc.name : 'Cuenta remunerada');
+
+  // Register transaction and payment with a shared id, so the payment can be
+  // matched back to its transaction later if it needs editing/deleting
+  const paymentId = Date.now().toString();
+
+  state.transactions.push({
+    id: paymentId,
+    person: detailRemunPerson,
+    type: 'income',
+    accountId: r.accountId,
+    category: 'Remuneración',
+    desc: `Remuneración: ${dispName}`,
+    amount,
+    date
+  });
+
+  // Record payment and advance next date
+  if (!r.payments) r.payments = [];
+  r.payments.push({ id: paymentId, amount, date });
+  r.nextDate = subNextDateAfter(r.nextDate, r.cycle);
+
+  saveState();
+  closeModal('modalRegisterRemuneration');
+  renderAll();
+  showToast(`Remuneración registrada ✓ · €${fmt(amount)}`, 'success');
+  openRemunDetail(detailRemunPerson, detailRemunId);
+}
+
+// ---- Edit / delete an individual remuneration payment ----
+
+let editRemunPaymentCtx = { person: null, remunId: null, paymentId: null };
+
+function openEditRemunPayment(person, remunId, paymentId) {
+  const r = (state.remunerations[person] || []).find(x => x.id === remunId);
+  if (!r) return;
+  const payment = (r.payments || []).find(p => p.id === paymentId);
+  if (!payment) return;
+
+  editRemunPaymentCtx = { person, remunId, paymentId };
+
+  const acc = findAccountById(r.accountId);
+  document.getElementById('editremunpay-name').textContent = r.name || (acc ? acc.name : '');
+  document.getElementById('editremunpay-amount').value = payment.amount;
+  document.getElementById('editremunpay-date').value = payment.date;
+
+  closeModal('modalRemunDetail');
+  document.getElementById('modalEditRemunPayment').classList.add('open');
+}
+
+function saveEditRemunPayment() {
+  const { person, remunId, paymentId } = editRemunPaymentCtx;
+  const r = (state.remunerations[person] || []).find(x => x.id === remunId);
+  if (!r) return;
+  const payment = (r.payments || []).find(p => p.id === paymentId);
+  if (!payment) return;
+
+  const newAmount = parseFloat(document.getElementById('editremunpay-amount').value) || 0;
+  const newDate   = document.getElementById('editremunpay-date').value;
+
+  if (newAmount <= 0) { showToast('Introduce el importe', 'error'); return; }
+  if (!newDate)       { showToast('Indica la fecha', 'error'); return; }
+
+  // Adjust account balance by the difference (income, so positive delta adds more)
+  const acc = findAccountById(r.accountId);
+  const delta = newAmount - payment.amount;
+  if (acc) acc.balance += delta;
+
+  const txn = state.transactions.find(t => t.id === paymentId);
+  if (txn) { txn.amount = newAmount; txn.date = newDate; }
+
+  payment.amount = newAmount;
+  payment.date   = newDate;
+
+  saveState();
+  closeModal('modalEditRemunPayment');
+  renderAll();
+  openRemunDetail(person, remunId);
+  showToast('Remuneración actualizada ✓', 'success');
+}
+
+function deleteEditRemunPayment() {
+  const { person, remunId, paymentId } = editRemunPaymentCtx;
+  const r = (state.remunerations[person] || []).find(x => x.id === remunId);
+  if (!r) return;
+  const payment = (r.payments || []).find(p => p.id === paymentId);
+  if (!payment) return;
+
+  showConfirm(
+    '¿Eliminar esta remuneración?',
+    'El importe se restará de la cuenta y desaparecerá del historial. La fecha de la próxima remuneración no se modificará.',
+    () => {
+      const acc = findAccountById(r.accountId);
+      if (acc) acc.balance -= payment.amount;
+
+      state.transactions = state.transactions.filter(t => t.id !== paymentId);
+      r.payments = (r.payments || []).filter(p => p.id !== paymentId);
+
+      saveState();
+      closeModal('modalEditRemunPayment');
+      renderAll();
+      openRemunDetail(person, remunId);
+      showToast('Remuneración eliminada', '');
+    }
+  );
+}
+
 // ===================== QUICK ENTRY =====================
 function openQuickEntry() {
   qeType = 'income';
@@ -8751,6 +9716,26 @@ function getPersonFromAccountId(accountId) {
 let currentPositionId = null;
 let addPositionMode   = 'new'; // 'new' | 'expand'
 let invType           = 'index';
+let posInputMode      = 'units'; // 'units' = unidades+precio, 'amount' = importe+precio
+
+function selectPosMode(mode) {
+  posInputMode = mode;
+  document.getElementById('posmode-units').className  = 'op-type-btn' + (mode === 'units'  ? ' active-income' : '');
+  document.getElementById('posmode-amount').className = 'op-type-btn' + (mode === 'amount' ? ' active-income' : '');
+  const unitsLabel = document.getElementById('inv-units-label');
+  const calcLabel  = document.getElementById('inv-total-calc-label');
+  const unitsInput = document.getElementById('inv-units');
+  if (mode === 'amount') {
+    unitsLabel.textContent = 'Importe invertido (€)';
+    calcLabel.textContent  = 'Participaciones — calculado';
+    unitsInput.placeholder = '0,00';
+  } else {
+    unitsLabel.textContent = INV_UNITS_LABEL[invType] || 'Participaciones';
+    calcLabel.textContent  = 'Total invertido (€) — calculado';
+    unitsInput.placeholder = '0';
+  }
+  updateInvTotalWithCommission();
+}
 let pdChartInstance      = null;
 let pdValueChartInstance = null;
 let invPortfolioChart    = null;
@@ -8845,11 +9830,22 @@ function resetInvNoDeduct() {
 }
 
 function updateInvTotalWithCommission() {
-  const u    = parseFloat(document.getElementById('inv-units').value)      || 0;
+  const raw  = parseFloat(document.getElementById('inv-units').value)      || 0;
   const p    = parseFloat(document.getElementById('inv-price').value)      || 0;
   const comm = parseFloat(document.getElementById('inv-commission').value) || 0;
-  const total = u * p;
-  document.getElementById('inv-total-calc').textContent = '€' + fmt(total);
+
+  let total;
+  if (posInputMode === 'amount') {
+    total = raw; // raw = importe invertido
+    const units = p > 0 ? total / p : 0;
+    document.getElementById('inv-total-calc').textContent = (units > 0 && p > 0)
+      ? units.toLocaleString('es-ES', { minimumFractionDigits: 4, maximumFractionDigits: 6 }) + ' uds.'
+      : '—';
+  } else {
+    total = raw * p; // raw = unidades
+    document.getElementById('inv-total-calc').textContent = '€' + fmt(total);
+  }
+
   const commRow = document.getElementById('inv-total-with-comm');
   if (comm > 0) {
     document.getElementById('inv-total-comm-value').textContent = '€' + fmt(total + comm);
@@ -8875,6 +9871,7 @@ function openAddPosition() {
   document.getElementById('inv-date').value  = new Date().toISOString().split('T')[0];
   document.getElementById('inv-total-calc').textContent = '€0,00';
   selectInvType('index');
+  selectPosMode('units');
   invDistType = 'acc';
   selectInvDist('acc');
   document.getElementById('inv-ter').value = '';
@@ -8897,7 +9894,7 @@ function openExpandPosition() {
   document.getElementById('inv-notes').value = '';
   document.getElementById('inv-date').value  = new Date().toISOString().split('T')[0];
   document.getElementById('inv-total-calc').textContent = '€0,00';
-  document.getElementById('inv-units-label').textContent = INV_UNITS_LABEL[inv.type];
+  selectPosMode('units');
   populateInvAccounts('inv-source-account');
   resetInvNoDeduct();
   closeModal('modalPositionDetail');
@@ -8911,7 +9908,7 @@ function selectInvType(type) {
   ['index','active','etf','stock','crypto'].forEach(t => {
     document.getElementById('invtype-' + t).className = 'op-type-btn' + (t === type ? ' active-income' : '');
   });
-  document.getElementById('inv-units-label').textContent = INV_UNITS_LABEL[type];
+  if (posInputMode === 'units') document.getElementById('inv-units-label').textContent = INV_UNITS_LABEL[type];
   const fundFields = document.getElementById('inv-fund-fields');
   if (fundFields) fundFields.style.display = INV_FUND_TYPES.has(type) ? 'block' : 'none';
 }
@@ -8947,15 +9944,24 @@ document.addEventListener('input', e => {
 });
 
 function savePosition() {
-  const units     = parseFloat(document.getElementById('inv-units').value) || 0;
+  const raw        = parseFloat(document.getElementById('inv-units').value) || 0;
   const price      = parseFloat(document.getElementById('inv-price').value) || 0;
   const sourceId   = document.getElementById('inv-source-account').value;
   const date       = document.getElementById('inv-date').value;
   const notes      = document.getElementById('inv-notes').value.trim();
   const commission = parseFloat(document.getElementById('inv-commission').value) || 0;
-  const total      = units * price;
 
-  if (units <= 0) { showToast('Introduce el número de unidades', 'error'); return; }
+  let units, total;
+  if (posInputMode === 'amount') {
+    total = raw; // importe invertido
+    units = price > 0 ? total / price : 0;
+    if (total <= 0) { showToast('Introduce el importe invertido', 'error'); return; }
+  } else {
+    units = raw;
+    total = units * price;
+    if (units <= 0) { showToast('Introduce el número de unidades', 'error'); return; }
+  }
+
   if (price <= 0) { showToast('Introduce el precio por unidad', 'error'); return; }
   if (!sourceId)  { showToast('Selecciona una cuenta', 'error'); return; }
   if (!date)      { showToast('Selecciona una fecha', 'error'); return; }
@@ -10051,6 +11057,13 @@ function renderInvestments() {
   document.getElementById('inv-total-return').textContent    = (returnEur >= 0 ? '+' : '') + returnPct.toFixed(2) + '%';
   document.getElementById('inv-total-return').style.color    = returnColor;
   document.getElementById('inv-total-positions').textContent = activeInvs.length;
+
+  // Realized P&L: accumulated gain/loss from all sales, respecting the current person/type filters
+  const realizedPL = activeInvs.reduce((s, inv) =>
+    s + (inv.movements || []).filter(m => m.type === 'sell').reduce((s2, m) => s2 + (m.pl || 0), 0), 0);
+  const realizedEl = document.getElementById('inv-realized-pl');
+  realizedEl.textContent = (realizedPL >= 0 ? '+' : '-') + '€' + fmt(Math.abs(realizedPL));
+  realizedEl.style.color = realizedPL > 0 ? 'var(--income)' : realizedPL < 0 ? 'var(--expense)' : 'var(--text)';
 
   if (state.investments.length === 0) {
     el.innerHTML = `<div class="deposit-no-items">Sin posiciones registradas.<br>Pulsa "+ Añadir" para crear la primera.</div>`;
@@ -11653,6 +12666,7 @@ function executeDeleteProfile(person) {
   state.debts[person]         = [];
   state.deposits[person]      = [];
   state.subscriptions[person] = [];
+  state.remunerations[person] = [];
   state.snapshots[person]     = [];
   state.goals[person]         = null;
 
@@ -11693,6 +12707,7 @@ function saveNewProfile() {
   state.debts[slot]         = [];
   state.deposits[slot]      = [];
   state.subscriptions[slot] = [];
+  state.remunerations[slot] = [];
   state.snapshots[slot]     = [];
   state.goals[slot]         = null;
   // Filter out any stray transactions from that slot
@@ -11761,6 +12776,7 @@ function exportProfileBackup(person) {
     debts:         { [person]: state.debts[person] || [] },
     deposits:      { [person]: state.deposits[person] || [] },
     subscriptions: { [person]: state.subscriptions[person] || [] },
+    remunerations: { [person]: state.remunerations[person] || [] },
     snapshots:     { [person]: state.snapshots[person] || [] },
     goals:         { [person]: state.goals?.[person] || null },
     names:         { [person]: state.names?.[person] || name },
@@ -11849,6 +12865,7 @@ function importProfileBackup(event) {
           state.debts[freeSlot]         = d.debts?.[parsed.profile] || d.debts?.[freeSlot] || [];
           state.deposits[freeSlot]      = d.deposits?.[parsed.profile] || d.deposits?.[freeSlot] || [];
           state.subscriptions[freeSlot] = d.subscriptions?.[parsed.profile] || d.subscriptions?.[freeSlot] || [];
+          state.remunerations[freeSlot] = d.remunerations?.[parsed.profile] || d.remunerations?.[freeSlot] || [];
           state.snapshots[freeSlot]     = d.snapshots?.[parsed.profile] || d.snapshots?.[freeSlot] || [];
           if (state.goals) state.goals[freeSlot] = d.goals?.[parsed.profile] || d.goals?.[freeSlot] || null;
 
@@ -12956,10 +13973,19 @@ function renderInOutChart(person) {
 }
 
 function renderSavingChart(person) {
-  const id = person + '-chart-saving';
+  const id     = person + '-chart-saving';
   destroyChart(id);
-  const ctx = document.getElementById(id);
-  if (!ctx || ctx.offsetWidth === 0) return;
+  const ctx    = document.getElementById(id);
+  const msgEl  = document.getElementById(person + '-saving-msg');
+  const wrapEl = document.getElementById(person + '-saving-wrap');
+  if (!ctx) return;
+
+  // Make sure the wrapper is visible before measuring it — a previous "no data"
+  // render may have hidden it, which would make offsetWidth read 0 here even
+  // though this tab is actually active, silently blocking all future renders
+  if (wrapEl) wrapEl.style.display = 'block';
+  if (msgEl)  msgEl.style.display  = 'none';
+  if (ctx.offsetWidth === 0) return;
 
   ensureSnapshots();
   const allSnaps = state.snapshots[person] || [];
@@ -12967,7 +13993,6 @@ function renderSavingChart(person) {
   // Year selector state
   if (!window.savingYear) window.savingYear = { mario: new Date().getFullYear(), miri: new Date().getFullYear() };
   const year = window.savingYear[person];
-  const yearStr = String(year);
 
   // Update label and next button
   const labelEl = document.getElementById(person + '-saving-year-label');
@@ -12975,14 +14000,25 @@ function renderSavingChart(person) {
   if (labelEl) labelEl.textContent = year;
   if (nextBtn)  nextBtn.disabled = year >= new Date().getFullYear();
 
-  // Filter snapshots for this year
-  const snaps = allSnaps.filter(s => s.month && s.month.startsWith(yearStr));
+  const now = new Date();
+  const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-  const msgEl  = document.getElementById(person + '-saving-msg');
-  const wrapEl = document.getElementById(person + '-saving-wrap');
+  // Build every month of the selected year (Jan → Dec, capped at the current
+  // month for the current year) so the chart always shows the whole year,
+  // not just whichever months happen to have a saved snapshot
+  const months = [];
+  for (let m = 0; m < 12; m++) {
+    const key = `${year}-${String(m + 1).padStart(2, '0')}`;
+    if (key > currentKey) break;
+    months.push({ key, label: new Date(year, m, 1).toLocaleDateString('es-ES', { month: 'short' }) });
+  }
 
-  if (snaps.length < 2) {
-    if (msgEl)  { msgEl.innerHTML = snaps.length === 0
+  const snapsByMonth = {};
+  allSnaps.forEach(s => { snapsByMonth[s.month] = s; });
+  const availableCount = months.filter(m => snapsByMonth[m.key]).length;
+
+  if (availableCount < 2) {
+    if (msgEl)  { msgEl.innerHTML = availableCount === 0
       ? `📊 Sin datos para ${year}.<br><span style="opacity:0.6;">Usa las flechas para ver otros años.</span>`
       : '📊 Los datos se irán acumulando<br>conforme pase el tiempo.';
       msgEl.style.display = 'block'; }
@@ -12992,13 +14028,11 @@ function renderSavingChart(person) {
   if (msgEl)  msgEl.style.display  = 'none';
   if (wrapEl) wrapEl.style.display = 'block';
 
-  const labels = snaps.map(s => {
-    const [y, m] = s.month.split('-');
-    return new Date(+y, +m - 1, 1).toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
-  });
-  const balances  = snaps.map(s => s.balance);
-  const deposits  = snaps.map(s => s.deposits || 0);
-  const totals    = balances.map((b, i) => b + deposits[i]);
+  const labels   = months.map(m => m.label);
+  const balances = months.map(m => snapsByMonth[m.key] ? snapsByMonth[m.key].balance : null);
+  const totals   = months.map((m, i) => balances[i] === null
+    ? null
+    : balances[i] + (snapsByMonth[m.key].deposits || 0));
 
   const c = getChartColors();
   chartInstances[id] = new Chart(ctx, {
@@ -13015,7 +14049,8 @@ function renderSavingChart(person) {
           pointRadius: 4,
           pointBackgroundColor: c.accent,
           fill: true,
-          tension: 0.3
+          tension: 0.3,
+          spanGaps: false
         },
         {
           label: 'Saldo cuentas',
@@ -13025,7 +14060,8 @@ function renderSavingChart(person) {
           pointRadius: 3,
           borderDash: [4, 3],
           fill: false,
-          tension: 0.3
+          tension: 0.3,
+          spanGaps: false
         }
       ]
     },
@@ -13076,7 +14112,14 @@ function renderAccDistChart(person) {
   const msgEl  = document.getElementById(person + '-accdist-msg');
   const wrapEl = document.getElementById(person + '-accdist-wrap');
   const legEl  = document.getElementById(person + '-accdist-legend');
-  if (!ctx || ctx.offsetWidth === 0) return;
+  if (!ctx) return;
+
+  // Make sure the wrapper is visible before measuring it — a previous "no data"
+  // render may have hidden it, which would make offsetWidth read 0 here even
+  // though this tab is actually active, silently blocking all future renders
+  if (wrapEl) wrapEl.style.display = 'block';
+  if (msgEl)  msgEl.style.display  = 'none';
+  if (ctx.offsetWidth === 0) return;
 
   if (!window.accDistYear) window.accDistYear = { mario: new Date().getFullYear(), miri: new Date().getFullYear() };
   const year = window.accDistYear[person];
