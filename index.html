@@ -2300,8 +2300,8 @@ body:not(.values-hidden) .account-rate-inline {
 .main-content::-webkit-scrollbar-track { background: transparent; }
 .main-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
-<script src="libs/xlsx.full.min.js"></script>
-<script src="libs/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" onerror="window.Chart=function(){this.destroy=function(){};}"></script>
 </head>
 <body>
 
@@ -2475,10 +2475,14 @@ body:not(.values-hidden) .account-rate-inline {
             <div class="chart-card-title" style="margin-bottom:0;">Evolución del ahorro</div>
             <div style="display:flex;align-items:center;gap:5px;">
               <button class="month-picker-year-btn" onclick="recalcSavingHistory('mario')" title="Recalcular historial" style="width:28px;height:28px;font-size:13px;">🔄</button>
-              <button class="month-picker-year-btn" onclick="changeSavingYear('mario',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
+              <button class="month-picker-year-btn" id="mario-saving-year-prev" onclick="changeSavingYear('mario',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
               <span id="mario-saving-year-label" style="font-size:13px;font-weight:600;color:var(--saving);min-width:34px;text-align:center;"></span>
               <button class="month-picker-year-btn" onclick="changeSavingYear('mario',1)" id="mario-saving-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
             </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <button class="chart-pill active" id="mario-saving-mode-months" onclick="selectSavingViewMode('mario','months')">Meses</button>
+            <button class="chart-pill" id="mario-saving-mode-years" onclick="selectSavingViewMode('mario','years')">Años</button>
           </div>
           <div id="mario-saving-msg" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:12px;line-height:1.8;"></div>
           <div class="chart-wrap" id="mario-saving-wrap"><canvas id="mario-chart-saving"></canvas></div>
@@ -2487,10 +2491,14 @@ body:not(.values-hidden) .account-rate-inline {
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <div class="chart-card-title" style="margin-bottom:0;">Distribución por cuenta</div>
             <div style="display:flex;align-items:center;gap:5px;">
-              <button class="month-picker-year-btn" onclick="changeAccDistYear('mario',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
+              <button class="month-picker-year-btn" id="mario-accdist-year-prev" onclick="changeAccDistYear('mario',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
               <span id="mario-accdist-year-label" style="font-size:13px;font-weight:600;color:var(--saving);min-width:34px;text-align:center;"></span>
               <button class="month-picker-year-btn" onclick="changeAccDistYear('mario',1)" id="mario-accdist-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
             </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <button class="chart-pill active" id="mario-accdist-mode-months" onclick="selectAccDistViewMode('mario','months')">Meses</button>
+            <button class="chart-pill" id="mario-accdist-mode-years" onclick="selectAccDistViewMode('mario','years')">Años</button>
           </div>
           <div id="mario-accdist-msg" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:12px;line-height:1.8;"></div>
           <div class="chart-wrap" id="mario-accdist-wrap"><canvas id="mario-chart-accdist"></canvas></div>
@@ -2498,10 +2506,13 @@ body:not(.values-hidden) .account-rate-inline {
         </div>
         <div class="chart-card">
           <div class="chart-card-title">Gastos por categoría — <span id="mario-chart-cat-month"></span></div>
-          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
-            <button class="month-picker-year-btn" onclick="changeCatYear('mario',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
-            <span id="mario-cat-year-label" style="font-size:13px;font-weight:600;color:var(--accent);min-width:38px;text-align:center;"></span>
-            <button class="month-picker-year-btn" onclick="changeCatYear('mario',1)" id="mario-cat-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <button class="month-picker-year-btn" onclick="changeCatYear('mario',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
+              <span id="mario-cat-year-label" style="font-size:13px;font-weight:600;color:var(--accent);min-width:38px;text-align:center;"></span>
+              <button class="month-picker-year-btn" onclick="changeCatYear('mario',1)" id="mario-cat-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
+            </div>
+            <div id="mario-cat-total-slot"></div>
           </div>
           <div id="mario-cat-filter-h1" style="display:flex;gap:5px;margin-bottom:5px;justify-content:flex-start;"></div>
           <div id="mario-cat-filter-h2" style="display:flex;gap:5px;margin-bottom:12px;justify-content:flex-end;"></div>
@@ -2642,10 +2653,14 @@ body:not(.values-hidden) .account-rate-inline {
             <div class="chart-card-title" style="margin-bottom:0;">Evolución del ahorro</div>
             <div style="display:flex;align-items:center;gap:5px;">
               <button class="month-picker-year-btn" onclick="recalcSavingHistory('miri')" title="Recalcular historial" style="width:28px;height:28px;font-size:13px;">🔄</button>
-              <button class="month-picker-year-btn" onclick="changeSavingYear('miri',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
+              <button class="month-picker-year-btn" id="miri-saving-year-prev" onclick="changeSavingYear('miri',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
               <span id="miri-saving-year-label" style="font-size:13px;font-weight:600;color:var(--saving);min-width:34px;text-align:center;"></span>
               <button class="month-picker-year-btn" onclick="changeSavingYear('miri',1)" id="miri-saving-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
             </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <button class="chart-pill active" id="miri-saving-mode-months" onclick="selectSavingViewMode('miri','months')">Meses</button>
+            <button class="chart-pill" id="miri-saving-mode-years" onclick="selectSavingViewMode('miri','years')">Años</button>
           </div>
           <div id="miri-saving-msg" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:12px;line-height:1.8;"></div>
           <div class="chart-wrap" id="miri-saving-wrap"><canvas id="miri-chart-saving"></canvas></div>
@@ -2654,10 +2669,14 @@ body:not(.values-hidden) .account-rate-inline {
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <div class="chart-card-title" style="margin-bottom:0;">Distribución por cuenta</div>
             <div style="display:flex;align-items:center;gap:5px;">
-              <button class="month-picker-year-btn" onclick="changeAccDistYear('miri',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
+              <button class="month-picker-year-btn" id="miri-accdist-year-prev" onclick="changeAccDistYear('miri',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
               <span id="miri-accdist-year-label" style="font-size:13px;font-weight:600;color:var(--saving);min-width:34px;text-align:center;"></span>
               <button class="month-picker-year-btn" onclick="changeAccDistYear('miri',1)" id="miri-accdist-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
             </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <button class="chart-pill active" id="miri-accdist-mode-months" onclick="selectAccDistViewMode('miri','months')">Meses</button>
+            <button class="chart-pill" id="miri-accdist-mode-years" onclick="selectAccDistViewMode('miri','years')">Años</button>
           </div>
           <div id="miri-accdist-msg" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:12px;line-height:1.8;"></div>
           <div class="chart-wrap" id="miri-accdist-wrap"><canvas id="miri-chart-accdist"></canvas></div>
@@ -2665,10 +2684,13 @@ body:not(.values-hidden) .account-rate-inline {
         </div>
         <div class="chart-card">
           <div class="chart-card-title">Gastos por categoría — <span id="miri-chart-cat-month"></span></div>
-          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
-            <button class="month-picker-year-btn" onclick="changeCatYear('miri',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
-            <span id="miri-cat-year-label" style="font-size:13px;font-weight:600;color:var(--accent);min-width:38px;text-align:center;"></span>
-            <button class="month-picker-year-btn" onclick="changeCatYear('miri',1)" id="miri-cat-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <button class="month-picker-year-btn" onclick="changeCatYear('miri',-1)" style="width:28px;height:28px;font-size:15px;">‹</button>
+              <span id="miri-cat-year-label" style="font-size:13px;font-weight:600;color:var(--accent);min-width:38px;text-align:center;"></span>
+              <button class="month-picker-year-btn" onclick="changeCatYear('miri',1)" id="miri-cat-year-next" style="width:28px;height:28px;font-size:15px;">›</button>
+            </div>
+            <div id="miri-cat-total-slot"></div>
           </div>
           <div id="miri-cat-filter-h1" style="display:flex;gap:5px;margin-bottom:5px;justify-content:flex-start;"></div>
           <div id="miri-cat-filter-h2" style="display:flex;gap:5px;margin-bottom:12px;justify-content:flex-end;"></div>
@@ -4410,8 +4432,12 @@ body:not(.values-hidden) .account-rate-inline {
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Importe</div>
+          <div id="subdetail-amount-label" style="font-size:10px;color:var(--muted);margin-bottom:2px;">Importe</div>
           <div id="subdetail-amount" style="font-size:20px;font-weight:700;color:var(--expense);"></div>
+          <div id="subdetail-last-wrap" style="display:none;margin-top:10px;">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Último importe</div>
+            <div id="subdetail-last" style="font-size:13px;font-weight:600;color:var(--expense);"></div>
+          </div>
         </div>
         <div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Próxima renovación</div>
@@ -7070,9 +7096,9 @@ function renderSubGroup(person, other, list, prefix, emptyMsg) {
         </div>
       </div>
       <div class="sub-amount">
-        <div class="sub-amount-val">€${fmt(displayAmt)}</div>
-        <div class="sub-amount-cycle">${isVariable ? 'último' : (CYCLE_LABELS[sub.cycle]?.toLowerCase() || '')}</div>
-        ${isVariable ? `<div style="font-size:9px;color:var(--muted);margin-top:2px;">media €${fmt(avgAmt)}</div>` : ''}
+        <div class="sub-amount-val">€${fmt(isVariable ? avgAmt : displayAmt)}</div>
+        <div class="sub-amount-cycle">${isVariable ? 'media' : (CYCLE_LABELS[sub.cycle]?.toLowerCase() || '')}</div>
+        ${isVariable ? `<div style="font-size:9px;color:var(--muted);margin-top:2px;">último €${fmt(displayAmt)}</div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -7098,9 +7124,21 @@ function openSubDetail(person, subId) {
   document.getElementById('subdetail-name').textContent   = sub.name;
   document.getElementById('subdetail-desc').textContent   = sub.desc || '';
   document.getElementById('subdetail-desc').style.display = sub.desc ? 'block' : 'none';
-  document.getElementById('subdetail-amount').textContent = isVariable
-    ? (lastAmount > 0 ? '€' + fmt(lastAmount) + ' (último) · media €' + fmt(avgAmount) : '—')
-    : '€' + fmt(sub.amount);
+  const amtEl      = document.getElementById('subdetail-amount');
+  const amtLabelEl = document.getElementById('subdetail-amount-label');
+  const lastWrapEl = document.getElementById('subdetail-last-wrap');
+  if (isVariable) {
+    amtLabelEl.textContent = 'Importe medio';
+    amtEl.style.fontSize   = '13px';
+    amtEl.textContent      = lastAmount > 0 ? '€' + fmt(avgAmount) : '—';
+    lastWrapEl.style.display = 'block';
+    document.getElementById('subdetail-last').textContent = lastAmount > 0 ? '€' + fmt(lastAmount) : '—';
+  } else {
+    amtLabelEl.textContent = 'Importe';
+    amtEl.style.fontSize   = '20px';
+    amtEl.textContent      = '€' + fmt(sub.amount);
+    lastWrapEl.style.display = 'none';
+  }
   document.getElementById('subdetail-account').textContent = getAccountName(sub.accountId);
   document.getElementById('subdetail-total-paid').textContent = '€' + fmt(totalPaid);
 
@@ -13821,9 +13859,13 @@ function changeCatYear(person, dir) {
   // Reset month to last available in new year
   const now = new Date();
   const maxMonth = newYear === currentYear ? now.getMonth() + 1 : 12;
-  const currentMonthNum = catFilterMonth[person] ? parseInt(catFilterMonth[person].split('-')[1]) : maxMonth;
-  const clampedMonth = Math.min(currentMonthNum, maxMonth);
-  catFilterMonth[person] = `${newYear}-${String(clampedMonth).padStart(2, '0')}`;
+  if (catFilterMonth[person] && catFilterMonth[person].endsWith('-TOTAL')) {
+    catFilterMonth[person] = `${newYear}-TOTAL`;
+  } else {
+    const currentMonthNum = catFilterMonth[person] ? parseInt(catFilterMonth[person].split('-')[1]) : maxMonth;
+    const clampedMonth = Math.min(currentMonthNum, maxMonth);
+    catFilterMonth[person] = `${newYear}-${String(clampedMonth).padStart(2, '0')}`;
+  }
   renderCatChart(person);
 }
 
@@ -13988,6 +14030,14 @@ function renderInOutChart(person) {
   });
 }
 
+function selectSavingViewMode(person, mode) {
+  if (!window.savingViewMode) window.savingViewMode = { mario: 'months', miri: 'months' };
+  window.savingViewMode[person] = mode;
+  document.getElementById(person + '-saving-mode-months').className = 'chart-pill' + (mode === 'months' ? ' active' : '');
+  document.getElementById(person + '-saving-mode-years').className  = 'chart-pill' + (mode === 'years'  ? ' active' : '');
+  renderSavingChart(person);
+}
+
 function renderSavingChart(person) {
   const id     = person + '-chart-saving';
   destroyChart(id);
@@ -14009,19 +14059,111 @@ function renderSavingChart(person) {
   // next full lock/unlock cycle.
   autoSnapshot();
   const allSnaps = state.snapshots[person] || [];
+  const snapsByMonth = {};
+  allSnaps.forEach(s => { snapsByMonth[s.month] = s; });
 
-  // Year selector state
-  if (!window.savingYear) window.savingYear = { mario: new Date().getFullYear(), miri: new Date().getFullYear() };
+  if (!window.savingViewMode) window.savingViewMode = { mario: 'months', miri: 'months' };
+  const mode = window.savingViewMode[person];
+
+  const now         = new Date();
+  const currentYear = now.getFullYear();
+  const currentKey  = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+  const labelEl = document.getElementById(person + '-saving-year-label');
+  const prevBtn = document.getElementById(person + '-saving-year-prev');
+  const nextBtn = document.getElementById(person + '-saving-year-next');
+
+  const c = getChartColors();
+
+  if (mode === 'years') {
+    // Years mode shows every year with data at once — no single-year paging needed
+    if (labelEl) labelEl.textContent = '';
+    if (prevBtn) prevBtn.style.display = 'none';
+    if (nextBtn) nextBtn.style.display = 'none';
+
+    const years = [...new Set(allSnaps.map(s => s.month.split('-')[0]))].sort();
+
+    if (years.length === 0) {
+      if (msgEl)  { msgEl.innerHTML = '📊 Todavía no hay años con datos.'; msgEl.style.display = 'block'; }
+      if (wrapEl) wrapEl.style.display = 'none';
+      return;
+    }
+    if (msgEl)  msgEl.style.display  = 'none';
+    if (wrapEl) wrapEl.style.display = 'block';
+
+    // Closed years use December's snapshot; the current (unfinished) year uses
+    // its latest available month instead, marked as a partial data point
+    const points = years.map(y => {
+      let snap = snapsByMonth[`${y}-12`];
+      let partial = false;
+      if (!snap) {
+        const monthsInYear = Object.keys(snapsByMonth).filter(k => k.startsWith(y + '-')).sort();
+        if (monthsInYear.length) { snap = snapsByMonth[monthsInYear[monthsInYear.length - 1]]; partial = true; }
+      }
+      return {
+        label: y + (partial ? '*' : ''),
+        balance: snap ? snap.balance : null,
+        total:   snap ? snap.balance + (snap.deposits || 0) : null,
+        partial
+      };
+    });
+
+    chartInstances[id] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: points.map(p => p.label),
+        datasets: [
+          {
+            label: 'Saldo + Depósitos',
+            data: points.map(p => p.total),
+            borderColor: c.accent,
+            backgroundColor: c.accent.replace('0.9)', '0.08)'),
+            borderWidth: 2,
+            pointRadius: points.map(p => p.partial ? 6 : 4),
+            pointBackgroundColor: points.map(p => p.partial ? 'transparent' : c.accent),
+            pointBorderColor: c.accent,
+            pointBorderWidth: points.map(p => p.partial ? 2 : 1),
+            fill: true,
+            tension: 0.3,
+            spanGaps: false
+          },
+          {
+            label: 'Saldo cuentas',
+            data: points.map(p => p.balance),
+            borderColor: c.accent.replace('0.9)', '0.4)'),
+            borderWidth: 1.5,
+            pointRadius: 3,
+            borderDash: [4, 3],
+            fill: false,
+            tension: 0.3,
+            spanGaps: false
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { boxWidth: 10, padding: 12 } },
+          tooltip: { callbacks: {
+            afterLabel: tctx => points[tctx.dataIndex]?.partial ? '(año en curso, dato parcial)' : ''
+          }}
+        },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => '€' + Number(v).toFixed(2) } }
+        }
+      }
+    });
+    return;
+  }
+
+  // ---- Months mode (default) ----
+  if (!window.savingYear) window.savingYear = { mario: currentYear, miri: currentYear };
   const year = window.savingYear[person];
 
-  // Update label and next button
-  const labelEl = document.getElementById(person + '-saving-year-label');
-  const nextBtn  = document.getElementById(person + '-saving-year-next');
   if (labelEl) labelEl.textContent = year;
-  if (nextBtn)  nextBtn.disabled = year >= new Date().getFullYear();
-
-  const now = new Date();
-  const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  if (prevBtn) prevBtn.style.display = '';
+  if (nextBtn) { nextBtn.style.display = ''; nextBtn.disabled = year >= currentYear; }
 
   // Build every month of the selected year (Jan → Dec, capped at the current
   // month for the current year) so the chart always shows the whole year,
@@ -14033,8 +14175,6 @@ function renderSavingChart(person) {
     months.push({ key, label: new Date(year, m, 1).toLocaleDateString('es-ES', { month: 'short' }) });
   }
 
-  const snapsByMonth = {};
-  allSnaps.forEach(s => { snapsByMonth[s.month] = s; });
   const availableCount = months.filter(m => snapsByMonth[m.key]).length;
 
   if (availableCount < 2) {
@@ -14054,7 +14194,6 @@ function renderSavingChart(person) {
     ? null
     : balances[i] + (snapsByMonth[m.key].deposits || 0));
 
-  const c = getChartColors();
   chartInstances[id] = new Chart(ctx, {
     type: 'line',
     data: {
@@ -14125,6 +14264,14 @@ function changeAccDistYear(person, dir) {
   renderAccDistChart(person);
 }
 
+function selectAccDistViewMode(person, mode) {
+  if (!window.accDistViewMode) window.accDistViewMode = { mario: 'months', miri: 'months' };
+  window.accDistViewMode[person] = mode;
+  document.getElementById(person + '-accdist-mode-months').className = 'chart-pill' + (mode === 'months' ? ' active' : '');
+  document.getElementById(person + '-accdist-mode-years').className  = 'chart-pill' + (mode === 'years'  ? ' active' : '');
+  renderAccDistChart(person);
+}
+
 function renderAccDistChart(person) {
   const id     = person + '-chart-accdist';
   destroyChart(id);
@@ -14141,14 +14288,6 @@ function renderAccDistChart(person) {
   if (msgEl)  msgEl.style.display  = 'none';
   if (ctx.offsetWidth === 0) return;
 
-  if (!window.accDistYear) window.accDistYear = { mario: new Date().getFullYear(), miri: new Date().getFullYear() };
-  const year = window.accDistYear[person];
-
-  const labelEl = document.getElementById(person + '-accdist-year-label');
-  const nextBtn = document.getElementById(person + '-accdist-year-next');
-  if (labelEl) labelEl.textContent = year;
-  if (nextBtn)  nextBtn.disabled = year >= new Date().getFullYear();
-
   const accounts = state.accounts[person] || [];
   if (!accounts.length) {
     if (msgEl)  { msgEl.textContent = 'Aún no tienes cuentas.'; msgEl.style.display = 'block'; }
@@ -14157,6 +14296,104 @@ function renderAccDistChart(person) {
     return;
   }
 
+  if (!window.accDistViewMode) window.accDistViewMode = { mario: 'months', miri: 'months' };
+  const mode = window.accDistViewMode[person];
+
+  const now         = new Date();
+  const currentYear = now.getFullYear();
+  const currentKey  = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+  const labelEl = document.getElementById(person + '-accdist-year-label');
+  const prevBtn = document.getElementById(person + '-accdist-year-prev');
+  const nextBtn = document.getElementById(person + '-accdist-year-next');
+
+  if (mode === 'years') {
+    // Years mode shows every year with data at once — no single-year paging needed
+    if (labelEl) labelEl.textContent = '';
+    if (prevBtn) prevBtn.style.display = 'none';
+    if (nextBtn) nextBtn.style.display = 'none';
+
+    const firstDates = accounts.map(a => getAccountFirstActivityDate(a)).filter(Boolean);
+    const minYear = firstDates.length
+      ? Math.min(...firstDates.map(d => parseInt(d.split('-')[0])))
+      : currentYear;
+
+    const years = [];
+    for (let y = minYear; y <= currentYear; y++) years.push(y);
+
+    const series = accounts.map((acc, i) => {
+      const firstDate = getAccountFirstActivityDate(acc);
+      return {
+        label: acc.name,
+        color: barSafeColor(acc.color || ACCOUNT_COLORS[i % ACCOUNT_COLORS.length]),
+        data: years.map(y => {
+          const isCurrentYear = y === currentYear;
+          const key = isCurrentYear ? currentKey : `${y}-12`;
+          if (firstDate ? (key + '-31') < firstDate : !isCurrentYear) return null;
+          return getAccountBalanceAtMonth(acc, key);
+        })
+      };
+    });
+
+    const hasData = series.some(s => s.data.some(v => v !== null && v > 0));
+    if (!hasData) {
+      if (msgEl)  { msgEl.innerHTML = 'Sin datos todavía.'; msgEl.style.display = 'block'; }
+      if (wrapEl) wrapEl.style.display = 'none';
+      if (legEl)  legEl.innerHTML = '';
+      return;
+    }
+    if (msgEl)  msgEl.style.display  = 'none';
+    if (wrapEl) wrapEl.style.display = 'block';
+
+    chartInstances[id] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: years.map(y => y === currentYear ? y + '*' : String(y)),
+        datasets: series.map(s => ({
+          label: s.label,
+          data: s.data,
+          backgroundColor: s.color + 'cc',
+          borderColor: s.color,
+          borderWidth: 0,
+          hoverBackgroundColor: s.color,
+        }))
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: €${fmt(ctx.raw)}`,
+            footer: items => `Total: €${fmt(items.reduce((s, i) => s + (i.raw || 0), 0))}`,
+            afterFooter: items => (items.length && years[items[0].dataIndex] === currentYear) ? 'Año en curso — dato parcial' : ''
+          }}
+        },
+        scales: {
+          x: { stacked: true, grid: { display: false } },
+          y: { stacked: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : '€'+v } }
+        }
+      }
+    });
+
+    if (legEl) {
+      legEl.innerHTML = series.map(s => `
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);">
+          <div style="width:10px;height:10px;border-radius:3px;background:${s.color};flex-shrink:0;"></div>
+          <span>${s.label}</span>
+        </div>`).join('');
+    }
+    return;
+  }
+
+  // ---- Months mode (default) ----
+  if (!window.accDistYear) window.accDistYear = { mario: currentYear, miri: currentYear };
+  const year = window.accDistYear[person];
+
+  if (labelEl) labelEl.textContent = year;
+  if (prevBtn) prevBtn.style.display = '';
+  if (nextBtn) { nextBtn.style.display = ''; nextBtn.disabled = year >= currentYear; }
+
   const months = [];
   for (let m = 0; m < 12; m++) {
     months.push({
@@ -14164,8 +14401,6 @@ function renderAccDistChart(person) {
       label: new Date(year, m, 1).toLocaleDateString('es-ES', { month: 'short' })
     });
   }
-  const now = new Date();
-  const currentKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
   const series = accounts.map((acc, i) => {
     const firstDate = getAccountFirstActivityDate(acc);
@@ -14246,6 +14481,7 @@ function renderCatChart(person) {
     catFilterMonth[person] = `${year}-${String(maxMonth).padStart(2, '0')}`;
   }
   const selectedKey = catFilterMonth[person];
+  const isTotal     = selectedKey.endsWith('-TOTAL');
 
   // Year label & next-year button
   const yearLabelEl = document.getElementById(person + '-cat-year-label');
@@ -14269,16 +14505,20 @@ function renderCatChart(person) {
   if (h1El) h1El.innerHTML = [0,1,2,3,4,5].map(makePill).join('');
   if (h2El) h2El.innerHTML = [6,7,8,9,10,11].map(makePill).join('');
 
+  // "Total" pill: whole-year breakdown, on the same row as the year selector
+  const totalSlot = document.getElementById(person + '-cat-total-slot');
+  if (totalSlot) totalSlot.innerHTML = `<button class="chart-pill${isTotal ? ' active' : ''}" onclick="setCatMonth('${person}','${year}-TOTAL')">Total</button>`;
+
   // Title label
   const labelEl = document.getElementById(person + '-chart-cat-month');
-  if (labelEl) labelEl.textContent = monthNames[parseInt(selectedKey.split('-')[1]) - 1] + ' ' + year;
+  if (labelEl) labelEl.textContent = isTotal ? 'Total ' + year : monthNames[parseInt(selectedKey.split('-')[1]) - 1] + ' ' + year;
 
   const personalAccIds = new Set(state.accounts[person].map(a => a.id));
   const commonAccIds   = new Set(state.accounts.common.map(a => a.id));
   const allAccIds      = new Set([...personalAccIds, ...commonAccIds]);
   const cats = {};
   state.transactions
-    .filter(t => t.date && t.date.startsWith(selectedKey) && t.type === 'expense' && t.category !== 'Transferencia' && t.category !== 'Inversión' && allAccIds.has(t.accountId))
+    .filter(t => t.date && t.date.startsWith(isTotal ? String(year) : selectedKey) && t.type === 'expense' && t.category !== 'Transferencia' && t.category !== 'Inversión' && allAccIds.has(t.accountId))
     .forEach(t => {
       const factor = commonAccIds.has(t.accountId) ? 0.5 : 1;
       cats[t.category] = (cats[t.category] || 0) + t.amount * factor;
@@ -14289,7 +14529,7 @@ function renderCatChart(person) {
   const wrapEl = document.getElementById(person + '-cat-wrap');
 
   if (sorted.length === 0) {
-    if (msgEl)  { msgEl.textContent = 'Sin gastos registrados este mes'; msgEl.style.display = 'block'; }
+    if (msgEl)  { msgEl.textContent = isTotal ? 'Sin gastos registrados este año' : 'Sin gastos registrados este mes'; msgEl.style.display = 'block'; }
     if (wrapEl) wrapEl.style.display = 'none';
     return;
   }
